@@ -6,8 +6,10 @@
 /// ```dart
 /// import 'package:rdf_xml/rdf_xml.dart';
 ///
-/// final parser = RdfParser.forFormat('application/rdf+xml');
-/// final serializer = RdfSerializer.forFormat('application/rdf+xml');
+/// final registry = RdfFormatRegistry();
+/// registry.registerFormat(const RdfXmlFormat());
+/// final parser = registry.getParser('application/rdf+xml');
+/// final graph = parser.parse(rdfXmlString);
 /// ```
 library rdfxml_format;
 
@@ -18,20 +20,11 @@ import 'rdfxml_serializer.dart';
 
 /// Format plugin for RDF/XML
 ///
-/// Implements the [FormatPlugin] interface for the RDF/XML format,
+/// Implements the [RdfFormat] interface for the RDF/XML format,
 /// providing factory methods for creating parsers and serializers.
 final class RdfXmlFormat implements RdfFormat {
   /// MIME type for RDF/XML
   static const String mimeType = 'application/rdf+xml';
-
-  /// Additional MIME types that this format can handle
-  static const List<String> alternativeMimeTypes = [
-    'application/xml',
-    'text/xml',
-  ];
-
-  /// File extensions for RDF/XML files
-  static const List<String> fileExtensions = ['rdf', 'xml'];
 
   /// Creates a new RDF/XML format plugin
   const RdfXmlFormat();
@@ -40,79 +33,53 @@ final class RdfXmlFormat implements RdfFormat {
   String get primaryMimeType => mimeType;
 
   @override
-  List<String> get additionalMimeTypes => alternativeMimeTypes;
+  Set<String> get supportedMimeTypes => {
+    mimeType,
+    'application/xml',
+    'text/xml',
+  };
 
   @override
-  List<String> get supportedFileExtensions => fileExtensions;
-
-  @override
-  RdfParser createParser(
-    String input, {
-    String? baseUri,
-    RdfNamespaceMappings? namespaceMappings,
-    Map<String, dynamic> parserOptions = const {},
-  }) {
-    return _RdfXmlParserWrapper(
-      RdfXmlParser(
-        input,
-        baseUri: baseUri,
-        namespaceMappings: namespaceMappings,
-      ),
-      format: mimeType,
-    );
+  RdfParser createParser() {
+    return _RdfXmlFormatParserAdapter();
   }
 
   @override
-  RdfSerializer createSerializer({
-    RdfNamespaceMappings? namespaceMappings,
-    Map<String, dynamic> serializerOptions = const {},
-  }) {
-    return _RdfXmlSerializerWrapper(
-      RdfXmlSerializer(namespaceMappings: namespaceMappings),
-      format: mimeType,
-    );
+  RdfSerializer createSerializer() {
+    return _RdfXmlFormatSerializerAdapter();
+  }
+
+  @override
+  bool canParse(String content) {
+    // Check if content appears to be RDF/XML
+    return content.contains('<rdf:RDF') ||
+        (content.contains(
+              'xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"',
+            ) &&
+            content.contains('<rdf:Description'));
   }
 }
 
-/// Wrapper for RdfXmlParser that implements RdfParser interface
-///
-/// Adapts the format-specific parser to the common RdfParser interface.
-class _RdfXmlParserWrapper implements RdfParser {
-  final RdfXmlParser _parser;
-  final String _format;
-
-  _RdfXmlParserWrapper(this._parser, {required String format})
-    : _format = format;
-
+/// Adapter class to make RdfXmlParser compatible with the RdfParser interface
+final class _RdfXmlFormatParserAdapter implements RdfParser {
   @override
-  String get format => _format;
-
-  @override
-  List<Triple> parse() {
-    return _parser.parse();
+  RdfGraph parse(String input, {String? documentUrl}) {
+    final parser = RdfXmlParser(input, baseUri: documentUrl);
+    final triples = parser.parse();
+    return RdfGraph.fromTriples(triples);
   }
 }
 
-/// Wrapper for RdfXmlSerializer that implements RdfSerializer interface
-///
-/// Adapts the format-specific serializer to the common RdfSerializer interface.
-class _RdfXmlSerializerWrapper implements RdfSerializer {
-  final RdfXmlSerializer _serializer;
-  final String _format;
-
-  _RdfXmlSerializerWrapper(this._serializer, {required String format})
-    : _format = format;
-
-  @override
-  String get format => _format;
-
+/// Adapter class to make RdfXmlSerializer compatible with the RdfSerializer interface
+final class _RdfXmlFormatSerializerAdapter implements RdfSerializer {
   @override
   String write(
     RdfGraph graph, {
     String? baseUri,
     Map<String, String> customPrefixes = const {},
   }) {
-    return _serializer.write(
+    final serializer = RdfXmlSerializer();
+    return serializer.write(
       graph,
       baseUri: baseUri,
       customPrefixes: customPrefixes,

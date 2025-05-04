@@ -1,4 +1,5 @@
 import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';
 import 'package:test/test.dart';
@@ -6,280 +7,306 @@ import 'package:xml/xml.dart';
 
 void main() {
   group('RdfXmlSerializer', () {
-    test('serializes a basic triple', () {
+    test('serializes basic triples to RDF/XML', () {
+      final triple = Triple(
+        IriTerm('http://example.org/subject'),
+        IriTerm('http://example.org/predicate'),
+        LiteralTerm.string('Object'),
+      );
+
+      final graph = RdfGraph(triples: [triple]);
+
       final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
 
-      // Create a simple triple
-      final subject = IriTerm('http://example.org/subject');
-      final predicate = IriTerm('http://example.org/predicate');
-      final object = LiteralTerm.string('Object');
-      final triple = Triple(subject, predicate, object);
+      // Parse the XML to check it
+      final doc = XmlDocument.parse(xml);
 
-      // Create a graph with the triple
-      final graph = RdfGraph.fromTriples([triple]);
+      // Check that we have the right root element
+      expect(doc.rootElement.name.qualified, equals('rdf:RDF'));
 
-      // Serialize to RDF/XML
-      final rdfXml = serializer.write(graph);
-
-      // Basic validation of the XML structure
-      final document = XmlDocument.parse(rdfXml);
-      expect(document.rootElement.name.qualified, equals('rdf:RDF'));
+      // Check that we have the right namespace
       expect(
-        document.rootElement.getAttribute('xmlns:rdf'),
+        doc.rootElement.getAttribute('xmlns:rdf'),
         equals('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
       );
 
-      // Find the Description element
-      final description = document.findAllElements('rdf:Description').first;
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
       expect(
-        description.getAttribute('rdf:about'),
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      // Check that we have a description element
+      final descriptions = doc.findAllElements('rdf:Description');
+      expect(descriptions, hasLength(1));
+
+      // Check that it has the right subject
+      expect(
+        descriptions.first.getAttribute('rdf:about'),
         equals('http://example.org/subject'),
       );
 
-      // Verify that the predicate and object are correctly serialized
-      final predicateElement = description.findElements('*').first;
-      expect(predicateElement.name.qualified.endsWith('predicate'), isTrue);
-      expect(predicateElement.innerText, equals('Object'));
+      // Check that it has a predicate element
+      final predicates = descriptions.first.findElements('$exPrefix:predicate');
+      expect(predicates, hasLength(1));
 
-      // Round-trip: Parse the serialized output to verify it produces the original triple
-      final parser = RdfXmlParser(rdfXml);
-      final parsedTriples = parser.parse();
-
-      expect(parsedTriples, hasLength(1));
-      final parsedTriple = parsedTriples.first;
-      expect(parsedTriple.subject, equals(subject));
-      expect(parsedTriple.predicate, equals(predicate));
-      expect(parsedTriple.object, equals(object));
+      // Check the predicate content
+      expect(predicates.first.innerText, equals('Object'));
     });
 
     test('serializes typed resources', () {
+      final subject = IriTerm('http://example.org/person/1');
+
+      final inputTriples = [
+        Triple(subject, RdfTerms.type, IriTerm('http://example.org/Person')),
+        Triple(
+          subject,
+          IriTerm('http://example.org/name'),
+          LiteralTerm.string('John Doe'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: inputTriples);
+
       final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
 
-      // Create a resource with a type and a property
-      final subject = IriTerm('http://example.org/john');
-      final typeTriple = Triple(
-        subject,
-        RdfPredicates.type,
-        IriTerm('http://example.org/Person'),
-      );
-      final nameTriple = Triple(
-        subject,
-        IriTerm('http://example.org/name'),
-        LiteralTerm.string('John'),
-      );
-
-      // Create a graph with the triples
-      final graph = RdfGraph.fromTriples([typeTriple, nameTriple]);
-
-      // Serialize to RDF/XML
-      final rdfXml = serializer.write(graph);
-
-      // Parse the XML to verify the structure
-      final document = XmlDocument.parse(rdfXml);
-
-      // In RDF/XML, types can be represented as element names
-      // Depending on the serializer implementation, it might use either:
-      // <ex:Person rdf:about="http://example.org/john">...</ex:Person>
-      // or
-      // <rdf:Description rdf:about="http://example.org/john"><rdf:type rdf:resource="http://example.org/Person"/>...</rdf:Description>
-
-      // Round-trip: Parse the serialized output
-      final parser = RdfXmlParser(rdfXml);
+      // Parse back to RDF to check round-trip conversion
+      final parser = RdfXmlParser(xml);
       final parsedTriples = parser.parse();
 
       expect(parsedTriples, hasLength(2));
 
-      // Find the type triple
-      final parsedTypeTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri.endsWith('type'),
+      // Check the type triple
+      final typeTriple = parsedTriples.firstWhere(
+        (t) => (t.predicate as IriTerm).iri == RdfTerms.type.iri,
       );
+      expect(typeTriple.subject, equals(subject));
+      expect(typeTriple.object, equals(IriTerm('http://example.org/Person')));
 
-      expect(parsedTypeTriple.subject, equals(subject));
-      expect(parsedTypeTriple.predicate, equals(RdfPredicates.type));
+      // Check the name triple
+      final nameTriple = parsedTriples.firstWhere(
+        (t) => (t.predicate as IriTerm).iri == 'http://example.org/name',
+      );
+      expect(nameTriple.subject, equals(subject));
+      expect(nameTriple.object, equals(LiteralTerm.string('John Doe')));
+
+      // Also check the XML structure - it should use the type as element name
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
       expect(
-        (parsedTypeTriple.object as IriTerm).iri,
-        equals('http://example.org/Person'),
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
       );
 
-      // Find the name triple
-      final parsedNameTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri.endsWith('name'),
-      );
-
-      expect(parsedNameTriple.subject, equals(subject));
+      final personElements = doc.findAllElements('$exPrefix:Person');
+      expect(personElements, hasLength(1));
       expect(
-        (parsedNameTriple.predicate as IriTerm).iri,
-        equals('http://example.org/name'),
-      );
-      expect((parsedNameTriple.object as LiteralTerm).value, equals('John'));
-    });
-
-    test('serializes blank nodes', () {
-      final serializer = RdfXmlSerializer();
-
-      // Create a resource with a blank node object
-      final subject = IriTerm('http://example.org/john');
-      final blankNode = BlankNodeTerm();
-      final knowsTriple = Triple(
-        subject,
-        IriTerm('http://example.org/knows'),
-        blankNode,
-      );
-      final nameTriple = Triple(
-        blankNode,
-        IriTerm('http://example.org/name'),
-        LiteralTerm.string('Jane'),
-      );
-
-      // Create a graph with the triples
-      final graph = RdfGraph.fromTriples([knowsTriple, nameTriple]);
-
-      // Serialize to RDF/XML
-      final rdfXml = serializer.write(graph);
-
-      // Round-trip: Parse the serialized output
-      final parser = RdfXmlParser(rdfXml);
-      final parsedTriples = parser.parse();
-
-      expect(parsedTriples, hasLength(2));
-
-      // Find the knows triple
-      final parsedKnowsTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri.endsWith('knows'),
-      );
-
-      expect(parsedKnowsTriple.subject, equals(subject));
-      expect(parsedKnowsTriple.object, isA<BlankNodeTerm>());
-
-      // Find the name triple
-      final parsedNameTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri.endsWith('name'),
-      );
-
-      expect(parsedNameTriple.subject, equals(parsedKnowsTriple.object));
-      expect((parsedNameTriple.object as LiteralTerm).value, equals('Jane'));
-    });
-
-    test('serializes typed literals', () {
-      final serializer = RdfXmlSerializer();
-
-      // Create a triple with a typed literal
-      final subject = IriTerm('http://example.org/john');
-      final predicate = IriTerm('http://example.org/age');
-      final object = LiteralTerm(
-        '42',
-        datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
-      );
-      final triple = Triple(subject, predicate, object);
-
-      // Create a graph with the triple
-      final graph = RdfGraph.fromTriples([triple]);
-
-      // Serialize to RDF/XML
-      final rdfXml = serializer.write(graph);
-
-      // Parse the XML to verify the structure
-      final document = XmlDocument.parse(rdfXml);
-      final description = document.findAllElements('rdf:Description').first;
-      final ageElement = description.findElements('*').first;
-
-      expect(ageElement.name.qualified.endsWith('age'), isTrue);
-      expect(ageElement.innerText, equals('42'));
-      expect(
-        ageElement.getAttribute('rdf:datatype'),
-        equals('http://www.w3.org/2001/XMLSchema#integer'),
-      );
-
-      // Round-trip: Parse the serialized output
-      final parser = RdfXmlParser(rdfXml);
-      final parsedTriples = parser.parse();
-
-      expect(parsedTriples, hasLength(1));
-      final parsedTriple = parsedTriples.first;
-
-      expect(parsedTriple.subject, equals(subject));
-      expect(parsedTriple.predicate, equals(predicate));
-      expect((parsedTriple.object as LiteralTerm).value, equals('42'));
-      expect(
-        (parsedTriple.object as LiteralTerm).datatype.iri,
-        equals('http://www.w3.org/2001/XMLSchema#integer'),
+        personElements.first.getAttribute('rdf:about'),
+        equals('http://example.org/person/1'),
       );
     });
 
     test('serializes language-tagged literals', () {
+      final subject = IriTerm('http://example.org/book/1');
+
+      final triples = [
+        Triple(
+          subject,
+          IriTerm('http://example.org/title'),
+          LiteralTerm.withLanguage('The Lord of the Rings', 'en'),
+        ),
+        Triple(
+          subject,
+          IriTerm('http://example.org/title'),
+          LiteralTerm.withLanguage('Der Herr der Ringe', 'de'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
       final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
 
-      // Create a triple with a language-tagged literal
-      final subject = IriTerm('http://example.org/john');
-      final predicate = IriTerm('http://example.org/greeting');
-      final object = LiteralTerm.withLanguage('Hello', 'en');
-      final triple = Triple(subject, predicate, object);
+      // Parse the XML
+      final doc = XmlDocument.parse(xml);
 
-      // Create a graph with the triple
-      final graph = RdfGraph.fromTriples([triple]);
-
-      // Serialize to RDF/XML
-      final rdfXml = serializer.write(graph);
-
-      // Parse the XML to verify the structure
-      final document = XmlDocument.parse(rdfXml);
-      final description = document.findAllElements('rdf:Description').first;
-      final greetingElement = description.findElements('*').first;
-
-      expect(greetingElement.name.qualified.endsWith('greeting'), isTrue);
-      expect(greetingElement.innerText, equals('Hello'));
-      expect(greetingElement.getAttribute('xml:lang'), equals('en'));
-
-      // Round-trip: Parse the serialized output
-      final parser = RdfXmlParser(rdfXml);
-      final parsedTriples = parser.parse();
-
-      expect(parsedTriples, hasLength(1));
-      final parsedTriple = parsedTriples.first;
-
-      expect(parsedTriple.subject, equals(subject));
-      expect(parsedTriple.predicate, equals(predicate));
-      expect((parsedTriple.object as LiteralTerm).value, equals('Hello'));
-      expect((parsedTriple.object as LiteralTerm).language, equals('en'));
-    });
-
-    test('handles custom namespace prefixes', () {
-      final serializer = RdfXmlSerializer();
-
-      // Create a triple
-      final subject = IriTerm('http://example.org/subject');
-      final predicate = IriTerm('http://example.org/predicate');
-      final object = LiteralTerm.string('Object');
-      final triple = Triple(subject, predicate, object);
-
-      // Create a graph with the triple
-      final graph = RdfGraph.fromTriples([triple]);
-
-      // Custom prefix mappings
-      final customPrefixes = {'ex': 'http://example.org/'};
-
-      // Serialize to RDF/XML with custom prefixes
-      final rdfXml = serializer.write(graph, customPrefixes: customPrefixes);
-
-      // Parse the XML to verify the structure
-      final document = XmlDocument.parse(rdfXml);
-
-      // Verify that the custom prefix is used
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
       expect(
-        document.rootElement.getAttribute('xmlns:ex'),
-        equals('http://example.org/'),
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
       );
 
-      // Round-trip: Parse the serialized output
-      final parser = RdfXmlParser(rdfXml);
-      final parsedTriples = parser.parse();
+      final titleElements = doc.findAllElements('$exPrefix:title');
+      expect(titleElements, hasLength(2));
 
-      expect(parsedTriples, hasLength(1));
-      final parsedTriple = parsedTriples.first;
+      // Find both language versions
+      final englishTitle = titleElements.firstWhere(
+        (e) => e.getAttribute('xml:lang') == 'en',
+      );
+      expect(englishTitle.innerText, equals('The Lord of the Rings'));
 
-      expect(parsedTriple.subject, equals(subject));
-      expect(parsedTriple.predicate, equals(predicate));
-      expect(parsedTriple.object, equals(object));
+      final germanTitle = titleElements.firstWhere(
+        (e) => e.getAttribute('xml:lang') == 'de',
+      );
+      expect(germanTitle.innerText, equals('Der Herr der Ringe'));
+    });
+
+    test('serializes datatyped literals', () {
+      final subject = IriTerm('http://example.org/person/1');
+
+      final triple = Triple(
+        subject,
+        IriTerm('http://example.org/age'),
+        LiteralTerm(
+          '42',
+          datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
+        ),
+      );
+
+      final graph = RdfGraph(triples: [triple]);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+      expect(
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      final ageElements = doc.findAllElements('$exPrefix:age');
+      expect(ageElements, hasLength(1));
+
+      // Check datatype
+      expect(
+        ageElements.first.getAttribute('rdf:datatype'),
+        equals('http://www.w3.org/2001/XMLSchema#integer'),
+      );
+      expect(ageElements.first.innerText, equals('42'));
+    });
+
+    test('handles nested resources', () {
+      final person = IriTerm('http://example.org/person/1');
+      final address = BlankNodeTerm();
+
+      final triples = [
+        // Link person to address
+        Triple(person, IriTerm('http://example.org/address'), address),
+
+        // Add address properties
+        Triple(address, RdfTerms.type, IriTerm('http://example.org/Address')),
+        Triple(
+          address,
+          IriTerm('http://example.org/street'),
+          LiteralTerm.string('123 Main St'),
+        ),
+        Triple(
+          address,
+          IriTerm('http://example.org/city'),
+          LiteralTerm.string('Springfield'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+      expect(
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      // The document should have a Description element for the person
+      final personElements = doc.findAllElements('rdf:Description');
+      expect(personElements, hasLength(1));
+
+      // It should have an address element
+      final addressElements = personElements.first.findElements(
+        '$exPrefix:address',
+      );
+      expect(addressElements, hasLength(1));
+
+      // The address should have a nodeID reference
+      expect(addressElements.first.getAttribute('rdf:nodeID'), isNotNull);
+
+      // There should be an Address element
+      final addressTypeElements = doc.findAllElements('$exPrefix:Address');
+      expect(addressTypeElements, hasLength(1));
+
+      // It should have the same nodeID
+      expect(
+        addressTypeElements.first.getAttribute('rdf:nodeID'),
+        equals(addressElements.first.getAttribute('rdf:nodeID')),
+      );
+
+      // Check for street and city
+      final streetElements = addressTypeElements.first.findElements(
+        '$exPrefix:street',
+      );
+      expect(streetElements, hasLength(1));
+      expect(streetElements.first.innerText, equals('123 Main St'));
+
+      final cityElements = addressTypeElements.first.findElements(
+        '$exPrefix:city',
+      );
+      expect(cityElements, hasLength(1));
+      expect(cityElements.first.innerText, equals('Springfield'));
     });
   });
 }

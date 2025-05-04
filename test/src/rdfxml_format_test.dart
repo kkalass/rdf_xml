@@ -1,4 +1,5 @@
-// filepath: /Users/klaskalass/privat/rdf/rdf_xml/test/src/rdfxml/rdfxml_format_test.dart
+import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_format.dart';
 import 'package:test/test.dart';
 
@@ -49,6 +50,47 @@ void main() {
 
       expect(parser, isNotNull);
       expect(serializer, isNotNull);
+    });
+
+    test('parser can parse RDF/XML content', () {
+      const format = RdfXmlFormat();
+      final parser = format.createParser();
+
+      final content = '''
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:ex="http://example.org/">
+          <rdf:Description rdf:about="http://example.org/subject">
+            <ex:predicate>Object</ex:predicate>
+          </rdf:Description>
+        </rdf:RDF>
+      ''';
+
+      final graph = parser.parse(content);
+      expect(graph.triples, hasLength(1));
+
+      final triple = graph.triples.first;
+      expect(triple.subject, equals(IriTerm('http://example.org/subject')));
+      expect(triple.predicate, equals(IriTerm('http://example.org/predicate')));
+      expect(triple.object, equals(LiteralTerm.string('Object')));
+    });
+
+    test('serializer can write RDF/XML content', () {
+      const format = RdfXmlFormat();
+      final serializer = format.createSerializer();
+
+      final subject = IriTerm('http://example.org/subject');
+      final predicate = RdfTerms.type;
+      final object = IriTerm('http://example.org/Class');
+
+      final graph = RdfGraph(triples: [Triple(subject, predicate, object)]);
+
+      final xml = serializer.write(graph);
+      expect(xml, contains('<rdf:RDF'));
+      expect(
+        xml,
+        contains('xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"'),
+      );
+      expect(xml, contains('rdf:about="http://example.org/subject"'));
     });
   });
 }

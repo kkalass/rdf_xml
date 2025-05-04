@@ -13,6 +13,8 @@ import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
+import 'rdfxml_constants.dart';
+
 /// Serializer for RDF/XML format
 ///
 /// Implements the RDF/XML serialization algorithm according to the W3C specification.
@@ -24,7 +26,7 @@ import 'package:xml/xml.dart';
 /// - Support for RDF collections
 /// - Blank node serialization
 /// - Datatype and language tag handling
-final class RdfXmlSerializer implements RdfSerializer {
+final class RdfXmlSerializer {
   static final _logger = Logger('rdf.serializer.rdfxml');
 
   /// Namespace mappings registry
@@ -37,7 +39,12 @@ final class RdfXmlSerializer implements RdfSerializer {
   RdfXmlSerializer({RdfNamespaceMappings? namespaceMappings})
     : _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings();
 
-  @override
+  /// Writes an RDF graph to RDF/XML format
+  ///
+  /// Parameters:
+  /// - [graph] The RDF graph to serialize
+  /// - [baseUri] Optional base URI for the document
+  /// - [customPrefixes] Custom namespace prefix mappings
   String write(
     RdfGraph graph, {
     String? baseUri,
@@ -100,12 +107,10 @@ final class RdfXmlSerializer implements RdfSerializer {
     RdfGraph graph,
     Map<String, String> customPrefixes,
   ) {
-    final result = <String, String>{
-      // Always include RDF namespace
-      'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-    };
+    // Start with standard namespaces
+    final result = Map<String, String>.from(RdfTerms.standardNamespaces);
 
-    // Add custom prefix mappings
+    // Add custom prefix mappings (overrides standard namespaces)
     result.addAll(customPrefixes);
 
     // Extract namespaces from IRI terms in the graph
@@ -148,6 +153,11 @@ final class RdfXmlSerializer implements RdfSerializer {
     if (nsEnd > 0) {
       final namespace = iri.substring(0, nsEnd);
 
+      // Skip if namespace already registered
+      if (namespaces.containsValue(namespace)) {
+        return;
+      }
+
       // Find prefix for this namespace if available
       final mappingsMap = _namespaceMappings.asMap();
       for (final entry in mappingsMap.entries) {
@@ -156,6 +166,17 @@ final class RdfXmlSerializer implements RdfSerializer {
           return;
         }
       }
+
+      // If we get here, it's a new namespace not in our mappings
+      // Generate a new prefix
+      int prefixNum = 1;
+      String prefix;
+      do {
+        prefix = 'ns$prefixNum';
+        prefixNum++;
+      } while (namespaces.containsKey(prefix));
+
+      namespaces[prefix] = namespace;
     }
   }
 
@@ -191,7 +212,7 @@ final class RdfXmlSerializer implements RdfSerializer {
             .where(
               (t) =>
                   t.predicate is IriTerm &&
-                  (t.predicate as IriTerm).iri == RdfPredicates.type.iri,
+                  (t.predicate as IriTerm).iri == RdfTerms.type.iri,
             )
             .toList();
 
@@ -223,7 +244,7 @@ final class RdfXmlSerializer implements RdfSerializer {
         for (final triple in triples) {
           if (typeIri != null &&
               triple.predicate is IriTerm &&
-              (triple.predicate as IriTerm).iri == RdfPredicates.type.iri &&
+              (triple.predicate as IriTerm).iri == RdfTerms.type.iri &&
               triple.object == typeIri) {
             continue; // Skip the type triple that's already encoded in the element name
           }
@@ -275,7 +296,7 @@ final class RdfXmlSerializer implements RdfSerializer {
       // Handle language tag or datatype
       if (object.language != null) {
         attributes['xml:lang'] = object.language!;
-      } else if (object.datatype != XsdTypes.string) {
+      } else if (object.datatype.iri != RdfTerms.string.iri) {
         attributes['rdf:datatype'] = object.datatype.iri;
       }
 

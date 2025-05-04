@@ -13,6 +13,8 @@ import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
+import 'rdfxml_constants.dart';
+
 /// Represents the XML literal datatype from the RDF Vocabulary
 final _xmlLiteral = IriTerm.prevalidated(
   'http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral',
@@ -80,12 +82,6 @@ final class RdfXmlParser {
   /// Parses the RDF/XML document and returns a list of triples
   ///
   /// This is the main entry point for parsing RDF/XML data.
-  ///
-  /// Returns:
-  /// - A list of RDF triples parsed from the document
-  ///
-  /// Throws:
-  /// - [RdfParserException] if the document cannot be parsed or contains invalid RDF
   List<Triple> parse() {
     _logger.fine('Parsing RDF/XML document');
 
@@ -157,7 +153,11 @@ final class RdfXmlParser {
   ///
   /// This is the core parsing function that handles different node types
   /// according to the RDF/XML syntax rules.
-  void _processNode(XmlElement element, List<Triple> triples) {
+  void _processNode(
+    XmlElement element,
+    List<Triple> triples, {
+    RdfSubject? subject,
+  }) {
     _logger.fine('Processing element: ${element.name.qualified}');
 
     // Check if this is an rdf:Description or a typed resource
@@ -166,14 +166,14 @@ final class RdfXmlParser {
         element.name.namespaceUri == rdfNamespace;
 
     // Get the subject of this element
-    final subject = _getSubject(element);
+    final currentSubject = subject ?? _getSubject(element);
 
     // If this is a typed resource (not rdf:Description), add a type triple
     if (!isDescription && element.name.namespaceUri != rdfNamespace) {
       final typeIri = IriTerm(
         '${element.name.namespaceUri}${element.name.local}',
       );
-      triples.add(Triple(subject, RdfPredicates.type, typeIri));
+      triples.add(Triple(currentSubject, RdfTerms.type, typeIri));
     }
 
     // Process all attributes that aren't rdf: or xmlns: as properties
@@ -185,44 +185,14 @@ final class RdfXmlParser {
           '${attr.name.namespaceUri}${attr.name.local}',
         );
         final object = LiteralTerm.string(attr.value);
-        triples.add(Triple(subject, predicate, object));
+        triples.add(Triple(currentSubject, predicate, object));
       }
     }
 
     // Process child elements as properties
     for (final childElement in element.childElements) {
-      _processProperty(subject, childElement, triples);
+      _processProperty(currentSubject, childElement, triples);
     }
-  }
-
-  /// Gets the subject term for an element
-  ///
-  /// Extracts the subject IRI or blank node from element attributes
-  /// according to RDF/XML rules (rdf:about, rdf:ID, or blank node).
-  RdfSubject _getSubject(XmlElement element) {
-    // Check for rdf:about attribute
-    final aboutAttr = element.getAttribute('about', namespace: rdfNamespace);
-    if (aboutAttr != null) {
-      final iri = _resolveUri(aboutAttr);
-      return IriTerm(iri);
-    }
-
-    // Check for rdf:ID attribute
-    final idAttr = element.getAttribute('ID', namespace: rdfNamespace);
-    if (idAttr != null) {
-      // rdf:ID creates a URI relative to the document base URI
-      final iri = '${_resolvedBaseUri}#$idAttr';
-      return IriTerm(iri);
-    }
-
-    // Check for rdf:nodeID attribute
-    final nodeIdAttr = element.getAttribute('nodeID', namespace: rdfNamespace);
-    if (nodeIdAttr != null) {
-      return _getBlankNode(nodeIdAttr);
-    }
-
-    // No identifier, create a blank node
-    return BlankNodeTerm();
   }
 
   /// Processes a property element
@@ -277,26 +247,30 @@ final class RdfXmlParser {
       return;
     }
 
-    // Check for rdf:datatype attribute
-    final datatypeAttr = propertyElement.getAttribute(
-      'datatype',
-      namespace: rdfNamespace,
-    );
-
     // Check for nested elements
     if (propertyElement.childElements.isNotEmpty) {
       // If there are child elements, this is a nested resource description
       final nestedSubject = BlankNodeTerm();
       triples.add(Triple(subject, predicate, nestedSubject));
 
+      // Process each child element as part of the nested resource
       for (final childElement in propertyElement.childElements) {
-        _processNode(childElement, triples);
+        // For a nested resource, we pass the blank node as the new subject
+        _processNode(childElement, triples, subject: nestedSubject);
       }
       return;
     }
 
+    // Check for rdf:datatype attribute
+    final datatypeAttr = propertyElement.getAttribute(
+      'datatype',
+      namespace: rdfNamespace,
+    );
+
     // If we get here, this is a literal property
     final literalValue = propertyElement.innerText;
+
+    // Check for XML language attribute (xml:lang)
     final langAttr = propertyElement.getAttribute(
       'lang',
       namespace: 'http://www.w3.org/XML/1998/namespace',
@@ -348,7 +322,7 @@ final class RdfXmlParser {
 
         // Process each child element
         for (final childElement in element.childElements) {
-          _processNode(childElement, triples);
+          _processNode(childElement, triples, subject: nestedSubject);
         }
         break;
 
@@ -378,7 +352,7 @@ final class RdfXmlParser {
         triples.add(Triple(subject, predicate, nestedSubject));
 
         for (final childElement in element.childElements) {
-          _processNode(childElement, triples);
+          _processNode(childElement, triples, subject: nestedSubject);
         }
     }
   }
@@ -394,7 +368,7 @@ final class RdfXmlParser {
   ) {
     if (items.isEmpty) {
       // Empty collection, link to rdf:nil
-      triples.add(Triple(subject, predicate, RdfResources.nil));
+      triples.add(Triple(subject, predicate, RdfTerms.nil));
       return;
     }
 
@@ -409,7 +383,7 @@ final class RdfXmlParser {
       final itemSubject = _getSubject(item);
 
       // Add the item to the list
-      triples.add(Triple(listNode, RdfPredicates.first, itemSubject));
+      triples.add(Triple(listNode, RdfTerms.first, itemSubject));
 
       // Process the item element
       _processNode(item, triples);
@@ -419,11 +393,11 @@ final class RdfXmlParser {
 
       if (isLastItem) {
         // Last item points to nil
-        triples.add(Triple(listNode, RdfPredicates.rest, RdfResources.nil));
+        triples.add(Triple(listNode, RdfTerms.rest, RdfTerms.nil));
       } else {
         // Create next list node
         final nextNode = BlankNodeTerm();
-        triples.add(Triple(listNode, RdfPredicates.rest, nextNode));
+        triples.add(Triple(listNode, RdfTerms.rest, nextNode));
         listNode = nextNode;
       }
     }
@@ -516,5 +490,60 @@ final class RdfXmlParser {
         return '$_resolvedBaseUri/$uri';
       }
     }
+  }
+
+  /// Resolves a QName to an IRI using namespace mappings
+  ///
+  /// Takes a qualified name (e.g., "dc:title") and resolves it to an absolute IRI
+  /// using the namespace mappings and XML namespace declarations.
+  String _resolveQName(String qname, Map<String, String> namespaces) {
+    final colonPos = qname.indexOf(':');
+    if (colonPos > 0) {
+      final prefix = qname.substring(0, colonPos);
+      final localName = qname.substring(colonPos + 1);
+
+      // First check explicit namespaces from XML
+      if (namespaces.containsKey(prefix)) {
+        return '${namespaces[prefix]}$localName';
+      }
+
+      // Then check namespace mappings
+      final nsMap = _namespaceMappings.asMap();
+      if (nsMap.containsKey(prefix)) {
+        return '${nsMap[prefix]}$localName';
+      }
+    }
+
+    return qname; // Return as-is if not a QName or prefix not found
+  }
+
+  /// Gets the subject term for an element
+  ///
+  /// Extracts the subject IRI or blank node from element attributes
+  /// according to RDF/XML rules (rdf:about, rdf:ID, or blank node).
+  RdfSubject _getSubject(XmlElement element) {
+    // Check for rdf:about attribute
+    final aboutAttr = element.getAttribute('about', namespace: rdfNamespace);
+    if (aboutAttr != null) {
+      final iri = _resolveUri(aboutAttr);
+      return IriTerm(iri);
+    }
+
+    // Check for rdf:ID attribute
+    final idAttr = element.getAttribute('ID', namespace: rdfNamespace);
+    if (idAttr != null) {
+      // rdf:ID creates a URI relative to the document base URI
+      final iri = '${_resolvedBaseUri}#$idAttr';
+      return IriTerm(iri);
+    }
+
+    // Check for rdf:nodeID attribute
+    final nodeIdAttr = element.getAttribute('nodeID', namespace: rdfNamespace);
+    if (nodeIdAttr != null) {
+      return _getBlankNode(nodeIdAttr);
+    }
+
+    // No identifier, create a blank node
+    return BlankNodeTerm();
   }
 }
