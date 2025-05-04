@@ -270,7 +270,15 @@ I had to interrupt because it failed with a non-helpful error that lead the agen
 
 Actually, it went into some sort of endless loop, incapable of fixing the issues.
 
-So we need to adjust our tester prompt again. Next time we could try:
+---
+
+### RESET
+
+---
+
+Unfortunately it all ended up as one big mess, so I had to revert and restart the test part.
+
+So we need to adjust our tester prompt again. This time we use:
 
 ```llm
 You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing. 
@@ -285,6 +293,34 @@ You do not like hardcoded or duplicate code - if functionality is available in o
 
 Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested. Also check if there are important tests missing and add them if needed.
 ```
+
+TODO:
+
+* Add test for streaming of real world files, verify that the result is exactly the same as non-streaming
+* What about Bag, Set, Alt? Is it handled correctly in streaming and non-streaming?
+
+---
+
+### RESET (2)
+
+---
+
+Again it all ended up as one big mess, so I had to revert and restart the test part. It started off really promising, but then it lost itself.
+
+So we need to adjust our tester prompt again. This time we use:
+
+```llm
+You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing. 
+
+You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etc. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation must be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong. You are part of the team implementing this code and your goal is to find errors in the implementation, not to write tests that match the implementation and that only fails if the implementation is changed. DO NOT actually adjust the code - leave this for the experts. Your job is, to create great test cases that show what works and what does not work as it should.
+
+Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested. Also check if there are important tests missing and add them if needed.
+```
+
+TODO:
+
+* Add test for streaming of real world files, verify that the result is exactly the same as non-streaming
+* What about Bag, Set, Alt? Is it handled correctly in streaming and non-streaming?
 
 ### TODO: Documentation (2)
 
