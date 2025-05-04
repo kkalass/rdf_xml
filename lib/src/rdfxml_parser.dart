@@ -367,6 +367,12 @@ final class RdfXmlParser implements IRdfXmlParser {
       // If this is a typed resource (not rdf:Description), add a type triple
       if (!isDescription &&
           element.name.namespaceUri != RdfTerms.rdfNamespace) {
+        if ((element.name.namespaceUri ?? '').isEmpty) {
+          throw RdfStructureException(
+            'Element without namespace URI: ${element.name.qualified}',
+            elementName: element.name.qualified,
+          );
+        }
         final typeIri = IriTerm(
           '${element.name.namespaceUri}${element.name.local}',
         );
@@ -378,6 +384,12 @@ final class RdfXmlParser implements IRdfXmlParser {
         if (attr.name.prefix != 'rdf' &&
             attr.name.prefix != 'xmlns' &&
             attr.name.prefix?.isNotEmpty == true) {
+          if ((attr.name.namespaceUri ?? '').isEmpty) {
+            throw RdfStructureException(
+              'Attribute without namespace URI: ${attr.name.qualified}',
+              elementName: element.name.qualified,
+            );
+          }
           final predicate = IriTerm(
             '${attr.name.namespaceUri}${attr.name.local}',
           );
@@ -419,6 +431,12 @@ final class RdfXmlParser implements IRdfXmlParser {
     );
     if (resourceAttr != null) {
       final objectIri = _uriResolver.resolveUri(resourceAttr, _resolvedBaseUri);
+      if (objectIri.isEmpty) {
+        throw RdfStructureException(
+          'Invalid rdf:resource URI: $resourceAttr',
+          elementName: propertyElement.name.qualified,
+        );
+      }
       triples.add(Triple(subject, predicate, IriTerm(objectIri)));
       return;
     }
@@ -486,9 +504,14 @@ final class RdfXmlParser implements IRdfXmlParser {
 
     if (datatypeAttr != null) {
       // Typed literal
-      final datatype = IriTerm(
-        _uriResolver.resolveUri(datatypeAttr, _resolvedBaseUri),
-      );
+      var resolveUri = _uriResolver.resolveUri(datatypeAttr, _resolvedBaseUri);
+      if (resolveUri.isEmpty) {
+        throw RdfStructureException(
+          'Invalid rdf:datatype URI: $datatypeAttr',
+          elementName: propertyElement.name.qualified,
+        );
+      }
+      final datatype = IriTerm(resolveUri);
       triples.add(
         Triple(
           subject,
@@ -646,7 +669,12 @@ final class RdfXmlParser implements IRdfXmlParser {
   RdfPredicate _getPredicateFromElement(XmlElement element) {
     final namespaceUri = element.name.namespaceUri ?? '';
     final localName = element.name.local;
-
+    if (namespaceUri.isEmpty) {
+      throw RdfStructureException(
+        'Element without namespace URI: ${element.name.qualified}',
+        elementName: element.name.qualified,
+      );
+    }
     return IriTerm('$namespaceUri$localName');
   }
 
@@ -663,6 +691,12 @@ final class RdfXmlParser implements IRdfXmlParser {
     if (aboutAttr != null) {
       try {
         final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
+        if (iri.isEmpty) {
+          throw RdfStructureException(
+            'Invalid rdf:about URI: $aboutAttr',
+            elementName: element.name.qualified,
+          );
+        }
         return IriTerm(iri);
       } catch (e) {
         _uriLogger.severe('Failed to resolve rdf:about URI', e);
@@ -680,6 +714,12 @@ final class RdfXmlParser implements IRdfXmlParser {
     if (idAttr != null) {
       try {
         // rdf:ID creates a URI relative to the document base URI
+        if (_resolvedBaseUri.isEmpty) {
+          throw RdfStructureException(
+            'Base URI is not set for rdf:ID resolution',
+            elementName: element.name.qualified,
+          );
+        }
         final iri = '${_resolvedBaseUri}#$idAttr';
         return IriTerm(iri);
       } catch (e) {
