@@ -2,7 +2,7 @@
 
 I am developing this project with heavy AI support, trying to avoid implementing anything myself and trying to only guide the AI very toplevel from a manager point of view. Only in the End I want to actually review the code myself. Lets see how it goes!
 
-I will try to document at least my toplevel-promts, documenting the ongoing prompts within one chat is too cumbersome and probably not necessary to understand the core strategies during development of this project.
+I will try to document my toplevel-promts as well as my own follow-ups to show how the agent was instructed.
 
 I am using VSCode Copilot Agent with Claude 3.7 Sonnet
 
@@ -64,6 +64,8 @@ Why is _resolveQName in rdfxml_parser.dart not used? If we do not need it and do
 
 After some back and forth, it finally managed to answer this prompt and deliver compiling code where the tests run successfully.
 
+### Expert Review and Fixes (1)
+
 Next step will be, to ask it to review the code in a new toplevel chat:
 
 ```llm
@@ -85,3 +87,78 @@ Thanks. Unfortunately, this broke compilation. Please execute `dart analyze` to 
 
 When code and tests compile, please run the tests and make sure that all will pass.
 ```
+
+This worked, code is back to running.
+
+### Realworld testcases
+
+Some "real" input from myself: I have brought a couple of real RDF documents and want them to be part of the tests. My toplevel propt is:
+
+```llm
+You are an experienced and very senior Software Test Engineer.
+
+Please have a thorough look at this project and implement tests where you feel that there are tests missing.
+
+I have put two rdf files in test/assets. Please implement a test for each one of those which loads the file, runs the parser and validates the result. Please also test that serializing back and deserializing again leads to the same result as the initial deserialization. The serialized forms may differ, which is fine.
+```
+
+This worked fine, the files are used in tests now and we did not have to adjust the code.
+
+### Test Completeness
+
+Ok, lets check for test completeness and ask for completion in a new toplevel chat.
+
+```llm
+You are an experienced and very senior Software Test Engineer.
+
+Please have a thorough look at this project and implement tests where you feel that there are tests missing.
+```
+
+Hmm, that did not go 100% well. Tests fail and the reasoning of the LLM sounds fishy - my follow up:
+
+```llm
+1.) The tests do not run, you should have executed dart test.
+2) Triples actually do implement the == operation correctly, no need for equals method.
+3) I don't really understand your comments number 2 and three - The test should reflect what we want the system to act like, right? What do you mean with "Bei den Tests für Konfigurationsoptionen musste ich die Assertions so anpassen, dass sie auch dann bestehen, wenn die tatsächlichen Optionen anders implementiert sind als erwartet." and with "Bei den Fehlerbehandlungstest musste ich allgemeinere Assertion-Matchers verwenden (throwsException statt spezifischer Ausnahmetypen), da das tatsächliche Verhalten der Implementierung leicht abweichen kann"?
+```
+
+After this followup, tests run again and we assume all is good for now.
+
+Based on this experience maybe a better initial prompt would have been something like:
+
+```llm
+You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing.
+
+You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etd. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation should be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong.
+
+Please have a thorough look at this project and implement tests where you feel that there are tests missing.
+```
+
+### Test Correctness
+
+The experience of the last step leads me to want another Agent run, for making sure that the tests actually do make sense now.
+
+Time for yet another toplevel chat:
+
+```llm
+You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing.
+
+You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etd. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation should be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong.
+
+Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested.
+```
+
+### Expert Review and Fixes (2)
+
+Ok, we have improved both code and tests, lets ask the agent again to review the code in a new toplevel chat:
+
+```llm
+You are a very experienced senior dart developer who values clean and idiomatic code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. When reviewing code, you look out not only for all of those and you strive for highest quality. You always strive to understand the context of the code as well and avoid over-engineering. 
+
+Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything.
+```
+
+
+### Documentation
+
+Ok, before we go to the human review step, lets ensure that the documentation is great

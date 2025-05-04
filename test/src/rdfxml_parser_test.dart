@@ -82,21 +82,6 @@ void main() {
       final parser = RdfXmlParser(xml);
       final triples = parser.parse();
 
-      // Debug output to understand what triples we actually got
-      for (final triple in triples) {
-        print('Subject: ${triple.subject}');
-        print('Predicate: ${triple.predicate}');
-        print('Object: ${triple.object}');
-
-        if (triple.object is LiteralTerm) {
-          final literal = triple.object as LiteralTerm;
-          print('  Language: ${literal.language}');
-          print('  Datatype: ${literal.datatype}');
-          print('  Value: ${literal.value}');
-        }
-        print('-----');
-      }
-
       expect(triples, hasLength(2));
 
       final englishTitle = triples.firstWhere(
@@ -146,17 +131,6 @@ void main() {
 
       final parser = RdfXmlParser(xml);
       final triples = parser.parse();
-
-      // Debug output to understand what triples we actually got
-      print('Total triples: ${triples.length}');
-      for (int i = 0; i < triples.length; i++) {
-        final triple = triples[i];
-        print('Triple $i:');
-        print('  Subject: ${triple.subject}');
-        print('  Predicate: ${triple.predicate}');
-        print('  Object: ${triple.object}');
-        print('-----');
-      }
 
       expect(triples, hasLength(4));
 
