@@ -238,9 +238,15 @@ Again, the agent said that there were warnings and asked if it should resolve th
 yes
 ```
 
+Ok, unused imports, let it clean up those as well
+
+```llm
+yes
+```
+
 Ok wow - that were many changes. We should probably do another full round of asking the technical writer and the test engineer. And we need to improve the senior engineer prompt apparently...
 
-### TODO: Test Correctness (2)
+### Test Correctness (2)
 
 Time for yet another toplevel chat:
 
@@ -248,6 +254,34 @@ Time for yet another toplevel chat:
 You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing.
 
 You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etd. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation should be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong.
+
+Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested. Also check if there are important tests missing and add them if needed.
+```
+
+Looks good, but has compile errors - need to check again.
+
+```llm
+Thanks. Unfortunately, this broke compilation. Please execute `dart analyze` to find out what the compile errors are and analyze what you have to do in order to fix them. Wrong API usage? Missing Imports? Missing Code?
+
+When code and tests compile, please run the tests and make sure that all will pass.
+```
+
+I had to interrupt because it failed with a non-helpful error that lead the agent into a wrong direction. In addition, I had to interrupt again because it was relaxing a test for the wrong reasons and then it even added code to hardcode to 'http://example.org' in order to make the tests pass.
+
+Actually, it went into some sort of endless loop, incapable of fixing the issues.
+
+So we need to adjust our tester prompt again. Next time we could try:
+
+```llm
+You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing. 
+
+You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etd. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation must be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong. You are part of the team implementing this code and your goal is to find errors in the implementation, not to write tests that match the implementation and that only fails if the implementation is changed.
+
+When you adjust the code, you strive to fix the underlying problem correctly and you never introduce test-specific hacks or constants that only exist to make the tests pass. Instead, you analyze the problem deeply and then solve it properly.
+
+You value clean, idiomatic and readable code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. 
+
+You do not like hardcoded or duplicate code - if functionality is available in one of the used libraries, you strongly prefer to use that one instead of duplicating or hardcoding it. If necessary, you go to the documentation and code to improve your knowledge and understanding of available functionality.
 
 Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested. Also check if there are important tests missing and add them if needed.
 ```
@@ -265,9 +299,11 @@ Please first read the sourcecode in this project to make sure you understand wha
 * document the why, not the what
 * target audience are Dart developers who may not be very familiar with the specifics of the problem this project solves (e.g. with rdf/xml format)
 
-After fixing the sourcecode documentation, please make sure that the README is really helpful and useful. Note: this project will be on github and deployed to pub.dev.
+Now that you have a good understanding of the project, please make sure that we have really usefull examples in the example directory. Run `dart analyze` to make sure that they are running and execute them with `dart run` to make sure that they output what you expect them to output.
 
-In addition, also update if neccessary our really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you can generate by calling `dart doc -o doc/api .`
+After fixing the sourcecode documentation, please make sure that the README is really helpful and useful. Note: this project will be on github and deployed to pub.dev. Take care to validate that all examples in the README actually are valid and only use existing APIs - maybe you should only use examples that you already have in the example directory?
+
+In addition, also update if neccessary our really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you can generate by calling `dart doc -o doc/api .`. The documentation in doc of course also should only contain examples where you are sure that they are correct and use existing APIs (maybe by putting them in the example directory if they are not there yet).
 ```
 
 
