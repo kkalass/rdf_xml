@@ -41,9 +41,6 @@ final class RdfXmlParser {
   /// Base URI for resolving relative URIs
   final String? _baseUri;
 
-  /// Namespace mappings registry
-  final RdfNamespaceMappings _namespaceMappings;
-
   /// Map of blank node IDs to actual blank node terms
   final Map<String, BlankNodeTerm> _blankNodes = {};
 
@@ -61,13 +58,7 @@ final class RdfXmlParser {
   /// Parameters:
   /// - [input] The RDF/XML document to parse as a string
   /// - [baseUri] Optional base URI for resolving relative references
-  /// - [namespaceMappings] Optional namespace mappings to use
-  RdfXmlParser(
-    this._input, {
-    String? baseUri,
-    RdfNamespaceMappings? namespaceMappings,
-  }) : _baseUri = baseUri,
-       _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings() {
+  RdfXmlParser(this._input, {String? baseUri}) : _baseUri = baseUri {
     try {
       _document = XmlDocument.parse(_input);
       _resolvedBaseUri = _resolveBaseUri();
@@ -490,31 +481,6 @@ final class RdfXmlParser {
         return '$_resolvedBaseUri/$uri';
       }
     }
-  }
-
-  /// Resolves a QName to an IRI using namespace mappings
-  ///
-  /// Takes a qualified name (e.g., "dc:title") and resolves it to an absolute IRI
-  /// using the namespace mappings and XML namespace declarations.
-  String _resolveQName(String qname, Map<String, String> namespaces) {
-    final colonPos = qname.indexOf(':');
-    if (colonPos > 0) {
-      final prefix = qname.substring(0, colonPos);
-      final localName = qname.substring(colonPos + 1);
-
-      // First check explicit namespaces from XML
-      if (namespaces.containsKey(prefix)) {
-        return '${namespaces[prefix]}$localName';
-      }
-
-      // Then check namespace mappings
-      final nsMap = _namespaceMappings.asMap();
-      if (nsMap.containsKey(prefix)) {
-        return '${nsMap[prefix]}$localName';
-      }
-    }
-
-    return qname; // Return as-is if not a QName or prefix not found
   }
 
   /// Gets the subject term for an element
