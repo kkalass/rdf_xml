@@ -1,11 +1,33 @@
 /// Configuration and options for RDF/XML processing
 ///
 /// Provides immutable configuration objects for parser and serializer options.
+/// This module follows the immutable configuration pattern to ensure thread safety
+/// and prevent unexpected changes to configuration during processing.
+///
+/// The configuration options allow fine-tuning of the RDF/XML processing behavior
+/// without modifying the core implementation, following the Open/Closed Principle.
+/// Predefined factory methods provide commonly used configuration profiles.
+///
+/// Example usage:
+/// ```dart
+/// // Create a parser with strict validation
+/// final parser = RdfXmlParser(
+///   xmlDocument,
+///   options: RdfXmlParserOptions.strict(),
+/// );
+///
+/// // Create a serializer with human-readable output
+/// final serializer = RdfXmlSerializer(
+///   options: RdfXmlSerializerOptions.readable(),
+/// );
+/// ```
 library rdfxml.configuration;
 
 /// Parser options for RDF/XML processing
 ///
 /// Immutable configuration for controlling parser behavior.
+/// Diese Klasse nutzt immutable Design-Patterns und bietet Factory-Methoden
+/// für typische Anwendungsfälle.
 final class RdfXmlParserOptions {
   /// Whether to validate the RDF/XML structure strictly
   ///
@@ -44,6 +66,7 @@ final class RdfXmlParserOptions {
   /// Creates a new options object with strict mode enabled
   ///
   /// Convenience factory for creating options with strict validation.
+  /// Validiert streng gegen die RDF/XML-Spezifikation.
   factory RdfXmlParserOptions.strict() => const RdfXmlParserOptions(
     strictMode: true,
     normalizeWhitespace: true,
@@ -54,10 +77,22 @@ final class RdfXmlParserOptions {
   ///
   /// Convenience factory for creating options that try to parse
   /// even non-conformant RDF/XML.
+  /// Ideal für fehlerhafte oder nicht ganz konforme RDF/XML-Dokumente.
   factory RdfXmlParserOptions.lenient() => const RdfXmlParserOptions(
     strictMode: false,
     normalizeWhitespace: true,
     validateOutput: false,
+  );
+
+  /// Creates a high-performance configuration with minimal validation
+  ///
+  /// For use when parsing large datasets where performance is critical
+  /// and input validity is guaranteed.
+  factory RdfXmlParserOptions.performance() => const RdfXmlParserOptions(
+    strictMode: false,
+    normalizeWhitespace: false,
+    validateOutput: false,
+    maxNestingDepth: 0, // Keine Tiefenprüfung für maximale Leistung
   );
 
   /// Creates a copy of this options object with the given values
@@ -94,11 +129,20 @@ final class RdfXmlParserOptions {
     validateOutput,
     maxNestingDepth,
   );
+
+  @override
+  String toString() =>
+      'RdfXmlParserOptions('
+      'strictMode: $strictMode, '
+      'normalizeWhitespace: $normalizeWhitespace, '
+      'validateOutput: $validateOutput, '
+      'maxNestingDepth: $maxNestingDepth)';
 }
 
 /// Serializer options for RDF/XML output
 ///
 /// Immutable configuration for controlling serializer behavior.
+/// Bietet verschiedene Konfigurationsprofile für unterschiedliche Ausgabeanforderungen.
 final class RdfXmlSerializerOptions {
   /// Whether to use pretty-printing for the output XML
   ///
@@ -136,6 +180,7 @@ final class RdfXmlSerializerOptions {
   ///
   /// Convenience factory for creating options that produce
   /// human-readable RDF/XML output.
+  /// Ideal für Debugging und manuelle Inspektion.
   factory RdfXmlSerializerOptions.readable() => const RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 2,
@@ -147,11 +192,23 @@ final class RdfXmlSerializerOptions {
   ///
   /// Convenience factory for creating options that produce
   /// the most compact RDF/XML output.
+  /// Optimiert für minimale Dateigröße.
   factory RdfXmlSerializerOptions.compact() => const RdfXmlSerializerOptions(
     prettyPrint: false,
     indentSpaces: 0,
     useNamespaces: true,
     useTypedNodes: true,
+  );
+
+  /// Creates a new options object for maximum compatibility
+  ///
+  /// Verwendet weniger fortschrittliche RDF/XML-Features
+  /// für bessere Kompatibilität mit älteren Parsern.
+  factory RdfXmlSerializerOptions.compatible() => const RdfXmlSerializerOptions(
+    prettyPrint: true,
+    indentSpaces: 2,
+    useNamespaces: true,
+    useTypedNodes: false, // Verwendet nur rdf:Description mit rdf:type
   );
 
   /// Creates a copy of this options object with the given values
@@ -184,4 +241,12 @@ final class RdfXmlSerializerOptions {
   @override
   int get hashCode =>
       Object.hash(prettyPrint, indentSpaces, useNamespaces, useTypedNodes);
+
+  @override
+  String toString() =>
+      'RdfXmlSerializerOptions('
+      'prettyPrint: $prettyPrint, '
+      'indentSpaces: $indentSpaces, '
+      'useNamespaces: $useNamespaces, '
+      'useTypedNodes: $useTypedNodes)';
 }

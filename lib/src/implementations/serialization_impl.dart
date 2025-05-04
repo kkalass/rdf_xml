@@ -79,10 +79,11 @@ final class DefaultNamespaceManager implements INamespaceManager {
       return;
     }
 
-    // Try to extract a namespace
+    // Try to extract a namespace using common namespace delimiters
     final lastHash = iri.lastIndexOf('#');
     final lastSlash = iri.lastIndexOf('/');
 
+    // Prefer hash-based namespaces over path-based ones
     final nsEnd =
         lastHash > 0
             ? lastHash + 1
@@ -93,12 +94,12 @@ final class DefaultNamespaceManager implements INamespaceManager {
     if (nsEnd > 0) {
       final namespace = iri.substring(0, nsEnd);
 
-      // Skip if namespace already registered
+      // Skip if this namespace is already registered with any prefix
       if (namespaces.containsValue(namespace)) {
         return;
       }
 
-      // Find prefix for this namespace if available
+      // Check known namespace mappings first for consistent prefixes
       final mappingsMap = _namespaceMappings.asMap();
       for (final entry in mappingsMap.entries) {
         if (entry.value == namespace) {
@@ -107,16 +108,56 @@ final class DefaultNamespaceManager implements INamespaceManager {
         }
       }
 
-      // If we get here, it's a new namespace not in our mappings
-      // Generate a new prefix
+      // Generate a meaningful prefix from domain when possible
+      String? prefix = _tryGeneratePrefixFromDomain(namespace);
+
+      // Ensure prefix is not already used
+      if (prefix != null && !namespaces.containsKey(prefix)) {
+        namespaces[prefix] = namespace;
+        return;
+      }
+
+      // Fall back to numbered prefixes
       int prefixNum = 1;
-      String prefix;
       do {
         prefix = 'ns$prefixNum';
         prefixNum++;
       } while (namespaces.containsKey(prefix));
 
       namespaces[prefix] = namespace;
+    }
+  }
+
+  /// Attempts to generate a meaningful prefix from a namespace URI
+  ///
+  /// For example, http://example.org/ might become "example"
+  String? _tryGeneratePrefixFromDomain(String namespace) {
+    try {
+      // Extract domain from http/https namespaces
+      final uriRegex = RegExp(r'^https?://(?:www\.)?([^/]+)/?');
+      final match = uriRegex.firstMatch(namespace);
+
+      if (match != null && match.groupCount >= 1) {
+        final domain = match.group(1);
+        if (domain == null || domain.isEmpty) return null;
+
+        // Extract organization/project name from domain
+        final parts = domain.split('.');
+
+        // For domains like example.org, return "example"
+        if (parts.length >= 2) {
+          final candidate = parts[0];
+
+          // Ensure it's a valid XML name component
+          if (_isValidXmlName(candidate)) {
+            return candidate;
+          }
+        }
+      }
+
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

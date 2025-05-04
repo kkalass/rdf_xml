@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="rdf_xml API docs, for the Dart programming language.">
+  <title>rdf_xml - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://kkalass.github.io/rdf_xml/">rdf_xml package</a></li>
+  </ol>
+  <div class="self-name">rdf_xml</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <div align="center">
+  <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" width="96" height="96">
+</div>
+<h1 id="rdf_xml">rdf_xml</h1>
+<p><a href="https://pub.dev/packages/rdf_xml"><img src="https://img.shields.io/pub/v/rdf_xml.svg" alt="pub package"></a>
+<a href="https://github.com/kkalass/rdf_xml/actions"><img src="https://github.com/kkalass/rdf_xml/actions/workflows/ci.yml/badge.svg" alt="build"></a>
+<a href="https://codecov.io/gh/kkalass/rdf_xml"><img src="https://codecov.io/gh/kkalass/rdf_xml/branch/main/graph/badge.svg" alt="codecov"></a>
+<a href="https://github.com/kkalass/rdf_xml/blob/main/LICENSE"><img src="https://img.shields.io/github/license/kkalass/rdf_xml.svg" alt="license"></a></p>
+<p>A high-performance RDF/XML parser and serializer for the <a href="https://pub.dev/packages/rdf_core">rdf_core</a> library, offering a complete implementation of the W3C RDF/XML specification.</p>
+<p><a href="https://kkalass.github.io/rdf_xml/">🌐 <strong>Official Documentation</strong></a></p>
+<hr>
+<h2 id="-features">📋 Features</h2>
+<ul>
+<li><strong>Complete RDF/XML support</strong> - Full implementation of the W3C RDF/XML standard</li>
+<li><strong>High performance</strong> - Optimized for both speed and memory efficiency</li>
+<li><strong>Configurable behavior</strong> - Strict or lenient parsing modes, formatting options</li>
+<li><strong>Clean architecture</strong> - Follows SOLID principles with dependency injection</li>
+<li><strong>Extensible design</strong> - Easy to customize and adapt to specific needs</li>
+<li><strong>Well tested</strong> - Comprehensive test suite with real-world examples</li>
+</ul>
+<h2 id="-installation">🚀 Installation</h2>
+<pre class="language-bash"><code class="language-bash">dart pub add rdf_xml
+</code></pre>
+<p>Or add to your <code>pubspec.yaml</code>:</p>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  rdf_xml: ^1.0.0
+</code></pre>
+<h2 id="-usage">📖 Usage</h2>
+<h3 id="parsing-rdfxml">Parsing RDF/XML</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+void main() {
+  final xmlContent = '''
+    &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;
+      &lt;rdf:Description rdf:about="http://example.org/resource"&gt;
+        &lt;dc:title&gt;Example Resource&lt;/dc:title&gt;
+        &lt;dc:creator&gt;Example Author&lt;/dc:creator&gt;
+      &lt;/rdf:Description&gt;
+    &lt;/rdf:RDF&gt;
+  ''';
+
+  // Create a parser directly
+  final parser = RdfXmlFormat().createParser();
+  final rdfGraph = parser.parse(xmlContent);
+  
+  // Print the parsed triples
+  for (final triple in rdfGraph.triples) {
+    print(triple);
+  }
+}
+</code></pre>
+<h3 id="serializing-to-rdfxml">Serializing to RDF/XML</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+void main() {
+  // Create a graph with some triples
+  final graph = RdfGraph.fromTriples([
+    Triple(
+      IriTerm('http://example.org/resource'),
+      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      LiteralTerm.string('Example Resource'),
+    ),
+    Triple(
+      IriTerm('http://example.org/resource'),
+      IriTerm('http://purl.org/dc/elements/1.1/creator'),
+      LiteralTerm.string('Example Author'),
+    ),
+  ]);
+
+  // Create a serializer with readable formatting
+  final serializer = RdfXmlFormat.readable().createSerializer();
+  
+  // Serialize with custom prefixes
+  final rdfXml = serializer.write(
+    graph,
+    customPrefixes: {
+      'dc': 'http://purl.org/dc/elements/1.1/',
+      'ex': 'http://example.org/',
+    },
+  );
+  
+  print(rdfXml);
+}
+</code></pre>
+<h3 id="using-with-the-format-registry">Using with the Format Registry</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+void main() {
+  // Register the format with the registry
+  final registry = RdfFormatRegistry();
+  registry.registerFormat(const RdfXmlFormat());
+  
+  // Get a parser by MIME type
+  final parser = registry.getParser('application/rdf+xml');
+  final serializer = registry.getSerializer('application/rdf+xml');
+  
+  // ...use parser and serializer
+}
+</code></pre>
+<h2 id="-configuration">⚙️ Configuration</h2>
+<h3 id="parser-options">Parser Options</h3>
+<pre class="language-dart"><code class="language-dart">// Create a parser with strict validation
+final strictParser = RdfXmlParser(
+  xmlContent,
+  options: RdfXmlParserOptions.strict(),
+);
+
+// Create a parser that handles non-standard RDF/XML
+final lenientParser = RdfXmlParser(
+  xmlContent,
+  options: RdfXmlParserOptions.lenient(),
+);
+
+// Create a high-performance parser for large documents
+final fastParser = RdfXmlParser(
+  xmlContent,
+  options: RdfXmlParserOptions.performance(),
+);
+
+// Custom configuration
+final customParser = RdfXmlParser(
+  xmlContent,
+  options: RdfXmlParserOptions(
+    strictMode: false,
+    normalizeWhitespace: true,
+    validateOutput: true,
+    maxNestingDepth: 50,
+  ),
+);
+</code></pre>
+<h3 id="serializer-options">Serializer Options</h3>
+<pre class="language-dart"><code class="language-dart">// Human-readable output
+final readableSerializer = RdfXmlSerializer(
+  options: RdfXmlSerializerOptions.readable(),
+);
+
+// Compact output for storage
+final compactSerializer = RdfXmlSerializer(
+  options: RdfXmlSerializerOptions.compact(),
+);
+
+// Compatible output for legacy systems
+final compatibleSerializer = RdfXmlSerializer(
+  options: RdfXmlSerializerOptions.compatible(),
+);
+
+// Custom configuration
+final customSerializer = RdfXmlSerializer(
+  options: RdfXmlSerializerOptions(
+    prettyPrint: true,
+    indentSpaces: 4,
+    useNamespaces: true,
+    useTypedNodes: false,
+  ),
+);
+</code></pre>
+<h2 id="-rdfxml-features">📚 RDF/XML Features</h2>
+<p>This library supports all features of the RDF/XML syntax:</p>
+<ul>
+<li>Resource descriptions (rdf:Description)</li>
+<li>Typed node elements</li>
+<li>Property elements</li>
+<li>Container elements (rdf:Bag, rdf:Seq, rdf:Alt)</li>
+<li>Collection elements (rdf:List)</li>
+<li>rdf:parseType (Resource, Literal, Collection)</li>
+<li>XML Base support</li>
+<li>XML language tags</li>
+<li>Datatyped literals</li>
+<li>Blank nodes (anonymous and labeled)</li>
+<li>RDF reification</li>
+</ul>
+<h2 id="-contributing">🤝 Contributing</h2>
+<p>Contributions, bug reports, and feature requests are welcome!</p>
+<ul>
+<li>Fork the repo and submit a PR</li>
+<li>See <a href="CONTRIBUTING.md">CONTRIBUTING.md</a> for guidelines</li>
+<li>Join the discussion in <a href="https://github.com/kkalass/rdf_xml/issues">GitHub Issues</a></li>
+</ul>
+<h2 id="-license">📄 License</h2>
+<p>This project is licensed under the MIT License - see the <a href="LICENSE">LICENSE</a> file for details.</p>
+<hr>
+<h2 id="-ai-policy">🤖 AI Policy</h2>
+<p>This project is proudly human-led and human-controlled, with all key decisions, design, and code reviews made by people. At the same time, it stands on the shoulders of LLM giants: generative AI tools are used throughout the development process to accelerate iteration, inspire new ideas, and improve documentation quality. We believe that combining human expertise with the best of AI leads to higher-quality, more innovative open source software.</p>
+<hr>
+<p>© 2025 Klas Kalaß. Licensed under the MIT License.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="rdf_xml">
+  <span class="name"><a href="rdf_xml">rdf_xml</a></span> 
+
+</dt>
+<dd>RDF/XML Format Implementation for rdf_core
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://kkalass.github.io/rdf_xml/">rdf_xml package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">rdf_xml</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="rdf_xml">rdf_xml</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    rdf_xml
+      0.1.0-dev
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

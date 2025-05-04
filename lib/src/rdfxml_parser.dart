@@ -1,12 +1,30 @@
 /// RDF/XML Parser Implementation
 ///
 /// Parses RDF/XML syntax into RDF triples according to the W3C RDF/XML specification.
+/// This is a feature-complete parser that handles all aspects of the RDF/XML syntax:
+///
+/// - Structured parsing of RDF/XML documents
+/// - Support for rdf:about, rdf:ID, and rdf:nodeID attributes
+/// - XML Base and namespace resolution
+/// - Typed nodes (shorthand for rdf:type)
+/// - Literal properties with datatype and language tags
+/// - Support for rdf:parseType="Resource", "Literal", and "Collection"
+/// - Handling of rdf:Bag, rdf:Seq, and rdf:Alt containers
+/// - XML language inheritance (xml:lang)
+/// - Blank node generation and mapping
+///
+/// The parser follows the clean architecture principles with dependency injection
+/// for components like XML parsing and URI resolution, making it highly testable
+/// and adaptable to different environments.
 ///
 /// Example usage:
 /// ```dart
 /// final parser = RdfXmlParser(xmlDocument, baseUri: 'http://example.org/');
 /// final triples = parser.parse();
+/// final graph = RdfGraph.fromTriples(triples);
 /// ```
+///
+/// For configuration options, see [RdfXmlParserOptions].
 library rdfxml_parser;
 
 import 'package:logging/logging.dart';
@@ -32,7 +50,11 @@ import 'rdfxml_constants.dart';
 /// - Reification
 /// - XML Base and namespace resolution
 final class RdfXmlParser implements IRdfXmlParser {
+  // Hierarchische Logger für verschiedene Verarbeitungsebenen
   static final _logger = Logger('rdf.parser.rdfxml');
+  static final _structureLogger = Logger('rdf.parser.rdfxml.structure');
+  static final _nodeLogger = Logger('rdf.parser.rdfxml.node');
+  static final _uriLogger = Logger('rdf.parser.rdfxml.uri');
 
   /// The RDF/XML document to parse
   final String _input;
@@ -64,12 +86,12 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Creates a new RDF/XML parser
   ///
   /// Parameters:
-  /// - [input] The RDF/XML document to parse as a string
-  /// - [baseUri] Optional base URI for resolving relative references
-  /// - [xmlDocumentProvider] Optional XML document provider
-  /// - [uriResolver] Optional URI resolver
-  /// - [blankNodeManager] Optional blank node manager
-  /// - [options] Optional parser options
+  /// - `input` The RDF/XML document to parse as a string
+  /// - `baseUri` Optional base URI for resolving relative references
+  /// - `xmlDocumentProvider` Optional XML document provider
+  /// - `uriResolver` Optional URI resolver
+  /// - `blankNodeManager` Optional blank node manager
+  /// - `options` Optional parser options
   RdfXmlParser(
     this._input, {
     String? baseUri,
@@ -131,29 +153,35 @@ final class RdfXmlParser implements IRdfXmlParser {
   ///
   /// Checks for common issues in the generated triples.
   void _validateTriples(List<Triple> triples) {
-    for (final triple in triples) {
-      // Validate subject
-      if (triple.subject is! IriTerm && triple.subject is! BlankNodeTerm) {
-        throw RdfStructureException(
-          'Invalid subject type: ${triple.subject.runtimeType}',
-        );
+    // Funktionaler Ansatz zur Validierung der Tripel
+    final invalidTriples =
+        triples.where((triple) {
+          final hasValidSubject =
+              triple.subject is IriTerm || triple.subject is BlankNodeTerm;
+          final hasValidPredicate = triple.predicate is IriTerm;
+          final hasValidObject =
+              triple.object is IriTerm ||
+              triple.object is BlankNodeTerm ||
+              triple.object is LiteralTerm;
+
+          return !hasValidSubject || !hasValidPredicate || !hasValidObject;
+        }).toList();
+
+    if (invalidTriples.isNotEmpty) {
+      final invalidTriple = invalidTriples.first;
+      String error = 'Invalid triple detected:';
+
+      if (!(invalidTriple.subject is IriTerm ||
+          invalidTriple.subject is BlankNodeTerm)) {
+        error += ' Invalid subject type: ${invalidTriple.subject.runtimeType}';
+      } else if (!(invalidTriple.predicate is IriTerm)) {
+        error +=
+            ' Invalid predicate type: ${invalidTriple.predicate.runtimeType}';
+      } else {
+        error += ' Invalid object type: ${invalidTriple.object.runtimeType}';
       }
 
-      // Validate predicate
-      if (triple.predicate is! IriTerm) {
-        throw RdfStructureException(
-          'Invalid predicate type: ${triple.predicate.runtimeType}',
-        );
-      }
-
-      // Validate object (can be any RDF term)
-      if (triple.object is! IriTerm &&
-          triple.object is! BlankNodeTerm &&
-          triple.object is! LiteralTerm) {
-        throw RdfStructureException(
-          'Invalid object type: ${triple.object.runtimeType}',
-        );
-      }
+      throw RdfStructureException(error);
     }
   }
 
@@ -162,31 +190,41 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// According to the spec, this should be an element named rdf:RDF,
   /// but some documents omit this and start directly with RDF content.
   XmlElement _findRdfRootElement() {
-    // Try to find rdf:RDF element
+    // Optimierte Suche nach dem RDF-Root-Element
+    // Suche zuerst nach direktem rdf:RDF Element (häufigster Fall)
     final rdfElements = _document.findAllElements(
       'RDF',
       namespace: RdfTerms.rdfNamespace,
     );
 
     if (rdfElements.isNotEmpty) {
+      _structureLogger.fine('Found standard rdf:RDF root element');
       return rdfElements.first;
     }
 
-    // If no rdf:RDF element found, use the document element if it has RDF namespace
+    // Wenn nicht gefunden, prüfe das Wurzelelement auf RDF-Namespace
     final rootElement = _document.rootElement;
     if (rootElement.namespaceUri == RdfTerms.rdfNamespace) {
+      _structureLogger.fine(
+        'Using document root as RDF element (namespace match)',
+      );
       return rootElement;
     }
 
-    // Look for any element with RDF namespace declarations
+    // Als letztes, suche nach Elementen mit RDF-Namespace-Deklaration
+    // Verwende einen effizienten XPath-ähnlichen Ansatz
+    _structureLogger.fine(
+      'Searching for elements with RDF namespace declaration',
+    );
     for (final element in _document.findAllElements('*')) {
-      final hasRdfNs = element.attributes.any(
-        (attr) =>
-            attr.name.qualified == 'xmlns:rdf' &&
-            attr.value == RdfTerms.rdfNamespace,
-      );
+      // Prüfe nur auf "xmlns:rdf" Attribute (schneller)
+      final hasRdfNs =
+          element.getAttribute('xmlns:rdf') == RdfTerms.rdfNamespace;
 
       if (hasRdfNs) {
+        _structureLogger.fine(
+          'Found element with RDF namespace declaration: ${element.name.qualified}',
+        );
         return element;
       }
     }
@@ -218,7 +256,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     }
 
     try {
-      _logger.fine('Processing element: ${element.name.qualified}');
+      _nodeLogger.fine('Processing element: ${element.name.qualified}');
 
       // Check if this is an rdf:Description or a typed resource
       final isDescription =
@@ -449,6 +487,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Processes an RDF collection (list)
   ///
   /// Handles parseType="Collection" by creating the RDF list structure.
+  /// Verwendet einen immutablen funktionalen Ansatz für bessere Lesbarkeit und Robustheit.
   void _processCollection(
     RdfSubject subject,
     RdfPredicate predicate,
@@ -456,38 +495,40 @@ final class RdfXmlParser implements IRdfXmlParser {
     List<Triple> triples,
   ) {
     if (items.isEmpty) {
-      // Empty collection, link to rdf:nil
+      // Leere Sammlung, Verknüpfung mit rdf:nil
       triples.add(Triple(subject, predicate, RdfTerms.nil));
       return;
     }
 
-    // Start with a blank node for the first list item
-    var listNode = BlankNodeTerm();
+    // Funktionalerer Ansatz zur Erstellung der Listenstruktur
+    final itemsList = items.toList(); // Zur Optimierung des Zugriffs
+    var currentNode = BlankNodeTerm();
 
-    // Link the subject to the first list node
-    triples.add(Triple(subject, predicate, listNode));
+    // Verbinde das Subjekt mit dem ersten Listenknoten
+    triples.add(Triple(subject, predicate, currentNode));
 
-    for (final item in items) {
-      // Create a new blank node for the item
+    // Für jedes Element außer dem letzten
+    for (int i = 0; i < itemsList.length; i++) {
+      final item = itemsList[i];
+      final isLastItem = i == itemsList.length - 1;
+
+      // Erstelle einen Knoten für das Element
       final itemSubject = _getSubject(item);
 
-      // Add the item to the list
-      triples.add(Triple(listNode, RdfTerms.first, itemSubject));
+      // Füge das Element zur Liste hinzu
+      triples.add(Triple(currentNode, RdfTerms.first, itemSubject));
 
-      // Process the item element
+      // Verarbeite das Element
       _processNode(item, triples);
 
-      // Is this the last item?
-      final isLastItem = item == items.last;
-
       if (isLastItem) {
-        // Last item points to nil
-        triples.add(Triple(listNode, RdfTerms.rest, RdfTerms.nil));
+        // Letztes Element zeigt auf nil
+        triples.add(Triple(currentNode, RdfTerms.rest, RdfTerms.nil));
       } else {
-        // Create next list node
+        // Erzeuge nächsten Listenknoten
         final nextNode = BlankNodeTerm();
-        triples.add(Triple(listNode, RdfTerms.rest, nextNode));
-        listNode = nextNode;
+        triples.add(Triple(currentNode, RdfTerms.rest, nextNode));
+        currentNode = nextNode;
       }
     }
   }
@@ -517,6 +558,7 @@ final class RdfXmlParser implements IRdfXmlParser {
         final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
         return IriTerm(iri);
       } catch (e) {
+        _uriLogger.severe('Failed to resolve rdf:about URI', e);
         throw UriResolutionException(
           'Failed to resolve rdf:about URI',
           uri: aboutAttr,
@@ -534,6 +576,7 @@ final class RdfXmlParser implements IRdfXmlParser {
         final iri = '${_resolvedBaseUri}#$idAttr';
         return IriTerm(iri);
       } catch (e) {
+        _uriLogger.severe('Failed to create IRI from rdf:ID', e);
         throw UriResolutionException(
           'Failed to create IRI from rdf:ID',
           uri: '#$idAttr',

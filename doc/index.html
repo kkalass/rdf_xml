@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RDF/XML - Dart Library for RDF/XML Parsing and Serialization</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #0175C2;
+      --secondary-color: #13B9FD;
+      --dark-color: #333333;
+      --light-color: #f8f9fa;
+      --accent-color: #EA3799;
+    }
+    
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: var(--dark-color);
+    }
+    
+    .hero {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 6rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon fill="rgba(255,255,255,0.1)" points="0,100 100,0 100,100"/></svg>');
+      background-size: cover;
+    }
+    
+    .hero h1 {
+      font-weight: 700;
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .hero p {
+      font-size: 1.5rem;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+    }
+    
+    .feature-icon {
+      font-size: 2rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+    
+    .code-block {
+      background-color: #272822;
+      color: #f8f8f2;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      font-family: 'Fira Code', 'Courier New', Courier, monospace;
+      overflow-x: auto;
+    }
+    
+    .code-block pre {
+      margin: 0;
+      color: #f8f8f2;
+    }
+    
+    .code-comment {
+      color: #88846f;
+    }
+    
+    .code-string {
+      color: #a6e22e;
+    }
+    
+    .code-keyword {
+      color: #f92672;
+    }
+    
+    .code-type {
+      color: #66d9ef;
+    }
+    
+    footer {
+      padding: 3rem 0;
+      background-color: var(--dark-color);
+      color: white;
+    }
+    
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background-color: var(--accent-color);
+    }
+    
+    .cta-button {
+      background-color: var(--accent-color);
+      border: none;
+      padding: 0.8rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      transition: all 0.3s;
+    }
+    
+    .cta-button:hover {
+      background-color: #d42986;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .install-command {
+      background-color: var(--dark-color);
+      color: white;
+      border-radius: 6px;
+      padding: 1rem;
+      display: inline-block;
+      margin-top: 1rem;
+    }
+    
+    .card {
+      border: none;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 100%;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      padding: 1rem;
+    }
+    
+    .nav-link {
+      color: var(--dark-color);
+      font-weight: 500;
+    }
+    
+    .nav-link:hover {
+      color: var(--primary-color);
+    }
+    
+    .docs-section {
+      padding: 5rem 0;
+      background-color: var(--light-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" width="40" height="40">
+        RDF/XML
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#features">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#installation">Installation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#usage">Usage</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#configuration">Configuration</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="api/index.html">API Docs</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/kkalass/rdf_xml">GitHub</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <h1>RDF/XML for Dart</h1>
+          <p>A high-performance RDF/XML parser and serializer implementing the W3C standard</p>
+          <a href="https://pub.dev/packages/rdf_xml" class="btn btn-light btn-lg me-3">
+            <i class="bi bi-box"></i> pub.dev
+          </a>
+          <a href="#installation" class="btn cta-button btn-lg text-white">
+            <i class="bi bi-code"></i> Get Started
+          </a>
+        </div>
+        <div class="col-lg-4 d-none d-lg-block text-center">
+          <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" class="img-fluid" width="200">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-5" id="features">
+    <div class="container">
+      <h2 class="text-center mb-5 section-title">Key Features</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-check-circle-fill feature-icon"></i>
+              <h3 class="h5">W3C Compliant</h3>
+              <p>Full implementation of the W3C RDF/XML specification with support for all standard features.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-speedometer feature-icon"></i>
+              <h3 class="h5">High Performance</h3>
+              <p>Optimized for both speed and memory efficiency with configurable performance options.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-gear-fill feature-icon"></i>
+              <h3 class="h5">Highly Configurable</h3>
+              <p>Flexible configuration for strict or lenient parsing, formatting options, and more.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-braces feature-icon"></i>
+              <h3 class="h5">Clean Architecture</h3>
+              <p>Built on SOLID principles with dependency injection for easy testing and customization.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-puzzle-fill feature-icon"></i>
+              <h3 class="h5">Extensible Design</h3>
+              <p>Easily extend or customize the behavior to meet specific application requirements.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-shield-check feature-icon"></i>
+              <h3 class="h5">Well Tested</h3>
+              <p>Comprehensive test suite covering both standard cases and real-world RDF/XML examples.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section class="docs-section" id="installation">
+    <div class="container">
+      <h2 class="section-title">Installation</h2>
+      <p>Add <code>rdf_xml</code> to your Dart project:</p>
+      <div class="install-command">
+        <code>dart pub add rdf_xml</code>
+      </div>
+      <p class="mt-3">Or add it to your <code>pubspec.yaml</code>:</p>
+      <div class="code-block">
+<pre><span class="code-comment"># pubspec.yaml</span>
+<span class="code-keyword">dependencies</span>:
+  <span class="code-string">rdf_xml</span>: ^1.0.0</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage Section -->
+  <section class="py-5" id="usage">
+    <div class="container">
+      <h2 class="section-title">Usage</h2>
+      
+      <h3 class="h4 mt-4 mb-3">Parsing RDF/XML</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">void</span> <span class="code-type">main</span>() {
+  <span class="code-keyword">final</span> xmlContent = <span class="code-string">'''
+    &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;
+      &lt;rdf:Description rdf:about="http://example.org/resource"&gt;
+        &lt;dc:title&gt;Example Resource&lt;/dc:title&gt;
+        &lt;dc:creator&gt;Example Author&lt;/dc:creator&gt;
+      &lt;/rdf:Description&gt;
+    &lt;/rdf:RDF&gt;
+  '''</span>;
+
+  <span class="code-comment">// Create a parser directly</span>
+  <span class="code-keyword">final</span> parser = <span class="code-type">RdfXmlFormat</span>().createParser();
+  <span class="code-keyword">final</span> rdfGraph = parser.parse(xmlContent);
+  
+  <span class="code-comment">// Print the parsed triples</span>
+  <span class="code-keyword">for</span> (<span class="code-keyword">final</span> triple <span class="code-keyword">in</span> rdfGraph.triples) {
+    print(triple);
+  }
+}</pre>
+      </div>
+      
+      <h3 class="h4 mt-4 mb-3">Serializing to RDF/XML</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">void</span> <span class="code-type">main</span>() {
+  <span class="code-comment">// Create a graph with some triples</span>
+  <span class="code-keyword">final</span> graph = <span class="code-type">RdfGraph</span>.fromTriples([
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/title'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Resource'</span>),
+    ),
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/creator'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Author'</span>),
+    ),
+  ]);
+
+  <span class="code-comment">// Create a serializer with readable formatting</span>
+  <span class="code-keyword">final</span> serializer = <span class="code-type">RdfXmlFormat</span>.readable().createSerializer();
+  
+  <span class="code-comment">// Serialize with custom prefixes</span>
+  <span class="code-keyword">final</span> rdfXml = serializer.write(
+    graph,
+    customPrefixes: {
+      <span class="code-string">'dc'</span>: <span class="code-string">'http://purl.org/dc/elements/1.1/'</span>,
+      <span class="code-string">'ex'</span>: <span class="code-string">'http://example.org/'</span>,
+    },
+  );
+  
+  print(rdfXml);
+}</pre>
+      </div>
+      
+      <h3 class="h4 mt-4 mb-3">Using with the Format Registry</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">void</span> <span class="code-type">main</span>() {
+  <span class="code-comment">// Register the format with the registry</span>
+  <span class="code-keyword">final</span> registry = <span class="code-type">RdfFormatRegistry</span>();
+  registry.registerFormat(<span class="code-keyword">const</span> <span class="code-type">RdfXmlFormat</span>());
+  
+  <span class="code-comment">// Get a parser by MIME type</span>
+  <span class="code-keyword">final</span> parser = registry.getParser(<span class="code-string">'application/rdf+xml'</span>);
+  <span class="code-keyword">final</span> serializer = registry.getSerializer(<span class="code-string">'application/rdf+xml'</span>);
+  
+  <span class="code-comment">// ...use parser and serializer</span>
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Configuration Section -->
+  <section class="docs-section" id="configuration">
+    <div class="container">
+      <h2 class="section-title">Configuration</h2>
+      
+      <h3 class="h4 mt-4 mb-3">Parser Options</h3>
+      <p>The parser can be configured for different use cases:</p>
+      <div class="code-block">
+<pre><span class="code-comment">// Create a parser with strict validation</span>
+<span class="code-keyword">final</span> strictParser = <span class="code-type">RdfXmlParser</span>(
+  xmlContent,
+  options: <span class="code-type">RdfXmlParserOptions</span>.strict(),
+);
+
+<span class="code-comment">// Create a parser that handles non-standard RDF/XML</span>
+<span class="code-keyword">final</span> lenientParser = <span class="code-type">RdfXmlParser</span>(
+  xmlContent,
+  options: <span class="code-type">RdfXmlParserOptions</span>.lenient(),
+);
+
+<span class="code-comment">// Create a high-performance parser for large documents</span>
+<span class="code-keyword">final</span> fastParser = <span class="code-type">RdfXmlParser</span>(
+  xmlContent,
+  options: <span class="code-type">RdfXmlParserOptions</span>.performance(),
+);
+
+<span class="code-comment">// Custom configuration</span>
+<span class="code-keyword">final</span> customParser = <span class="code-type">RdfXmlParser</span>(
+  xmlContent,
+  options: <span class="code-type">RdfXmlParserOptions</span>(
+    strictMode: <span class="code-keyword">false</span>,
+    normalizeWhitespace: <span class="code-keyword">true</span>,
+    validateOutput: <span class="code-keyword">true</span>,
+    maxNestingDepth: 50,
+  ),
+);</pre>
+      </div>
+      
+      <h3 class="h4 mt-4 mb-3">Serializer Options</h3>
+      <p>The serializer can also be configured for different output requirements:</p>
+      <div class="code-block">
+<pre><span class="code-comment">// Human-readable output</span>
+<span class="code-keyword">final</span> readableSerializer = <span class="code-type">RdfXmlSerializer</span>(
+  options: <span class="code-type">RdfXmlSerializerOptions</span>.readable(),
+);
+
+<span class="code-comment">// Compact output for storage</span>
+<span class="code-keyword">final</span> compactSerializer = <span class="code-type">RdfXmlSerializer</span>(
+  options: <span class="code-type">RdfXmlSerializerOptions</span>.compact(),
+);
+
+<span class="code-comment">// Compatible output for legacy systems</span>
+<span class="code-keyword">final</span> compatibleSerializer = <span class="code-type">RdfXmlSerializer</span>(
+  options: <span class="code-type">RdfXmlSerializerOptions</span>.compatible(),
+);
+
+<span class="code-comment">// Custom configuration</span>
+<span class="code-keyword">final</span> customSerializer = <span class="code-type">RdfXmlSerializer</span>(
+  options: <span class="code-type">RdfXmlSerializerOptions</span>(
+    prettyPrint: <span class="code-keyword">true</span>,
+    indentSpaces: 4,
+    useNamespaces: <span class="code-keyword">true</span>,
+    useTypedNodes: <span class="code-keyword">false</span>,
+  ),
+);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- RDF/XML Features Section -->
+  <section class="py-5" id="features-full">
+    <div class="container">
+      <h2 class="section-title">Supported RDF/XML Features</h2>
+      <p>This library implements all features of the RDF/XML syntax as defined by the W3C:</p>
+      
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Resource descriptions (rdf:Description)
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Typed node elements
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Property elements
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Container elements (rdf:Bag, rdf:Seq, rdf:Alt)
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Collection elements (rdf:List)
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              rdf:parseType (Resource, Literal, Collection)
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              XML Base support
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              XML language tags and datatyped literals
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              Blank nodes (anonymous and labeled)
+            </li>
+            <li class="list-group-item">
+              <i class="bi bi-check-circle-fill text-success me-2"></i>
+              RDF reification
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Documentation Section -->
+  <section class="docs-section" id="api-docs">
+    <div class="container text-center">
+      <h2 class="section-title text-center">API Documentation</h2>
+      <p class="mb-4">Explore the complete API documentation for detailed information about all classes and methods.</p>
+      <a href="api/index.html" class="btn btn-primary btn-lg">
+        <i class="bi bi-book"></i> View API Documentation
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <h3 class="h5">RDF/XML for Dart</h3>
+          <p>A high-performance RDF/XML parser and serializer for the rdf_core library.</p>
+          <p>
+            <a href="https://pub.dev/packages/rdf_xml" class="text-white me-3">
+              <i class="bi bi-box"></i> pub.dev
+            </a>
+            <a href="https://github.com/kkalass/rdf_xml" class="text-white me-3">
+              <i class="bi bi-github"></i> GitHub
+            </a>
+            <a href="api/index.html" class="text-white">
+              <i class="bi bi-book"></i> API Docs
+            </a>
+          </p>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p>© 2025 Klas Kalaß. Licensed under the MIT License.</p>
+          <p>Built with <i class="bi bi-heart-fill text-danger"></i> and Dart</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

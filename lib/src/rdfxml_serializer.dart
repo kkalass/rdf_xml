@@ -1,12 +1,29 @@
 /// RDF/XML Serializer Implementation
 ///
 /// Serializes RDF graphs to the RDF/XML syntax format according to the W3C specification.
+/// This serializer transforms RDF data models (graphs of triples) into a standard
+/// XML representation that can be processed by XML tools while preserving the
+/// semantics of the RDF data.
+///
+/// Key features:
+/// - Namespace management for compact and readable output
+/// - Typed node serialization (using element types instead of rdf:type triples)
+/// - Support for RDF collections (rdf:List)
+/// - Proper handling of blank nodes
+/// - Datatype and language tag serialization
+/// - Configurable formatting options for human readability or compact storage
+///
+/// The implementation follows clean architecture principles with injectable
+/// dependencies for XML building and namespace management, making it easy to
+/// adapt to different requirements and test thoroughly.
 ///
 /// Example usage:
 /// ```dart
 /// final serializer = RdfXmlSerializer();
 /// final rdfXml = serializer.write(graph, customPrefixes: {'ex': 'http://example.org/'});
 /// ```
+///
+/// For configuration options, see [RdfXmlSerializerOptions].
 library rdfxml_serializer;
 
 import 'package:logging/logging.dart';

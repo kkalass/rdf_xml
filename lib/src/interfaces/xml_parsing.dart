@@ -1,7 +1,16 @@
 /// Interfaces for XML parsing and related operations
 ///
-/// This file provides interfaces for XML document parsing and processing,
-/// enabling dependency injection and better testability.
+/// This file provides abstractions for XML document parsing and processing,
+/// enabling dependency injection and better testability of the RDF/XML parser.
+///
+/// These interfaces decouple the RDF/XML parser from specific implementations of:
+/// - XML document parsing and processing
+/// - URI resolution strategies
+/// - Blank node management
+///
+/// The use of these interfaces follows the Dependency Inversion Principle,
+/// making the parser more maintainable, testable, and adaptable to different
+/// environments and requirements.
 library rdfxml.interfaces.xml_parsing;
 
 import 'package:rdf_core/rdf_core.dart';

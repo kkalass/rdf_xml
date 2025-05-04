@@ -1,9 +1,20 @@
 /// RDF/XML Format Implementation for rdf_core
 ///
 /// This library provides parsing and serialization support for the RDF/XML format
-/// as defined by the W3C Recommendation.
+/// as defined by the W3C Recommendation. RDF/XML is the original standard format
+/// for representing RDF data as XML, allowing semantic web data to be exchanged
+/// in an XML-compatible syntax.
 ///
-/// To use this package, import it and register the format with the format registry:
+/// The implementation handles key RDF/XML features including:
+/// - Resource descriptions with rdf:about, rdf:ID, and rdf:resource attributes
+/// - Literal properties with language tags and datatypes
+/// - Container elements (rdf:Bag, rdf:Seq, rdf:Alt)
+/// - Collection elements (rdf:List)
+/// - Blank nodes and reification
+///
+/// To use this package, import it and either:
+///
+/// 1. Create parser/serializer instances directly:
 ///
 /// ```dart
 /// import 'package:rdf_core/rdf_core.dart';
@@ -17,9 +28,26 @@
 /// final serializer = RdfXmlFormat().createSerializer();
 /// final rdfXml = serializer.write(rdfGraph);
 /// ```
+///
+/// 2. Or register with the format registry for automatic format handling:
+///
+/// ```dart
+/// import 'package:rdf_core/rdf_core.dart';
+/// import 'package:rdf_xml/rdf_xml.dart';
+///
+/// // Register the format
+/// final registry = RdfFormatRegistry();
+/// registry.registerFormat(const RdfXmlFormat());
+///
+/// // Use the registry to get the appropriate parser by MIME type
+/// final parser = registry.getParser('application/rdf+xml');
+/// final serializer = registry.getSerializer('application/rdf+xml');
+/// ```
 library rdf_xml;
 
 export 'src/rdfxml_constants.dart';
 export 'src/rdfxml_format.dart';
 export 'src/rdfxml_parser.dart';
 export 'src/rdfxml_serializer.dart';
+export 'src/configuration.dart';
+export 'src/exceptions.dart';

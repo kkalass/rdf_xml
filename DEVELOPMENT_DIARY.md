@@ -158,7 +158,57 @@ You are a very experienced senior dart developer who values clean and idiomatic 
 Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything.
 ```
 
+Interestingly, this did lead into a new round of changes, amongst others about performance improvements.
+
+### Expert Review and Fixes (3)
+
+Ok, check again if our senior software engineer is happy now (new toplevel). 
+
+```llm
+You are a very experienced senior dart developer who values clean and idiomatic code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. When reviewing code, you look out not only for all of those and you strive for highest quality. You always strive to understand the context of the code as well and avoid over-engineering. 
+
+Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything. Is the codebase good enough to be released to the public as a world-class quality project?
+```
+
+While the agent stated he was happy with the codebase to be released, it still had some important advices. So we will definitely ask again after the next step.
 
 ### Documentation
 
-Ok, before we go to the human review step, lets ensure that the documentation is great
+Now it is time to revisit our documentation.
+
+```llm
+You are a top-notch writer of technical documentation and you want this project to be a world-class project that meets the highest standards of excellence.
+
+Please first read the sourcecode in this project to make sure you understand what it is about from a toplevel point of view. Then go through all files and mnake sure they are documented to the highest standards:
+
+* language is english 
+* document the why, not the what
+* target audience are Dart developers who may not be very familiar with the specifics of the problem this project solves (e.g. with rdf/xml format)
+
+After fixing the sourcecode documentation, please create a really helpful and useful README. Note: this project will be on github and deployed to pub.dev.
+
+In addition, also create a really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you generate by calling `dart doc -o doc/api .`
+```
+
+Follow Up:
+
+```llm
+Yes, please implement each of your suggestions one by one.
+```
+
+### Expert Review - Final (?) Quality Checks
+
+```llm
+You are a very experienced senior dart developer who values clean and idiomatic code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. 
+
+You value clean, very readable code and will not accept code that "does too much" and thus is hard to read and understand. You also do not like hardcoded or duplicate code - if functionality is available in one of the used libraries, you strongly prefer to use that one instead of duplicating or hardcoding it. If necessary, you go to the documentation and code to improve your knowledge and understanding of available functionality.
+
+You also always read the documentation and comments and make sure that all examples provided make sense and are using correct syntax and are not hallucinated.
+
+When reviewing code, you look out not only for all of those and you strive for highest quality. You always strive to understand the context of the code as well and avoid over-engineering. 
+
+Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything. Is the codebase good enough to be released to the public as a world-class quality project?
+```
+
+
+### Ready for human feedback?
