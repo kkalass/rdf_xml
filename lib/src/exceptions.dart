@@ -1,0 +1,154 @@
+/// Exception classes for RDF/XML processing
+///
+/// Provides specialized exception classes for different error scenarios
+/// in RDF/XML parsing and serialization.
+library rdfxml.exceptions;
+
+import 'package:rdf_core/rdf_core.dart';
+
+/// Base class for RDF/XML-specific exceptions
+///
+/// Extends RdfParserException with additional context specific
+/// to RDF/XML processing errors.
+sealed class RdfXmlException extends RdfParserException {
+  /// Creates a new RDF/XML exception
+  ///
+  /// Parameters:
+  /// - [message] Detailed error message
+  /// - [sourceContext] Optional source context where the error occurred
+  const RdfXmlException(super.message, {this.sourceContext})
+    : super(format: 'application/rdf+xml');
+
+  /// Source context where the error occurred
+  ///
+  /// Could be an element name, document section, etc.
+  final String? sourceContext;
+
+  @override
+  String toString() {
+    if (sourceContext != null) {
+      return 'RDF/XML Error in $sourceContext: $message';
+    }
+    return 'RDF/XML Error: $message';
+  }
+}
+
+/// Exception for XML parsing errors
+///
+/// Thrown when the input document is not valid XML.
+final class XmlParseException extends RdfXmlException {
+  /// Creates a new XML parse exception
+  ///
+  /// Parameters:
+  /// - [message] Detailed error message
+  /// - [line] Optional line number where the error occurred
+  /// - [column] Optional column number where the error occurred
+  /// - [sourceContext] Optional source context where the error occurred
+  const XmlParseException(
+    super.message, {
+    this.line,
+    this.column,
+    super.sourceContext,
+  });
+
+  /// Line number where the error occurred
+  final int? line;
+
+  /// Column number where the error occurred
+  final int? column;
+
+  @override
+  String toString() {
+    final location =
+        line != null
+            ? ' at line $line${column != null ? ', column $column' : ''}'
+            : '';
+    if (sourceContext != null) {
+      return 'XML Parse Error in $sourceContext$location: $message';
+    }
+    return 'XML Parse Error$location: $message';
+  }
+}
+
+/// Exception for RDF structure errors
+///
+/// Thrown when the document is valid XML but has invalid RDF structure.
+final class RdfStructureException extends RdfXmlException {
+  /// Creates a new RDF structure exception
+  ///
+  /// Parameters:
+  /// - [message] Detailed error message
+  /// - [elementName] Optional name of the problematic element
+  /// - [sourceContext] Optional source context where the error occurred
+  const RdfStructureException(
+    super.message, {
+    this.elementName,
+    super.sourceContext,
+  });
+
+  /// Name of the problematic element
+  final String? elementName;
+
+  @override
+  String toString() {
+    final element = elementName != null ? ' in element <$elementName>' : '';
+    if (sourceContext != null) {
+      return 'RDF Structure Error in $sourceContext$element: $message';
+    }
+    return 'RDF Structure Error$element: $message';
+  }
+}
+
+/// Exception for URI resolution errors
+///
+/// Thrown when a URI cannot be resolved properly.
+final class UriResolutionException extends RdfXmlException {
+  /// Creates a new URI resolution exception
+  ///
+  /// Parameters:
+  /// - [message] Detailed error message
+  /// - [uri] The URI that could not be resolved
+  /// - [baseUri] The base URI used for resolution
+  /// - [sourceContext] Optional source context where the error occurred
+  const UriResolutionException(
+    super.message, {
+    required this.uri,
+    required this.baseUri,
+    super.sourceContext,
+  });
+
+  /// The URI that could not be resolved
+  final String uri;
+
+  /// The base URI used for resolution
+  final String baseUri;
+
+  @override
+  String toString() {
+    return 'URI Resolution Error: Cannot resolve "$uri" against base "$baseUri"${sourceContext != null ? ' in $sourceContext' : ''}: $message';
+  }
+}
+
+/// Exception for serialization errors
+///
+/// Thrown when an RDF graph cannot be serialized to RDF/XML.
+final class RdfXmlSerializationException extends RdfSerializerException {
+  /// Creates a new serialization exception
+  ///
+  /// Parameters:
+  /// - [message] Detailed error message
+  /// - [subjectContext] Optional subject context where the error occurred
+  const RdfXmlSerializationException(super.message, {this.subjectContext})
+    : super(format: 'application/rdf+xml');
+
+  /// Subject context where the error occurred
+  final String? subjectContext;
+
+  @override
+  String toString() {
+    if (subjectContext != null) {
+      return 'RDF/XML Serialization Error for subject $subjectContext: $message';
+    }
+    return 'RDF/XML Serialization Error: $message';
+  }
+}
