@@ -80,22 +80,29 @@ final class RdfStructureException extends RdfXmlException {
   /// - [message] Detailed error message
   /// - [elementName] Optional name of the problematic element
   /// - [sourceContext] Optional source context where the error occurred
+  /// - [cause] Optional underlying exception that caused this error
   const RdfStructureException(
     super.message, {
     this.elementName,
     super.sourceContext,
+    this.cause,
   });
 
   /// Name of the problematic element
   final String? elementName;
 
+  /// The underlying exception that caused this error
+  final Object? cause;
+
   @override
   String toString() {
     final element = elementName != null ? ' in element <$elementName>' : '';
+    final causeInfo = cause != null ? ' (Caused by: ${cause.toString()})' : '';
+
     if (sourceContext != null) {
-      return 'RDF Structure Error in $sourceContext$element: $message';
+      return 'RDF Structure Error in $sourceContext$element: $message$causeInfo';
     }
-    return 'RDF Structure Error$element: $message';
+    return 'RDF Structure Error$element: $message$causeInfo';
   }
 }
 

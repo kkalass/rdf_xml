@@ -6,6 +6,7 @@ library rdfxml.parsing.implementations;
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
+import 'package:xml/xml_events.dart';
 
 import '../interfaces/xml_parsing.dart';
 import 'parsing_context.dart';
@@ -19,43 +20,66 @@ final class DefaultXmlDocumentProvider implements IXmlDocumentProvider {
 
   @override
   XmlDocument parseXml(String input) => XmlDocument.parse(input);
+
+  @override
+  Stream<XmlEvent> parseXmlEvents(String input) {
+    // Use parseEvents function and convert to a stream
+    return Stream.fromIterable(parseEvents(input));
+  }
 }
 
 /// Default implementation of IUriResolver
 ///
 /// Provides URI resolution functionality for RDF/XML processing.
+/// Uses efficient caching for improved performance with large documents.
 final class DefaultUriResolver implements IUriResolver {
   /// Creates a new DefaultUriResolver
   const DefaultUriResolver();
 
+  /// Cache for document base URIs
+  static final Map<XmlDocument, String> _baseUriCache = {};
+
   @override
   String resolveBaseUri(XmlDocument document, String? providedBaseUri) {
+    // Check cache first for better performance
+    if (_baseUriCache.containsKey(document)) {
+      return _baseUriCache[document]!;
+    }
+
     // Check for xml:base attribute on the document element
     final xmlBase = document.rootElement.getAttribute(
       'base',
       namespace: 'http://www.w3.org/XML/1998/namespace',
     );
 
-    if (xmlBase != null) {
-      return xmlBase;
-    }
+    final result = xmlBase ?? providedBaseUri ?? '';
 
-    // Fall back to the provided base URI
-    return providedBaseUri ?? '';
+    // Cache the result for future lookups
+    _baseUriCache[document] = result;
+    return result;
   }
 
   @override
   String resolveUri(String uri, String baseUri) {
-    // If URI is already absolute, return it as is
-    if (uri.contains(':')) {
+    // Handle empty base URI or already absolute URIs quickly
+    if (baseUri.isEmpty || uri.contains(':')) {
       return uri;
     }
 
-    // If base URI is empty, can't resolve
-    if (baseUri.isEmpty) {
-      return uri;
+    // Handle standard cases using Uri class when possible for robustness
+    try {
+      // For relative URIs, use the Dart URI resolution
+      final base = Uri.parse(baseUri);
+      final resolved = base.resolveUri(Uri.parse(uri));
+      return resolved.toString();
+    } catch (e) {
+      // Fall back to manual resolution if URI parsing fails
+      return _manualResolveUri(uri, baseUri);
     }
+  }
 
+  /// Manual URI resolution logic for cases where Uri.resolveUri fails
+  String _manualResolveUri(String uri, String baseUri) {
     // Fragment identifier
     if (uri.startsWith('#')) {
       final baseWithoutFragment =
@@ -67,18 +91,17 @@ final class DefaultUriResolver implements IUriResolver {
 
     // Absolute path
     if (uri.startsWith('/')) {
-      final protocol =
-          baseUri.contains('://')
-              ? baseUri.substring(0, baseUri.indexOf('://') + 3)
-              : '';
-      final authority =
-          baseUri.contains('://')
-              ? baseUri.substring(
-                baseUri.indexOf('://') + 3,
-                baseUri.indexOf('/', baseUri.indexOf('://') + 3),
-              )
-              : '';
-      return '$protocol$authority$uri';
+      final schemeEnd = baseUri.indexOf('://');
+      if (schemeEnd >= 0) {
+        final pathStart = baseUri.indexOf('/', schemeEnd + 3);
+        if (pathStart >= 0) {
+          return '${baseUri.substring(0, pathStart)}$uri';
+        }
+      }
+      // If we can't parse the base URI properly, concat with care
+      return baseUri.endsWith('/')
+          ? '${baseUri.substring(0, baseUri.length - 1)}$uri'
+          : '$baseUri$uri';
     }
 
     // Relative path

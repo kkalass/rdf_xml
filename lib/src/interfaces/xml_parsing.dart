@@ -7,6 +7,7 @@
 /// - XML document parsing and processing
 /// - URI resolution strategies
 /// - Blank node management
+/// - Stream-based processing for large documents
 ///
 /// The use of these interfaces follows the Dependency Inversion Principle,
 /// making the parser more maintainable, testable, and adaptable to different
@@ -15,6 +16,7 @@ library rdfxml.interfaces.xml_parsing;
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
+import 'package:xml/xml_events.dart'; // Added import for XML events
 
 /// Contract for RDF/XML parsing functionality
 abstract interface class IRdfXmlParser {
@@ -22,6 +24,12 @@ abstract interface class IRdfXmlParser {
   ///
   /// This is the main entry point for parsing RDF/XML data.
   List<Triple> parse();
+
+  /// Parses the RDF/XML document as a stream of triples
+  ///
+  /// Provides a more memory-efficient way to process large documents
+  /// by yielding triples incrementally.
+  Stream<Triple> parseAsStream();
 }
 
 /// Provides XML document parsing functionality
@@ -33,6 +41,11 @@ abstract interface class IXmlDocumentProvider {
   ///
   /// May throw exceptions for malformed XML input
   XmlDocument parseXml(String input);
+
+  /// Parses an XML string as a stream of events
+  ///
+  /// Provides more memory-efficient processing for large documents
+  Stream<XmlEvent> parseXmlEvents(String input);
 }
 
 /// Handles URI resolution for RDF/XML processing

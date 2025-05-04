@@ -1,10 +1,8 @@
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/configuration.dart';
 import 'package:rdf_xml/src/exceptions.dart';
 import 'package:test/test.dart';
-import 'package:xml/xml.dart';
 
 void main() {
   group('RdfXmlParser Error Handling', () {

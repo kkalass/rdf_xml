@@ -23,6 +23,19 @@ import 'interfaces/xml_parsing.dart';
 import 'rdfxml_parser.dart';
 import 'rdfxml_serializer.dart';
 
+/// Enhanced parser with stream-based parsing capabilities
+///
+/// Extends the standard RdfParser interface with streaming capabilities
+/// for more efficient processing of large RDF documents.
+abstract class StreamingRdfParser implements RdfParser {
+  /// Parses an RDF document as a stream of triples
+  ///
+  /// This method allows for more memory-efficient processing of large documents
+  /// by yielding triples incrementally as they are parsed, rather than
+  /// building a complete graph in memory.
+  Stream<Triple> parseAsStream(String input, {String? documentUrl});
+}
+
 /// Format plugin for RDF/XML
 ///
 /// Implements the [RdfFormat] interface for the RDF/XML format,
@@ -87,6 +100,18 @@ final class RdfXmlFormat implements RdfFormat {
   @override
   RdfParser createParser() {
     return _RdfXmlFormatParserAdapter(
+      xmlDocumentProvider: _xmlDocumentProvider,
+      uriResolver: _uriResolver,
+      options: _parserOptions,
+    );
+  }
+
+  /// Creates a streaming parser for processing large documents
+  ///
+  /// Returns a parser that supports incremental processing of RDF/XML documents
+  /// using a stream-based approach for better memory efficiency.
+  StreamingRdfParser createStreamingParser() {
+    return _RdfXmlFormatStreamingParserAdapter(
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
       options: _parserOptions,
@@ -232,5 +257,51 @@ final class _RdfXmlFormatSerializerAdapter implements RdfSerializer {
       baseUri: baseUri,
       customPrefixes: customPrefixes,
     );
+  }
+}
+
+/// Adapter class to make RdfXmlParser compatible with the StreamingRdfParser interface
+final class _RdfXmlFormatStreamingParserAdapter implements StreamingRdfParser {
+  /// XML document provider for parsing XML
+  final IXmlDocumentProvider _xmlDocumentProvider;
+
+  /// URI resolver for handling URI resolution
+  final IUriResolver _uriResolver;
+
+  /// Parser options for configuring behavior
+  final RdfXmlParserOptions _options;
+
+  /// Creates a new adapter for RdfXmlParser with streaming capabilities
+  const _RdfXmlFormatStreamingParserAdapter({
+    required IXmlDocumentProvider xmlDocumentProvider,
+    required IUriResolver uriResolver,
+    required RdfXmlParserOptions options,
+  }) : _xmlDocumentProvider = xmlDocumentProvider,
+       _uriResolver = uriResolver,
+       _options = options;
+
+  @override
+  RdfGraph parse(String input, {String? documentUrl}) {
+    final parser = RdfXmlParser(
+      input,
+      baseUri: documentUrl,
+      xmlDocumentProvider: _xmlDocumentProvider,
+      uriResolver: _uriResolver,
+      options: _options,
+    );
+    final triples = parser.parse();
+    return RdfGraph.fromTriples(triples);
+  }
+
+  @override
+  Stream<Triple> parseAsStream(String input, {String? documentUrl}) async* {
+    final parser = RdfXmlParser(
+      input,
+      baseUri: documentUrl,
+      xmlDocumentProvider: _xmlDocumentProvider,
+      uriResolver: _uriResolver,
+      options: _options,
+    );
+    yield* parser.parseAsStream();
   }
 }

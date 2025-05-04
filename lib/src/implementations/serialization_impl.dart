@@ -13,9 +13,16 @@ import '../rdfxml_constants.dart';
 /// Default implementation of INamespaceManager
 ///
 /// Manages namespaces and QName conversions for RDF/XML serialization.
+/// Includes caching and optimized algorithms for better performance with large documents.
 final class DefaultNamespaceManager implements INamespaceManager {
   /// Namespace mappings registry
   final RdfNamespaceMappings _namespaceMappings;
+
+  /// Cache for QName conversions
+  static final Map<String, Map<String, String?>> _qnameCache = {};
+
+  /// Cache for namespace extractions from IRIs
+  static final Map<String, String?> _namespaceExtractionCache = {};
 
   /// Creates a new DefaultNamespaceManager
   ///
@@ -35,19 +42,65 @@ final class DefaultNamespaceManager implements INamespaceManager {
     // Add custom prefix mappings (overrides standard namespaces)
     result.addAll(customPrefixes);
 
+    // Optimize by using a Set to track processed IRIs
+    final processedIris = <String>{};
+
     // Extract namespaces from IRI terms in the graph
     for (final triple in graph.triples) {
-      _extractNamespace(triple.subject, result);
-      _extractNamespace(triple.predicate, result);
-      _extractNamespace(triple.object, result);
+      _extractNamespaceFromTerm(triple.subject, result, processedIris);
+      _extractNamespaceFromTerm(triple.predicate, result, processedIris);
+      _extractNamespaceFromTerm(triple.object, result, processedIris);
     }
 
     return result;
   }
 
+  /// Extracts namespace from a term if it's an IRI, using a cache and tracking processed IRIs
+  void _extractNamespaceFromTerm(
+    RdfTerm term,
+    Map<String, String> namespaces,
+    Set<String> processedIris,
+  ) {
+    if (term is! IriTerm) {
+      return;
+    }
+
+    final iri = term.iri;
+
+    // Skip if already processed
+    if (processedIris.contains(iri)) {
+      return;
+    }
+    processedIris.add(iri);
+
+    _extractNamespace(iri, namespaces);
+  }
+
   @override
   String? iriToQName(String iri, Map<String, String> namespaces) {
-    for (final entry in namespaces.entries) {
+    // Check if this combination is in the cache
+    final cacheKey = iri;
+    final nsKey = namespaces.entries
+        .map((e) => '${e.key}=${e.value}')
+        .join(',');
+
+    if (_qnameCache.containsKey(nsKey) &&
+        _qnameCache[nsKey]!.containsKey(cacheKey)) {
+      return _qnameCache[nsKey]![cacheKey];
+    }
+
+    // Initialize the namespace cache if needed
+    _qnameCache[nsKey] ??= {};
+
+    // Try to convert to QName
+    String? result;
+
+    // Sort namespaces by length (descending) for best match
+    final sortedNamespaces =
+        namespaces.entries.toList()
+          ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    for (final entry in sortedNamespaces) {
       final prefix = entry.key;
       final namespace = entry.value;
 
@@ -55,27 +108,36 @@ final class DefaultNamespaceManager implements INamespaceManager {
         final localName = iri.substring(namespace.length);
         // Ensure the local name is a valid XML name
         if (_isValidXmlName(localName) && localName.isNotEmpty) {
-          return '$prefix:$localName';
+          result = '$prefix:$localName';
+          break;
         }
       }
     }
 
-    return null;
+    // Cache the result
+    _qnameCache[nsKey]![cacheKey] = result;
+    return result;
   }
 
-  /// Extracts namespace from an RDF term if it's an IRI
+  /// Extracts namespace from an IRI
   ///
-  /// Helper method to find namespaces used in the graph data.
+  /// Helper method to find namespaces used in the graph data with caching.
   /// This helps to generate compact QNames where possible.
-  void _extractNamespace(RdfTerm term, Map<String, String> namespaces) {
-    if (term is! IriTerm) {
+  void _extractNamespace(String iri, Map<String, String> namespaces) {
+    // Skip if this is an already known namespace
+    if (namespaces.containsValue(iri)) {
       return;
     }
 
-    final iri = term.iri;
-
-    // Skip if this is an already known namespace
-    if (namespaces.containsValue(iri)) {
+    // Check namespace extraction cache
+    if (_namespaceExtractionCache.containsKey(iri)) {
+      final cachedNamespace = _namespaceExtractionCache[iri];
+      if (cachedNamespace != null) {
+        // Check if this namespace is already registered with any prefix
+        if (!namespaces.containsValue(cachedNamespace)) {
+          _assignPrefixToNamespace(cachedNamespace, namespaces);
+        }
+      }
       return;
     }
 
@@ -94,38 +156,52 @@ final class DefaultNamespaceManager implements INamespaceManager {
     if (nsEnd > 0) {
       final namespace = iri.substring(0, nsEnd);
 
+      // Cache the extraction result
+      _namespaceExtractionCache[iri] = namespace;
+
       // Skip if this namespace is already registered with any prefix
       if (namespaces.containsValue(namespace)) {
         return;
       }
 
-      // Check known namespace mappings first for consistent prefixes
-      final mappingsMap = _namespaceMappings.asMap();
-      for (final entry in mappingsMap.entries) {
-        if (entry.value == namespace) {
-          namespaces[entry.key] = namespace;
-          return;
-        }
-      }
+      _assignPrefixToNamespace(namespace, namespaces);
+    } else {
+      // Cache the failed extraction
+      _namespaceExtractionCache[iri] = null;
+    }
+  }
 
-      // Generate a meaningful prefix from domain when possible
-      String? prefix = _tryGeneratePrefixFromDomain(namespace);
-
-      // Ensure prefix is not already used
-      if (prefix != null && !namespaces.containsKey(prefix)) {
-        namespaces[prefix] = namespace;
+  /// Assigns a prefix to a namespace, maintaining consistency
+  void _assignPrefixToNamespace(
+    String namespace,
+    Map<String, String> namespaces,
+  ) {
+    // Check known namespace mappings first for consistent prefixes
+    final mappingsMap = _namespaceMappings.asMap();
+    for (final entry in mappingsMap.entries) {
+      if (entry.value == namespace) {
+        namespaces[entry.key] = namespace;
         return;
       }
-
-      // Fall back to numbered prefixes
-      int prefixNum = 1;
-      do {
-        prefix = 'ns$prefixNum';
-        prefixNum++;
-      } while (namespaces.containsKey(prefix));
-
-      namespaces[prefix] = namespace;
     }
+
+    // Generate a meaningful prefix from domain when possible
+    String? prefix = _tryGeneratePrefixFromDomain(namespace);
+
+    // Ensure prefix is not already used
+    if (prefix != null && !namespaces.containsKey(prefix)) {
+      namespaces[prefix] = namespace;
+      return;
+    }
+
+    // Fall back to numbered prefixes
+    int prefixNum = 1;
+    do {
+      prefix = 'ns$prefixNum';
+      prefixNum++;
+    } while (namespaces.containsKey(prefix));
+
+    namespaces[prefix] = namespace;
   }
 
   /// Attempts to generate a meaningful prefix from a namespace URI
@@ -199,9 +275,13 @@ final class DefaultNamespaceManager implements INamespaceManager {
 /// Default implementation of IRdfXmlBuilder
 ///
 /// Builds XML documents from RDF graphs for serialization.
+/// Includes performance optimizations for handling large datasets.
 final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   /// Namespace manager for handling namespace declarations and QName conversions
   final INamespaceManager _namespaceManager;
+
+  /// Cache for type-to-QName lookups to improve serialization performance
+  static final Map<IriTerm, Map<String, String?>> _typeQNameCache = {};
 
   /// Creates a new DefaultRdfXmlBuilder
   ///
@@ -238,9 +318,21 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         // Group triples by subject for more compact output
         final subjectGroups = _groupTriplesBySubject(graph);
 
+        // Pre-compute type information for better performance
+        final subjectTypeMap = _precomputeSubjectTypes(
+          subjectGroups,
+          namespaces,
+        );
+
         // Serialize each subject group
         for (final entry in subjectGroups.entries) {
-          _serializeSubject(builder, entry.key, entry.value, namespaces);
+          _serializeSubject(
+            builder,
+            entry.key,
+            entry.value,
+            namespaces,
+            subjectTypeMap[entry.key],
+          );
         }
       },
     );
@@ -256,11 +348,66 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     final result = <RdfSubject, List<Triple>>{};
 
     for (final triple in graph.triples) {
-      if (!result.containsKey(triple.subject)) {
-        result[triple.subject] = [];
-      }
-      result[triple.subject]!.add(triple);
+      result.putIfAbsent(triple.subject, () => []).add(triple);
     }
+
+    return result;
+  }
+
+  /// Pre-computes type information for all subjects
+  ///
+  /// This avoids repeated lookups and improves performance for large datasets.
+  Map<RdfSubject, _TypeInfo?> _precomputeSubjectTypes(
+    Map<RdfSubject, List<Triple>> subjectGroups,
+    Map<String, String> namespaces,
+  ) {
+    final result = <RdfSubject, _TypeInfo?>{};
+
+    for (final entry in subjectGroups.entries) {
+      final subject = entry.key;
+      final triples = entry.value;
+
+      // Find rdf:type triples
+      final typeTriples =
+          triples
+              .where(
+                (t) =>
+                    t.predicate is IriTerm &&
+                    (t.predicate as IriTerm).iri == RdfTerms.type.iri &&
+                    t.object is IriTerm,
+              )
+              .toList();
+
+      if (typeTriples.length == 1) {
+        final typeIri = typeTriples[0].object as IriTerm;
+        final qname = _getTypeQName(typeIri, namespaces);
+
+        if (qname != null) {
+          result[subject] = _TypeInfo(typeIri, qname);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// Gets a QName for a type IRI with caching for better performance
+  String? _getTypeQName(IriTerm typeIri, Map<String, String> namespaces) {
+    final nsKey = namespaces.entries
+        .map((e) => '${e.key}=${e.value}')
+        .join(',');
+
+    // Initialize cache for this namespace set if needed
+    _typeQNameCache[typeIri] ??= {};
+
+    // Check cache
+    if (_typeQNameCache[typeIri]!.containsKey(nsKey)) {
+      return _typeQNameCache[typeIri]![nsKey];
+    }
+
+    // Compute and cache
+    final result = _namespaceManager.iriToQName(typeIri.iri, namespaces);
+    _typeQNameCache[typeIri]![nsKey] = result;
 
     return result;
   }
@@ -273,28 +420,11 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     RdfSubject subject,
     List<Triple> triples,
     Map<String, String> namespaces,
+    _TypeInfo? typeInfo,
   ) {
-    // Check for rdf:type triples to potentially use as element name
-    final typeTriples =
-        triples
-            .where(
-              (t) =>
-                  t.predicate is IriTerm &&
-                  (t.predicate as IriTerm).iri == RdfTerms.type.iri,
-            )
-            .toList();
-
-    // Element name: if we have a single type, use it, otherwise use rdf:Description
-    String elementName = 'rdf:Description';
-    IriTerm? typeIri;
-
-    if (typeTriples.length == 1 && typeTriples[0].object is IriTerm) {
-      typeIri = typeTriples[0].object as IriTerm;
-      final qname = _namespaceManager.iriToQName(typeIri.iri, namespaces);
-      if (qname != null) {
-        elementName = qname;
-      }
-    }
+    // Element name: if we have a type info, use it, otherwise use rdf:Description
+    final elementName = typeInfo?.qname ?? 'rdf:Description';
+    final typeIri = typeInfo?.iri;
 
     // Start element for this subject
     builder.element(
@@ -373,4 +503,18 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
       );
     }
   }
+}
+
+/// Helper class to store type information for subjects
+///
+/// Used to cache type-related data for more efficient serialization.
+class _TypeInfo {
+  /// The type IRI term
+  final IriTerm iri;
+
+  /// The QName for the type
+  final String qname;
+
+  /// Creates a new type info object
+  const _TypeInfo(this.iri, this.qname);
 }

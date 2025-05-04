@@ -4,7 +4,6 @@ import 'package:rdf_xml/src/rdfxml_serializer.dart';
 import 'package:rdf_xml/src/configuration.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:test/test.dart';
-import 'package:xml/xml.dart';
 
 void main() {
   group('RdfXmlSerializer Configuration Options', () {

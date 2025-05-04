@@ -1,5 +1,4 @@
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/src/interfaces/serialization.dart';
 import 'package:rdf_xml/src/implementations/serialization_impl.dart';
 import 'package:test/test.dart';
 

@@ -30,12 +30,23 @@ library rdfxml_parser;
 import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
+import 'package:xml/xml_events.dart'; // Added import for XML events
 
 import 'configuration.dart';
 import 'exceptions.dart';
 import 'implementations/parsing_impl.dart';
 import 'interfaces/xml_parsing.dart';
 import 'rdfxml_constants.dart';
+
+// Import the necessary parts of parsing_impl
+import 'implementations/parsing_impl.dart'
+    show
+        DefaultXmlDocumentProvider,
+        DefaultUriResolver,
+        FunctionalBlankNodeManager;
+
+// Make the _StreamParsingContext and related classes available
+part 'implementations/stream_parsing.dart';
 
 /// Parser for RDF/XML format
 ///
@@ -50,7 +61,7 @@ import 'rdfxml_constants.dart';
 /// - Reification
 /// - XML Base and namespace resolution
 final class RdfXmlParser implements IRdfXmlParser {
-  // Hierarchische Logger für verschiedene Verarbeitungsebenen
+  // Hierarchical loggers for different processing levels
   static final _logger = Logger('rdf.parser.rdfxml');
   static final _structureLogger = Logger('rdf.parser.rdfxml.structure');
   static final _nodeLogger = Logger('rdf.parser.rdfxml.node');
@@ -140,49 +151,136 @@ final class RdfXmlParser implements IRdfXmlParser {
 
       _logger.fine('Parsed ${triples.length} triples');
       return triples;
-    } catch (e) {
-      _logger.severe('Error parsing RDF/XML: $e');
+    } catch (e, stackTrace) {
+      // Enhanced error logging with context information
+      _logger.severe(
+        'Error parsing RDF/XML: $e\n'
+        'Base URI: $_resolvedBaseUri\n'
+        'Stack trace: $stackTrace',
+      );
+
+      // Rethrow specialized exceptions, but wrap generic ones with more context
       if (e is RdfXmlException) {
         rethrow;
       }
-      throw RdfStructureException('Error parsing RDF/XML: $e');
+      throw RdfStructureException(
+        'Error parsing RDF/XML: ${e.toString()}',
+        cause: e,
+      );
     }
+  }
+
+  /// Parses the RDF/XML document as a stream of triples
+  ///
+  /// Provides a memory-efficient way to process large documents
+  /// by yielding triples incrementally as they are parsed.
+  @override
+  Stream<Triple> parseAsStream() async* {
+    _logger.fine('Parsing RDF/XML document as stream');
+
+    _currentDepth = 0;
+
+    try {
+      // Parse the XML document as a stream of events
+      final xmlEvents = _xmlDocumentProvider.parseXmlEvents(_input);
+
+      // Create a context to track state during streaming
+      final context = _createStreamParsingContext();
+
+      // Process the XML events
+      await for (final event in xmlEvents) {
+        if (event is XmlStartElementEvent) {
+          // Process start element
+          final elementResult = await context.processStartElement(event);
+          for (final triple in elementResult.triples) {
+            yield triple;
+          }
+        } else if (event is XmlEndElementEvent) {
+          // Process end element
+          final elementResult = context.processEndElement(event);
+          for (final triple in elementResult.triples) {
+            yield triple;
+          }
+        } else if (event is XmlTextEvent && !event.value.trim().isEmpty) {
+          // Process text nodes (for literal properties)
+          context.processText(event);
+        }
+      }
+
+      _logger.fine('Completed streaming parse of RDF/XML document');
+    } catch (e, stackTrace) {
+      // Enhanced error logging with context information
+      _logger.severe(
+        'Error parsing RDF/XML stream: $e\n'
+        'Stack trace: $stackTrace',
+      );
+
+      // Rethrow specialized exceptions, but wrap generic ones with more context
+      if (e is RdfXmlException) {
+        rethrow;
+      }
+      throw RdfStructureException(
+        'Error parsing RDF/XML stream: ${e.toString()}',
+        cause: e,
+      );
+    }
+  }
+
+  /// Creates a new stream parsing context for handling XML events
+  _StreamParsingContext _createStreamParsingContext() {
+    return _StreamParsingContext(
+      uriResolver: _uriResolver,
+      blankNodeManager: _blankNodeManager,
+      options: _options,
+      baseUri: _baseUri,
+    );
   }
 
   /// Validates the parsed triples for RDF conformance
   ///
-  /// Checks for common issues in the generated triples.
+  /// Checks for common issues in the generated triples using a functional approach
+  /// with clear separation of validation concerns.
   void _validateTriples(List<Triple> triples) {
-    // Funktionaler Ansatz zur Validierung der Tripel
     final invalidTriples =
-        triples.where((triple) {
-          final hasValidSubject =
-              triple.subject is IriTerm || triple.subject is BlankNodeTerm;
-          final hasValidPredicate = triple.predicate is IriTerm;
-          final hasValidObject =
-              triple.object is IriTerm ||
-              triple.object is BlankNodeTerm ||
-              triple.object is LiteralTerm;
-
-          return !hasValidSubject || !hasValidPredicate || !hasValidObject;
-        }).toList();
+        triples.where((triple) => !_isValidTriple(triple)).toList();
 
     if (invalidTriples.isNotEmpty) {
-      final invalidTriple = invalidTriples.first;
-      String error = 'Invalid triple detected:';
-
-      if (!(invalidTriple.subject is IriTerm ||
-          invalidTriple.subject is BlankNodeTerm)) {
-        error += ' Invalid subject type: ${invalidTriple.subject.runtimeType}';
-      } else if (!(invalidTriple.predicate is IriTerm)) {
-        error +=
-            ' Invalid predicate type: ${invalidTriple.predicate.runtimeType}';
-      } else {
-        error += ' Invalid object type: ${invalidTriple.object.runtimeType}';
-      }
-
+      final error = _buildValidationErrorMessage(invalidTriples.first);
       throw RdfStructureException(error);
     }
+  }
+
+  /// Checks if a triple conforms to RDF requirements
+  bool _isValidTriple(Triple triple) {
+    return _isValidSubject(triple.subject) &&
+        _isValidPredicate(triple.predicate) &&
+        _isValidObject(triple.object);
+  }
+
+  /// Checks if a subject term is valid according to RDF rules
+  bool _isValidSubject(RdfSubject subject) =>
+      subject is IriTerm || subject is BlankNodeTerm;
+
+  /// Checks if a predicate term is valid according to RDF rules
+  bool _isValidPredicate(RdfPredicate predicate) => predicate is IriTerm;
+
+  /// Checks if an object term is valid according to RDF rules
+  bool _isValidObject(RdfObject object) =>
+      object is IriTerm || object is BlankNodeTerm || object is LiteralTerm;
+
+  /// Builds a detailed error message for an invalid triple
+  String _buildValidationErrorMessage(Triple triple) {
+    String error = 'Invalid triple detected:';
+
+    if (!_isValidSubject(triple.subject)) {
+      error += ' Invalid subject type: ${triple.subject.runtimeType}';
+    } else if (!_isValidPredicate(triple.predicate)) {
+      error += ' Invalid predicate type: ${triple.predicate.runtimeType}';
+    } else {
+      error += ' Invalid object type: ${triple.object.runtimeType}';
+    }
+
+    return error;
   }
 
   /// Finds the root RDF element in the document
@@ -190,8 +288,8 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// According to the spec, this should be an element named rdf:RDF,
   /// but some documents omit this and start directly with RDF content.
   XmlElement _findRdfRootElement() {
-    // Optimierte Suche nach dem RDF-Root-Element
-    // Suche zuerst nach direktem rdf:RDF Element (häufigster Fall)
+    // Optimized search for the RDF root element
+    // First look for direct rdf:RDF element (most common case)
     final rdfElements = _document.findAllElements(
       'RDF',
       namespace: RdfTerms.rdfNamespace,
@@ -202,7 +300,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       return rdfElements.first;
     }
 
-    // Wenn nicht gefunden, prüfe das Wurzelelement auf RDF-Namespace
+    // If not found, check if the root element has RDF namespace
     final rootElement = _document.rootElement;
     if (rootElement.namespaceUri == RdfTerms.rdfNamespace) {
       _structureLogger.fine(
@@ -211,13 +309,13 @@ final class RdfXmlParser implements IRdfXmlParser {
       return rootElement;
     }
 
-    // Als letztes, suche nach Elementen mit RDF-Namespace-Deklaration
-    // Verwende einen effizienten XPath-ähnlichen Ansatz
+    // Finally, search for elements with RDF namespace declaration
+    // Use an efficient XPath-like approach
     _structureLogger.fine(
       'Searching for elements with RDF namespace declaration',
     );
     for (final element in _document.findAllElements('*')) {
-      // Prüfe nur auf "xmlns:rdf" Attribute (schneller)
+      // Only check for "xmlns:rdf" attributes (faster)
       final hasRdfNs =
           element.getAttribute('xmlns:rdf') == RdfTerms.rdfNamespace;
 
@@ -487,7 +585,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Processes an RDF collection (list)
   ///
   /// Handles parseType="Collection" by creating the RDF list structure.
-  /// Verwendet einen immutablen funktionalen Ansatz für bessere Lesbarkeit und Robustheit.
+  /// Uses a purely functional approach with immutable data flow.
   void _processCollection(
     RdfSubject subject,
     RdfPredicate predicate,
@@ -495,41 +593,50 @@ final class RdfXmlParser implements IRdfXmlParser {
     List<Triple> triples,
   ) {
     if (items.isEmpty) {
-      // Leere Sammlung, Verknüpfung mit rdf:nil
+      // Empty collection, connect with rdf:nil
       triples.add(Triple(subject, predicate, RdfTerms.nil));
       return;
     }
 
-    // Funktionalerer Ansatz zur Erstellung der Listenstruktur
-    final itemsList = items.toList(); // Zur Optimierung des Zugriffs
-    var currentNode = BlankNodeTerm();
+    // Convert to List for indexed access
+    final itemsList = items.toList();
 
-    // Verbinde das Subjekt mit dem ersten Listenknoten
-    triples.add(Triple(subject, predicate, currentNode));
+    // Create the list chain recursively with a functional approach
+    final firstNode = BlankNodeTerm();
+    triples.add(Triple(subject, predicate, firstNode));
 
-    // Für jedes Element außer dem letzten
-    for (int i = 0; i < itemsList.length; i++) {
-      final item = itemsList[i];
-      final isLastItem = i == itemsList.length - 1;
+    // Process all items by building triples
+    _buildRdfList(firstNode, itemsList, 0, triples);
+  }
 
-      // Erstelle einen Knoten für das Element
-      final itemSubject = _getSubject(item);
+  /// Recursively builds an RDF list structure
+  ///
+  /// This helper function processes list items using a functional approach,
+  /// avoiding mutable state where possible.
+  void _buildRdfList(
+    BlankNodeTerm currentNode,
+    List<XmlElement> items,
+    int index,
+    List<Triple> triples,
+  ) {
+    final item = items[index];
+    final isLastItem = index == items.length - 1;
 
-      // Füge das Element zur Liste hinzu
-      triples.add(Triple(currentNode, RdfTerms.first, itemSubject));
+    // Create a node for the item and process it
+    final itemSubject = _getSubject(item);
+    triples.add(Triple(currentNode, RdfTerms.first, itemSubject));
+    _processNode(item, triples);
 
-      // Verarbeite das Element
-      _processNode(item, triples);
+    if (isLastItem) {
+      // Terminate the list with rdf:nil
+      triples.add(Triple(currentNode, RdfTerms.rest, RdfTerms.nil));
+    } else {
+      // Continue the list with the next node
+      final nextNode = BlankNodeTerm();
+      triples.add(Triple(currentNode, RdfTerms.rest, nextNode));
 
-      if (isLastItem) {
-        // Letztes Element zeigt auf nil
-        triples.add(Triple(currentNode, RdfTerms.rest, RdfTerms.nil));
-      } else {
-        // Erzeuge nächsten Listenknoten
-        final nextNode = BlankNodeTerm();
-        triples.add(Triple(currentNode, RdfTerms.rest, nextNode));
-        currentNode = nextNode;
-      }
+      // Process the next item recursively
+      _buildRdfList(nextNode, items, index + 1, triples);
     }
   }
 

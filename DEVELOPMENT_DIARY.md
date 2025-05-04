@@ -196,6 +196,8 @@ Follow Up:
 Yes, please implement each of your suggestions one by one.
 ```
 
+Wow, this did  a lot of changes, but lets wait until the very end to actually review the result.
+
 ### Expert Review - Final (?) Quality Checks
 
 ```llm
@@ -210,5 +212,89 @@ When reviewing code, you look out not only for all of those and you strive for h
 Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything. Is the codebase good enough to be released to the public as a world-class quality project?
 ```
 
+Ok, it still has some points that sounds as if we should adhere to its advice, so lets go:
+
+```llm
+Yes, please implement each of your suggestions one by one.
+```
+
+Follow up
+
+```llm
+Thanks. Unfortunately, this broke compilation. Please execute `dart analyze` to find out what the compile errors are and analyze what you have to do in order to fix them. Wrong API usage? Missing Imports? Missing Code?
+
+When code and tests compile, please run the tests and make sure that all will pass.
+```
+
+Follow up (when asked if the remaining problems should be solved)
+
+```llm
+yes
+```
+
+Again, the agent said that there were warnings and asked if it should resolve them..
+
+```llm
+yes
+```
+
+Ok wow - that were many changes. We should probably do another full round of asking the technical writer and the test engineer. And we need to improve the senior engineer prompt apparently...
+
+### TODO: Test Correctness (2)
+
+Time for yet another toplevel chat:
+
+```llm
+You are an experienced and very senior Software Test Engineer. After implementing test you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the tests are passing.
+
+You investigate the APIs you are using thoroughly and of course you stick to testing best practices: Tests should assert the expected behaviour. This includes asserting the expected exception classes etd. If tests fail, you first check if the test expectation is actually justified. If it is, then the implementation should be fixed to match the expected behavior, not the other way around. Only adjust the test if you come to the conclusion that its expectation was wrong.
+
+Please have a thorough look at all tests implemented in this project and check if their expectations are legitimate or if they were adjusted to make tests pass where the implementation should have been fixed. If necessary, update existing tests (and/or add new ones) to make sure that the correct expectations are tested. Also check if there are important tests missing and add them if needed.
+```
+
+### TODO: Documentation (2)
+
+Now it is time to revisit our documentation again.
+
+```llm
+You are a top-notch writer of technical documentation and you want this project to be a world-class project that meets the highest standards of excellence.
+
+Please first read the sourcecode in this project to make sure you understand what it is about from a toplevel point of view. Then go through all files and mnake sure they are documented to the highest standards, including but not limited to the following criteria:
+
+* code and documentation language is english 
+* document the why, not the what
+* target audience are Dart developers who may not be very familiar with the specifics of the problem this project solves (e.g. with rdf/xml format)
+
+After fixing the sourcecode documentation, please make sure that the README is really helpful and useful. Note: this project will be on github and deployed to pub.dev.
+
+In addition, also update if neccessary our really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you can generate by calling `dart doc -o doc/api .`
+```
+
+
+### TODO: Expert Review - Final (?) Quality Checks v2
+
+```llm
+You are a very experienced senior dart developer who values clean and idiomatic code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. 
+
+You value clean, very readable code and will not accept code that "does too much" and thus is hard to read and understand. You also do not like hardcoded or duplicate code - if functionality is available in one of the used libraries, you strongly prefer to use that one instead of duplicating or hardcoding it. If necessary, you go to the documentation and code to improve your knowledge and understanding of available functionality.
+
+You also always read the documentation and comments and make sure that all examples provided make sense and are using correct syntax and are not hallucinated.
+
+When reviewing code, you look out not only for all of those and you strive for highest quality. You always strive to understand the context of the code as well and avoid over-engineering. 
+
+After implementing code or tests you of course execute `dart analyze`, `dart format` etc and of course `dart test` to verify that the code is compiling and that the tests are passing.
+
+Please have a look at this codebase in lib and review it thoroughly. Come up with advice on what should be improved, if anything. Is the codebase good enough to be released to the public as a world-class quality project?
+```
+
+### TODO: Potential User Review
+
+```llm
+You are a dart developer working on a project where you think that RDF would be useful and you have a preference (or need for other reasons) to choose XML for (de)serialization of RDF. 
+
+You come across our library on pub.dev and read the README.md and the docs underneath doc. 
+
+What do you think of this library? Do you want to use it?
+```
 
 ### Ready for human feedback?

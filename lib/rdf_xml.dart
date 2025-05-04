@@ -11,6 +11,7 @@
 /// - Container elements (rdf:Bag, rdf:Seq, rdf:Alt)
 /// - Collection elements (rdf:List)
 /// - Blank nodes and reification
+/// - Stream-based processing for large RDF/XML documents
 ///
 /// To use this package, import it and either:
 ///
@@ -23,6 +24,13 @@
 /// // Create a parser directly
 /// final parser = RdfXmlFormat().createParser();
 /// final rdfGraph = parser.parse(rdfXmlContent);
+///
+/// // For large documents, use streaming parser
+/// final streamingParser = RdfXmlFormat().createStreamingParser();
+/// await for (final triple in streamingParser.parseAsStream(rdfXmlContent)) {
+///   // Process each triple as it's parsed
+///   processTriple(triple);
+/// }
 ///
 /// // Create a serializer directly
 /// final serializer = RdfXmlFormat().createSerializer();
@@ -46,7 +54,7 @@
 library rdf_xml;
 
 export 'src/rdfxml_constants.dart';
-export 'src/rdfxml_format.dart';
+export 'src/rdfxml_format.dart' show RdfXmlFormat, StreamingRdfParser;
 export 'src/rdfxml_parser.dart';
 export 'src/rdfxml_serializer.dart';
 export 'src/configuration.dart';
