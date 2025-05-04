@@ -154,6 +154,14 @@ class _StreamParsingContext {
             resourceAttr,
             _resolvedBaseUri,
           );
+          if (objectIri.isEmpty) {
+            throw UriResolutionException(
+              'Failed to resolve rdf:resource URI',
+              uri: resourceAttr,
+              baseUri: _resolvedBaseUri,
+              sourceContext: event.name,
+            );
+          }
           triples.add(
             Triple(parentState.subject!, predicate, IriTerm(objectIri)),
           );
@@ -415,6 +423,14 @@ class _StreamParsingContext {
     if (aboutAttr != null) {
       try {
         final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
+        if (iri.isEmpty) {
+          throw UriResolutionException(
+            'Failed to resolve rdf:about URI',
+            uri: aboutAttr,
+            baseUri: _resolvedBaseUri,
+            sourceContext: event.name,
+          );
+        }
         return IriTerm(iri);
       } catch (e) {
         throw UriResolutionException(
@@ -430,6 +446,14 @@ class _StreamParsingContext {
     final idAttr = _getAttributeValue(event, 'ID', RdfTerms.rdfNamespace);
     if (idAttr != null) {
       try {
+        if (_resolvedBaseUri.isEmpty) {
+          throw UriResolutionException(
+            'Base URI is not set for rdf:ID',
+            uri: '#$idAttr',
+            baseUri: _resolvedBaseUri,
+            sourceContext: event.name,
+          );
+        }
         final iri = '${_resolvedBaseUri}#$idAttr';
         return IriTerm(iri);
       } catch (e) {
@@ -460,6 +484,12 @@ class _StreamParsingContext {
   IriTerm _createTypeIriFromElement(XmlStartElementEvent event) {
     final namespace =
         _getNamespaceForPrefix(event, event.namespacePrefix) ?? '';
+    if (namespace.isEmpty) {
+      throw RdfStructureException(
+        'Namespace not found for prefix: ${event.namespacePrefix}',
+        elementName: event.name,
+      );
+    }
     return IriTerm('$namespace${event.localName}');
   }
 
@@ -467,6 +497,12 @@ class _StreamParsingContext {
   RdfPredicate _createPredicateFromElement(XmlStartElementEvent event) {
     final namespace =
         _getNamespaceForPrefix(event, event.namespacePrefix) ?? '';
+    if (namespace.isEmpty) {
+      throw RdfStructureException(
+        'Namespace not found for prefix: ${event.namespacePrefix}',
+        elementName: event.name,
+      );
+    }
     return IriTerm('$namespace${event.localName}');
   }
 
@@ -485,6 +521,12 @@ class _StreamParsingContext {
           prefix != null &&
           prefix.isNotEmpty) {
         final namespace = _getNamespaceForPrefix(event, prefix) ?? '';
+        if (namespace.isEmpty) {
+          throw RdfStructureException(
+            'Namespace not found for prefix: $prefix',
+            elementName: event.name,
+          );
+        }
         final predicate = IriTerm('$namespace${attr.localName}');
         final object = LiteralTerm.string(attr.value);
 
