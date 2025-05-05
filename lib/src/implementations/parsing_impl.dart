@@ -45,6 +45,7 @@ final class DefaultUriResolver implements IUriResolver {
       namespace: 'http://www.w3.org/XML/1998/namespace',
     );
 
+    // According to W3C specs, xml:base takes precedence over provided base URI
     final result = xmlBase ?? providedBaseUri ?? '';
 
     // Cache the result for future lookups
@@ -54,8 +55,13 @@ final class DefaultUriResolver implements IUriResolver {
 
   @override
   String resolveUri(String uri, String baseUri) {
-    // Handle empty base URI or already absolute URIs quickly
-    if (baseUri.isEmpty || uri.contains(':')) {
+    // Handle empty base URI cases
+    if (baseUri.isEmpty) {
+      return uri;
+    }
+
+    // Return absolute URIs immediately
+    if (_isAbsoluteUri(uri)) {
       return uri;
     }
 
@@ -69,6 +75,31 @@ final class DefaultUriResolver implements IUriResolver {
       // Fall back to manual resolution if URI parsing fails
       return _manualResolveUri(uri, baseUri);
     }
+  }
+
+  /// Determines if a URI is absolute (has a scheme)
+  bool _isAbsoluteUri(String uri) {
+    // Check for URI scheme (e.g., http:, https:, file:)
+    // More efficient than regex for this simple case
+    final colonPos = uri.indexOf(':');
+    if (colonPos <= 0) return false;
+
+    // Check that characters before colon are valid scheme characters
+    for (int i = 0; i < colonPos; i++) {
+      final char = uri.codeUnitAt(i);
+      // Valid scheme chars are a-z, A-Z, 0-9, +, -, .
+      final isValidSchemeChar =
+          (char >= 97 && char <= 122) || // a-z
+          (char >= 65 && char <= 90) || // A-Z
+          (char >= 48 && char <= 57) || // 0-9
+          char == 43 || // +
+          char == 45 || // -
+          char == 46; // .
+
+      if (!isValidSchemeChar) return false;
+    }
+
+    return true;
   }
 
   /// Manual URI resolution logic for cases where Uri.resolveUri fails

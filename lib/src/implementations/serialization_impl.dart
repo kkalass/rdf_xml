@@ -283,6 +283,9 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   /// Cache for type-to-QName lookups to improve serialization performance
   static final Map<IriTerm, Map<String, String?>> _typeQNameCache = {};
 
+  /// Current base URI for the document being serialized
+  String? _currentBaseUri;
+
   /// Creates a new DefaultRdfXmlBuilder
   ///
   /// Parameters:
@@ -311,6 +314,9 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     String? baseUri,
     Map<String, String> namespaces,
   ) {
+    // Store the base URI for use in reification
+    _currentBaseUri = baseUri;
+
     final builder = XmlBuilder();
 
     // Add XML declaration
@@ -544,6 +550,30 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     return false;
   }
 
+  /// Determines if a blank node is a container and returns its type
+  ///
+  /// Uses the type information to identify container nodes (Bag, Seq, Alt).
+  String? _getContainerType(BlankNodeTerm node) {
+    final triples = _currentSubjectGroups[node];
+    if (triples == null) return null;
+
+    // Check if there's a rdf:type triple that identifies this as a container
+    for (final triple in triples) {
+      if (triple.predicate is IriTerm &&
+          (triple.predicate as IriTerm).iri == RdfTerms.type.iri &&
+          triple.object is IriTerm) {
+        final typeIri = (triple.object as IriTerm).iri;
+
+        // Check if it's one of the container types
+        if (typeIri == '${RdfTerms.rdfNamespace}Bag') return 'Bag';
+        if (typeIri == '${RdfTerms.rdfNamespace}Seq') return 'Seq';
+        if (typeIri == '${RdfTerms.rdfNamespace}Alt') return 'Alt';
+      }
+    }
+
+    return null;
+  }
+
   /// Pre-computes type information for all subjects
   ///
   /// This avoids repeated lookups and improves performance for large datasets.
@@ -679,12 +709,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
 
     if (originalTriple == null) {
       // Fallback, shouldn't happen in normal operation
-      _serializePredicateWithoutReification(
-        builder,
-        predicateQName,
-        object,
-        namespaces,
-      );
+      _serializePredicateObject(builder, predicateQName, object, namespaces);
       return;
     }
 
@@ -693,64 +718,105 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         '${originalTriple.subject.toString()}|${predicate.toString()}|${object.toString()}';
     final reificationUri = _reifiedStatementsMap[statementSignature];
 
-    if (reificationUri != null) {
-      // This statement is reified - use rdf:ID syntax
+    if (reificationUri != null && _reificationMap.containsKey(reificationUri)) {
+      final reificationInfo = _reificationMap[reificationUri]!;
 
-      // Extract the local ID from the URI
-      String localId = _extractLocalId(reificationUri);
-
-      // Handle different object types with reification
-      if (object is IriTerm) {
-        // Resource reference with reification
-        final attributes = <String, String>{
-          'rdf:resource': object.iri,
-          'rdf:ID': localId,
-        };
-
-        builder.element(predicateQName, attributes: attributes);
-      } else if (object is LiteralTerm) {
-        // Literal value with reification
-        final attributes = <String, String>{'rdf:ID': localId};
-
-        // Add language tag or datatype if needed
-        if (object.language != null) {
-          attributes['xml:lang'] = object.language!;
-        } else if (object.datatype.iri != RdfTerms.string.iri) {
-          attributes['rdf:datatype'] = object.datatype.iri;
+      // Get the base URI from the document context
+      String? baseUri = null;
+      for (final entry in namespaces.entries) {
+        if (entry.key == 'xml') {
+          baseUri = entry.value;
+          break;
         }
-
-        builder.element(
-          predicateQName,
-          attributes: attributes,
-          nest: object.value,
-        );
-      } else {
-        // For blank nodes, fall back to explicit reification
-        _serializePredicateWithoutReification(
-          builder,
-          predicateQName,
-          object,
-          namespaces,
-        );
       }
 
-      // Add any additional properties of the reification statement
-      _addReificationProperties(builder, predicateQName, reificationUri);
+      // If we couldn't find it in namespaces, try getting it from buildDocument context
+      if (baseUri == null) {
+        // Use the baseUri parameter from buildDocument, stored in closure scope
+        baseUri = _currentBaseUri;
+      }
 
+      // Only use rdf:ID if:
+      // 1. We have a base URI
+      // 2. The reification URI starts with baseUri# pattern
+      final canUseRdfId =
+          baseUri != null &&
+          baseUri.isNotEmpty &&
+          reificationUri.startsWith('$baseUri#');
+
+      if (canUseRdfId) {
+        // Extract the local ID from the URI (part after #)
+        final localId = reificationUri.substring(
+          baseUri!.length + 1,
+        ); // +1 for the #
+
+        // Handle different object types with reification using rdf:ID
+        if (object is IriTerm) {
+          // Resource reference with reification
+          final attributes = <String, String>{
+            'rdf:resource': object.iri,
+            'rdf:ID': localId,
+          };
+
+          builder.element(predicateQName, attributes: attributes);
+          return;
+        } else if (object is LiteralTerm) {
+          // Literal value with reification
+          final attributes = <String, String>{'rdf:ID': localId};
+
+          // Add language tag or datatype if needed
+          if (object.language != null) {
+            attributes['xml:lang'] = object.language!;
+          } else if (object.datatype.iri != RdfTerms.string.iri) {
+            attributes['rdf:datatype'] = object.datatype.iri;
+          }
+
+          builder.element(
+            predicateQName,
+            attributes: attributes,
+            nest: object.value,
+          );
+          return;
+        }
+      }
+
+      // For other cases, fall back to explicit reification
+      _serializePredicateObject(builder, predicateQName, object, namespaces);
       return;
     }
 
     // No reification - normal serialization
-    _serializePredicateWithoutReification(
+    _serializePredicateObject(builder, predicateQName, object, namespaces);
+  }
+
+  /// Serializes a predicate-object pair with explicit reification
+  ///
+  /// This is used when rdf:ID syntax cannot be used
+  void _serializeFullReification(
+    XmlBuilder builder,
+    RdfSubject subject,
+    RdfPredicate predicate,
+    RdfObject object,
+    String reificationUri,
+    Map<String, String> namespaces,
+  ) {
+    // Serialize the original statement without reification
+    _serializePredicateObject(
       builder,
-      predicateQName,
+      predicate is IriTerm
+          ? _namespaceManager.iriToQName(predicate.iri, namespaces) ??
+              'rdf:value'
+          : 'rdf:value',
       object,
       namespaces,
     );
+
+    // We'll serialize the reification statement separately during the main subject iteration
+    // The statement itself is already in _currentSubjectGroups with the reificationUri
   }
 
   /// Serializes a predicate-object pair without reification
-  void _serializePredicateWithoutReification(
+  void _serializePredicateObject(
     XmlBuilder builder,
     String predicateQName,
     RdfObject object,
@@ -797,85 +863,6 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         nest: object.value,
       );
     }
-  }
-
-  /// Adds properties of a reified statement to the output
-  void _addReificationProperties(
-    XmlBuilder builder,
-    String predicateQName,
-    String reificationUri,
-  ) {
-    // Get the reification triples
-    final subject = IriTerm(reificationUri);
-    final triples = _currentSubjectGroups[subject];
-    if (triples == null) return;
-
-    // Find all triples that aren't part of the reification pattern
-    final additionalTriples =
-        triples.where((triple) {
-          if (triple.predicate == RdfTerms.type) {
-            return false; // Skip rdf:type rdf:Statement
-          }
-
-          if (triple.predicate is IriTerm) {
-            final predIri = (triple.predicate as IriTerm).iri;
-            if (predIri == '${RdfTerms.rdfNamespace}subject' ||
-                predIri == '${RdfTerms.rdfNamespace}predicate' ||
-                predIri == '${RdfTerms.rdfNamespace}object') {
-              return false; // Skip reification components
-            }
-          }
-
-          return true; // Keep additional properties
-        }).toList();
-
-    // FIXME: what does this mean?
-    // We don't add these properties here as they would be siblings
-    // of the reified statement. Instead, we might want to add them
-    // as children in a nested element, but that would require changes
-    // to the RDF/XML syntax structure, which we want to avoid.
-  }
-
-  /// Extracts the local ID from a URI
-  String _extractLocalId(String uri) {
-    // If URI has a fragment identifier, use that
-    final hashIndex = uri.lastIndexOf('#');
-    if (hashIndex >= 0 && hashIndex < uri.length - 1) {
-      return uri.substring(hashIndex + 1);
-    }
-
-    // Otherwise, use the last path segment
-    final slashIndex = uri.lastIndexOf('/');
-    if (slashIndex >= 0 && slashIndex < uri.length - 1) {
-      return uri.substring(slashIndex + 1);
-    }
-
-    // Fallback: use a sanitized version of the whole URI
-    return 'id${uri.hashCode.abs()}';
-  }
-
-  /// Determines if a blank node is a container and returns its type
-  ///
-  /// Uses the type information to identify container nodes (Bag, Seq, Alt).
-  String? _getContainerType(BlankNodeTerm node) {
-    final triples = _currentSubjectGroups[node];
-    if (triples == null) return null;
-
-    // Check if there's a rdf:type triple that identifies this as a container
-    for (final triple in triples) {
-      if (triple.predicate is IriTerm &&
-          (triple.predicate as IriTerm).iri == RdfTerms.type.iri &&
-          triple.object is IriTerm) {
-        final typeIri = (triple.object as IriTerm).iri;
-
-        // Check if it's one of the container types
-        if (typeIri == '${RdfTerms.rdfNamespace}Bag') return 'Bag';
-        if (typeIri == '${RdfTerms.rdfNamespace}Seq') return 'Seq';
-        if (typeIri == '${RdfTerms.rdfNamespace}Alt') return 'Alt';
-      }
-    }
-
-    return null;
   }
 
   /// Serializes an RDF container
@@ -972,6 +959,40 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         );
       },
     );
+  }
+
+  /// Adds properties of a reified statement to the output
+  void _addReificationMetadata(
+    XmlBuilder builder,
+    String predicateQName,
+    String reificationUri,
+  ) {
+    // Get the reification triples
+    final subject = IriTerm(reificationUri);
+    final triples = _currentSubjectGroups[subject];
+    if (triples == null) return;
+
+    // Find all triples that aren't part of the reification pattern
+    final additionalTriples =
+        triples.where((triple) {
+          if (triple.predicate == RdfTerms.type) {
+            return false; // Skip rdf:type rdf:Statement
+          }
+
+          if (triple.predicate is IriTerm) {
+            final predIri = (triple.predicate as IriTerm).iri;
+            if (predIri == '${RdfTerms.rdfNamespace}subject' ||
+                predIri == '${RdfTerms.rdfNamespace}predicate' ||
+                predIri == '${RdfTerms.rdfNamespace}object') {
+              return false; // Skip reification components
+            }
+          }
+
+          return true; // Keep additional properties
+        }).toList();
+
+    // We don't add these properties here as they would be siblings
+    // of the reified statement. They'll be serialized separately.
   }
 }
 

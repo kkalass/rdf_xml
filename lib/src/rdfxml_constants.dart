@@ -35,6 +35,22 @@ class RdfTerms {
   /// The xsd:string datatype
   static final IriTerm string = IriTerm.prevalidated('${xsdNamespace}string');
 
+  /// The rdf:Statement resource (for reification)
+  static final IriTerm statement = IriTerm.prevalidated(
+    '${rdfNamespace}Statement',
+  );
+
+  /// The rdf:subject predicate (for reification)
+  static final IriTerm subject = IriTerm.prevalidated('${rdfNamespace}subject');
+
+  /// The rdf:predicate predicate (for reification)
+  static final IriTerm predicate = IriTerm.prevalidated(
+    '${rdfNamespace}predicate',
+  );
+
+  /// The rdf:object predicate (for reification)
+  static final IriTerm object = IriTerm.prevalidated('${rdfNamespace}object');
+
   /// Standard namespaces used in RDF
   static final Map<String, String> standardNamespaces = {
     'rdf': rdfNamespace,
