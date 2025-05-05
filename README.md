@@ -75,58 +75,13 @@ Future<void> parseFromFile(String filePath) async {
   final xmlContent = await file.readAsString();
   
   // Parse with base URI set to the file location
-  final parser = RdfXmlParser(
-    xmlContent, 
-    baseUri: 'file://${file.absolute.path}',
-  );
-  
-  final triples = parser.parse();
-  final graph = RdfGraph.fromTriples(triples);
-  
-  print('Parsed ${graph.size} triples from $filePath');
-}
-```
-
-### Working with Named Graphs
-
-```dart
-import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/rdf_xml.dart';
-
-void main() {
-  final xmlContent = '''
-    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-             xmlns:foaf="http://xmlns.com/foaf/0.1/">
-      <foaf:Person rdf:about="http://example.org/person/alice">
-        <foaf:name>Alice</foaf:name>
-        <foaf:knows rdf:resource="http://example.org/person/bob"/>
-      </foaf:Person>
-    </rdf:RDF>
-  ''';
-
-  // Parse the content
   final parser = RdfXmlFormat().createParser();
-  final graph = parser.parse(xmlContent);
-  
-  // Create a named graph
-  final namedGraph = NamedGraph(
-    IriTerm('http://example.org/graphs/people'),
-    graph,
+  final rdfGraph = parser.parse(
+    xmlContent, 
+    documentUrl: 'file://${file.absolute.path}',
   );
   
-  // Add to a dataset
-  final dataset = RdfDataset.empty();
-  dataset.addNamedGraph(namedGraph);
-  
-  // Query the dataset
-  final people = dataset.findByPredicateObject(
-    IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-    IriTerm('http://xmlns.com/foaf/0.1/Person'),
-  );
-  
-  for (final person in people) {
-    print('Found person: ${person.subject}');
-  }
+  print('Parsed ${rdfGraph.size} triples from $filePath');
 }
 ```
 
@@ -176,7 +131,7 @@ import 'package:rdf_xml/rdf_xml.dart';
 void main() {
   // Register the format with the registry
   final registry = RdfFormatRegistry();
-  registry.registerFormat(const RdfXmlFormat());
+  registry.registerFormat(RdfXmlFormat());
   
   // Get a parser by MIME type
   final parser = registry.getParser('application/rdf+xml');
@@ -192,62 +147,40 @@ void main() {
 
 ```dart
 // Create a parser with strict validation
-final strictParser = RdfXmlParser(
-  xmlContent,
-  options: RdfXmlParserOptions.strict(),
-);
+final strictParser = RdfXmlFormat.strict().createParser();
 
 // Create a parser that handles non-standard RDF/XML
-final lenientParser = RdfXmlParser(
-  xmlContent,
-  options: RdfXmlParserOptions.lenient(),
-);
-
-// Create a high-performance parser for large documents
-final fastParser = RdfXmlParser(
-  xmlContent,
-  options: RdfXmlParserOptions.performance(),
-);
+final lenientParser = RdfXmlFormat.lenient().createParser();
 
 // Custom configuration
-final customParser = RdfXmlParser(
-  xmlContent,
-  options: RdfXmlParserOptions(
+final customParser = RdfXmlFormat(
+  parserOptions: RdfXmlParserOptions(
     strictMode: false,
     normalizeWhitespace: true,
     validateOutput: true,
     maxNestingDepth: 50,
   ),
-);
+).createParser();
 ```
 
 ### Serializer Options
 
 ```dart
 // Human-readable output
-final readableSerializer = RdfXmlSerializer(
-  options: RdfXmlSerializerOptions.readable(),
-);
+final readableSerializer = RdfXmlFormat.readable().createSerializer();
 
 // Compact output for storage
-final compactSerializer = RdfXmlSerializer(
-  options: RdfXmlSerializerOptions.compact(),
-);
-
-// Compatible output for legacy systems
-final compatibleSerializer = RdfXmlSerializer(
-  options: RdfXmlSerializerOptions.compatible(),
-);
+final compactSerializer = RdfXmlFormat.compact().createSerializer();
 
 // Custom configuration
-final customSerializer = RdfXmlSerializer(
-  options: RdfXmlSerializerOptions(
+final customSerializer = RdfXmlFormat(
+  serializerOptions: RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 4,
     useNamespaces: true,
-    useTypedNodes: false,
+    useTypedNodes: true,
   ),
-);
+).createSerializer();
 ```
 
 ## 📚 RDF/XML Features
@@ -265,10 +198,6 @@ This library supports all features of the RDF/XML syntax:
 - Datatyped literals
 - Blank nodes (anonymous and labeled)
 - RDF reification
-
-## 🛣️ Roadmap / Next Steps
-
-- Stream parsing?
 
 ## 🤝 Contributing
 

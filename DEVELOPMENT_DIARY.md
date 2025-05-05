@@ -375,6 +375,11 @@ After fixing the sourcecode documentation, please make sure that the README is r
 In addition, also update if neccessary our really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you can generate by calling `dart doc -o doc/api .`. The documentation in doc of course also should only contain examples where you are sure that they are correct and use existing APIs (maybe by putting them in the example directory if they are not there yet).
 ```
 
+TODO
+
+* only serialize namespaces that are actually used
+* check that examples run  correctly
+
 ### TODO: Expert Review - Final (?) Quality Checks v2
 
 ```llm

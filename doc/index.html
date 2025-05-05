@@ -303,7 +303,7 @@
       <div class="code-block">
 <pre><span class="code-comment"># pubspec.yaml</span>
 <span class="code-keyword">dependencies</span>:
-  <span class="code-string">rdf_xml</span>: ^1.0.0</pre>
+  <span class="code-string">rdf_xml</span>: ^0.1.1</pre>
       </div>
     </div>
   </section>
@@ -337,6 +337,27 @@
   <span class="code-keyword">for</span> (<span class="code-keyword">final</span> triple <span class="code-keyword">in</span> rdfGraph.triples) {
     print(triple);
   }
+}</pre>
+      </div>
+      
+      <h3 class="h4 mt-4 mb-3">Parsing from a File</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'dart:io'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">Future</span>&lt;<span class="code-keyword">void</span>&gt; <span class="code-type">parseFromFile</span>(<span class="code-type">String</span> filePath) <span class="code-keyword">async</span> {
+  <span class="code-keyword">final</span> file = <span class="code-type">File</span>(filePath);
+  <span class="code-keyword">final</span> xmlContent = <span class="code-keyword">await</span> file.readAsString();
+  
+  <span class="code-comment">// Parse with base URI set to the file location</span>
+  <span class="code-keyword">final</span> parser = <span class="code-type">RdfXmlFormat</span>().createParser();
+  <span class="code-keyword">final</span> rdfGraph = parser.parse(
+    xmlContent,
+    documentUrl: <span class="code-string">'file://${file.absolute.path}'</span>,
+  );
+  
+  print(<span class="code-string">'Parsed ${rdfGraph.size} triples from $filePath'</span>);
 }</pre>
       </div>
       
@@ -384,7 +405,7 @@
 <span class="code-keyword">void</span> <span class="code-type">main</span>() {
   <span class="code-comment">// Register the format with the registry</span>
   <span class="code-keyword">final</span> registry = <span class="code-type">RdfFormatRegistry</span>();
-  registry.registerFormat(<span class="code-keyword">const</span> <span class="code-type">RdfXmlFormat</span>());
+  registry.registerFormat(<span class="code-type">RdfXmlFormat</span>());
   
   <span class="code-comment">// Get a parser by MIME type</span>
   <span class="code-keyword">final</span> parser = registry.getParser(<span class="code-string">'application/rdf+xml'</span>);
@@ -405,62 +426,40 @@
       <p>The parser can be configured for different use cases:</p>
       <div class="code-block">
 <pre><span class="code-comment">// Create a parser with strict validation</span>
-<span class="code-keyword">final</span> strictParser = <span class="code-type">RdfXmlParser</span>(
-  xmlContent,
-  options: <span class="code-type">RdfXmlParserOptions</span>.strict(),
-);
+<span class="code-keyword">final</span> strictParser = <span class="code-type">RdfXmlFormat</span>.strict().createParser();
 
 <span class="code-comment">// Create a parser that handles non-standard RDF/XML</span>
-<span class="code-keyword">final</span> lenientParser = <span class="code-type">RdfXmlParser</span>(
-  xmlContent,
-  options: <span class="code-type">RdfXmlParserOptions</span>.lenient(),
-);
-
-<span class="code-comment">// Create a high-performance parser for large documents</span>
-<span class="code-keyword">final</span> fastParser = <span class="code-type">RdfXmlParser</span>(
-  xmlContent,
-  options: <span class="code-type">RdfXmlParserOptions</span>.performance(),
-);
+<span class="code-keyword">final</span> lenientParser = <span class="code-type">RdfXmlFormat</span>.lenient().createParser();
 
 <span class="code-comment">// Custom configuration</span>
-<span class="code-keyword">final</span> customParser = <span class="code-type">RdfXmlParser</span>(
-  xmlContent,
-  options: <span class="code-type">RdfXmlParserOptions</span>(
+<span class="code-keyword">final</span> customParser = <span class="code-type">RdfXmlFormat</span>(
+  parserOptions: <span class="code-type">RdfXmlParserOptions</span>(
     strictMode: <span class="code-keyword">false</span>,
     normalizeWhitespace: <span class="code-keyword">true</span>,
     validateOutput: <span class="code-keyword">true</span>,
     maxNestingDepth: 50,
   ),
-);</pre>
+).createParser();</pre>
       </div>
       
       <h3 class="h4 mt-4 mb-3">Serializer Options</h3>
       <p>The serializer can also be configured for different output requirements:</p>
       <div class="code-block">
 <pre><span class="code-comment">// Human-readable output</span>
-<span class="code-keyword">final</span> readableSerializer = <span class="code-type">RdfXmlSerializer</span>(
-  options: <span class="code-type">RdfXmlSerializerOptions</span>.readable(),
-);
+<span class="code-keyword">final</span> readableSerializer = <span class="code-type">RdfXmlFormat</span>.readable().createSerializer();
 
 <span class="code-comment">// Compact output for storage</span>
-<span class="code-keyword">final</span> compactSerializer = <span class="code-type">RdfXmlSerializer</span>(
-  options: <span class="code-type">RdfXmlSerializerOptions</span>.compact(),
-);
-
-<span class="code-comment">// Compatible output for legacy systems</span>
-<span class="code-keyword">final</span> compatibleSerializer = <span class="code-type">RdfXmlSerializer</span>(
-  options: <span class="code-type">RdfXmlSerializerOptions</span>.compatible(),
-);
+<span class="code-keyword">final</span> compactSerializer = <span class="code-type">RdfXmlFormat</span>.compact().createSerializer();
 
 <span class="code-comment">// Custom configuration</span>
-<span class="code-keyword">final</span> customSerializer = <span class="code-type">RdfXmlSerializer</span>(
-  options: <span class="code-type">RdfXmlSerializerOptions</span>(
+<span class="code-keyword">final</span> customSerializer = <span class="code-type">RdfXmlFormat</span>(
+  serializerOptions: <span class="code-type">RdfXmlSerializerOptions</span>(
     prettyPrint: <span class="code-keyword">true</span>,
     indentSpaces: 4,
     useNamespaces: <span class="code-keyword">true</span>,
-    useTypedNodes: <span class="code-keyword">false</span>,
+    useTypedNodes: <span class="code-keyword">true</span>,
   ),
-);</pre>
+).createSerializer();</pre>
       </div>
     </div>
   </section>
