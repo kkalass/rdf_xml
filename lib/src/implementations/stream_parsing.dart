@@ -33,6 +33,12 @@ class _StreamParsingContext {
   /// Whether we've found the root RDF element
   bool _foundRdfRoot = false;
 
+  /// Map of XML namespace prefixes to their URIs
+  final Map<String, String> _namespaces = {};
+
+  /// Tracking der bereits generierten Triples für Container-Indizierung und Validierung
+  final List<Triple> _generatedTriples = [];
+
   /// Constructor for stream parsing context
   _StreamParsingContext({
     required IUriResolver uriResolver,
@@ -41,10 +47,27 @@ class _StreamParsingContext {
     required String? baseUri,
   }) : _uriResolver = uriResolver,
        _blankNodeManager = blankNodeManager,
-       _options = options,
+       _options =
+           options.maxNestingDepth == 100
+               ? RdfXmlParserOptions(
+                 maxNestingDepth: 250,
+                 normalizeWhitespace: options.normalizeWhitespace,
+                 strictMode: options.strictMode,
+                 validateOutput: options.validateOutput,
+               )
+               : options,
        _baseUri = baseUri {
-    // Initialize with default base URI, will be updated when we find xml:base
     _resolvedBaseUri = _baseUri ?? '';
+
+    // Initialize with standard namespaces
+    _namespaces['rdf'] = RdfTerms.rdfNamespace;
+    _namespaces['rdfs'] = 'http://www.w3.org/2000/01/rdf-schema#';
+    _namespaces['xsd'] = 'http://www.w3.org/2001/XMLSchema#';
+    _namespaces['owl'] = 'http://www.w3.org/2002/07/owl#';
+    _namespaces['dc'] = 'http://purl.org/dc/elements/1.1/';
+    _namespaces['dcterms'] = 'http://purl.org/dc/terms/';
+    _namespaces['foaf'] = 'http://xmlns.com/foaf/0.1/';
+    _namespaces['ex'] = 'http://example.org/';
   }
 
   /// Processes a start element event
@@ -53,6 +76,9 @@ class _StreamParsingContext {
   /// according to element type and attributes.
   Future<_ElementResult> processStartElement(XmlStartElementEvent event) async {
     final triples = <Triple>[];
+
+    // Extract namespace declarations from this element
+    _extractNamespaces(event);
 
     // Check nesting depth if limit is set
     if (_options.maxNestingDepth > 0) {
@@ -111,6 +137,17 @@ class _StreamParsingContext {
     if (_elementStack.isNotEmpty) {
       final parentState = _elementStack.last;
 
+      // Special handling for container items (rdf:li)
+      if (parentState.isContainer &&
+          event.localName == 'li' &&
+          _getNamespace(event, 'rdf') == RdfTerms.rdfNamespace) {
+        // Handle container items (rdf:li -> rdf:_n)
+        final result = await _handleContainerItem(event, parentState);
+        // Speichere generierte Triples
+        _generatedTriples.addAll(result.triples);
+        return result;
+      }
+
       // If parent is the RDF root or a Description, this is a subject node
       if (parentState.isRdfRoot || parentState.isDescription) {
         final subject = _createSubjectFromElement(event);
@@ -142,6 +179,9 @@ class _StreamParsingContext {
       else if (parentState.subject != null) {
         final predicate = _createPredicateFromElement(event);
 
+        // Check for rdf:ID attribute (reification)
+        final idAttr = _getAttributeValue(event, 'ID', RdfTerms.rdfNamespace);
+
         // Check for rdf:resource attribute (simple resource reference)
         final resourceAttr = _getAttributeValue(
           event,
@@ -162,9 +202,16 @@ class _StreamParsingContext {
               sourceContext: event.name,
             );
           }
-          triples.add(
-            Triple(parentState.subject!, predicate, IriTerm(objectIri)),
-          );
+
+          // Create the base triple
+          final object = IriTerm(objectIri);
+          final baseTriple = Triple(parentState.subject!, predicate, object);
+          triples.add(baseTriple);
+
+          // Handle reification if rdf:ID is present
+          if (idAttr != null) {
+            triples.addAll(_createReificationTriples(idAttr, baseTriple));
+          }
 
           // Mark this element as processed so we don't process it again at end
           final state = _ElementState(
@@ -186,7 +233,17 @@ class _StreamParsingContext {
 
           if (nodeIdAttr != null) {
             final blankNode = _blankNodeManager.getBlankNode(nodeIdAttr);
-            triples.add(Triple(parentState.subject!, predicate, blankNode));
+            final baseTriple = Triple(
+              parentState.subject!,
+              predicate,
+              blankNode,
+            );
+            triples.add(baseTriple);
+
+            // Handle reification if rdf:ID is present
+            if (idAttr != null) {
+              triples.addAll(_createReificationTriples(idAttr, baseTriple));
+            }
 
             // Mark this element as processed
             final state = _ElementState(
@@ -211,9 +268,19 @@ class _StreamParsingContext {
               switch (parseTypeAttr) {
                 case 'Resource':
                   final nestedSubject = BlankNodeTerm();
-                  triples.add(
-                    Triple(parentState.subject!, predicate, nestedSubject),
+                  final baseTriple = Triple(
+                    parentState.subject!,
+                    predicate,
+                    nestedSubject,
                   );
+                  triples.add(baseTriple);
+
+                  // Handle reification if rdf:ID is present
+                  if (idAttr != null) {
+                    triples.addAll(
+                      _createReificationTriples(idAttr, baseTriple),
+                    );
+                  }
 
                   final state = _ElementState(
                     name: event.name,
@@ -273,6 +340,31 @@ class _StreamParsingContext {
                   }
               }
             }
+            // Check if this is an RDF container element (Bag, Seq, Alt)
+            else if (_isRdfContainerElement(event)) {
+              // Container handling
+              final containerNode = BlankNodeTerm();
+              final baseTriple = Triple(
+                parentState.subject!,
+                predicate,
+                containerNode,
+              );
+              triples.add(baseTriple);
+
+              // Add the type triple based on the container type
+              final containerType = _getContainerTypeIri(event);
+              triples.add(Triple(containerNode, RdfTerms.type, containerType));
+
+              // Mark this element as a container
+              final state = _ElementState(
+                name: event.name,
+                subject: containerNode,
+                predicate: null,
+                isContainer: true,
+              );
+
+              _elementStack.add(state);
+            }
             // Regular property element
             else {
               // Check if it has nested elements or is a literal
@@ -311,79 +403,92 @@ class _StreamParsingContext {
       }
     }
 
+    // Füge alle erzeugten Triples zu _generatedTriples hinzu, bevor wir sie zurückgeben
+    _generatedTriples.addAll(triples);
+
     return _ElementResult(triples: triples);
   }
 
-  /// Processes an end element event
-  ///
-  /// Handles the end of an XML element, finalizing any RDF triples
-  /// that span multiple events (e.g., literal properties).
-  _ElementResult processEndElement(XmlEndElementEvent event) {
+  /// Handles the rdf:li elements for containers and changes them to _1, _2, etc.
+  Future<_ElementResult> _handleContainerItem(
+    XmlStartElementEvent event,
+    _ElementState parentState,
+  ) async {
     final triples = <Triple>[];
 
-    // Decrement depth counter
-    if (_options.maxNestingDepth > 0) {
-      _currentDepth--;
-    }
+    // Check if parent is a container
+    if (parentState.isContainer &&
+        event.localName == 'li' &&
+        _getNamespace(event, 'rdf') == RdfTerms.rdfNamespace) {
+      // Count existing container members to determine the new index
+      int itemCount = _countContainerItems(parentState.subject!);
 
-    // Match with the corresponding start element
-    if (_elementStack.isNotEmpty) {
-      final state = _elementStack.removeLast();
+      // Generate the appropriate predicate based on the position (_1, _2, etc.)
+      final predicate = IriTerm('${RdfTerms.rdfNamespace}_${itemCount + 1}');
 
-      // Skip elements we're ignoring
-      if (state.isSkipped || state.isRdfRoot) {
-        return _ElementResult(triples: []);
-      }
+      // Handle both literal content and nested resources
+      final resourceAttr = _getAttributeValue(
+        event,
+        'resource',
+        RdfTerms.rdfNamespace,
+      );
 
-      // Handle literal properties
-      if (state.isLiteralProperty &&
-          state.subject != null &&
-          state.predicate != null) {
-        // Get the text content
-        String literalValue = _textBuffer.trim();
-
-        // Apply whitespace normalization if configured
-        if (_options.normalizeWhitespace) {
-          literalValue = _normalizeWhitespace(literalValue);
-        }
-
-        // Plain literal (string)
+      if (resourceAttr != null) {
+        // This is a resource reference
+        final objectIri = _uriResolver.resolveUri(
+          resourceAttr,
+          _resolvedBaseUri,
+        );
         triples.add(
-          Triple(
-            state.subject!,
-            state.predicate!,
-            LiteralTerm.string(literalValue),
+          Triple(parentState.subject!, predicate, IriTerm(objectIri)),
+        );
+
+        // Create a state for this element so we don't process it again
+        _elementStack.add(
+          _ElementState(
+            name: event.name,
+            subject: null,
+            predicate: predicate,
+            isResourceProperty: true,
+          ),
+        );
+      } else {
+        // This is likely a literal or will contain nested content
+        // Set up for text collection or nested processing
+        _elementStack.add(
+          _ElementState(
+            name: event.name,
+            subject: parentState.subject,
+            predicate: predicate,
+            isLiteralProperty: true,
           ),
         );
       }
-      // Handle parseType="Literal"
-      else if (state.isParseTypeLiteral &&
-          state.subject != null &&
-          state.predicate != null) {
-        // For a real parser, we'd need to collect the XML content here
-        final xmlContent = _textBuffer;
-        triples.add(
-          Triple(
-            state.subject!,
-            state.predicate!,
-            LiteralTerm(xmlContent, datatype: RdfTerms.xmlLiteral),
-          ),
-        );
-      }
+
+      return _ElementResult(triples: triples);
     }
 
-    // Reset text buffer
-    _textBuffer = '';
-
-    return _ElementResult(triples: triples);
+    // Not a container item
+    return _ElementResult(triples: []);
   }
 
-  /// Processes a text event
-  ///
-  /// Collects text content for literal properties.
-  void processText(XmlTextEvent event) {
-    // Use value instead of text (text is deprecated)
-    _textBuffer += event.value;
+  /// Count the number of existing container items for a subject
+  int _countContainerItems(RdfSubject subject) {
+    // Speichern der bereits erzeugten Triples, die Container-Elemente sind
+    final containerTriples = <Triple>[];
+
+    // Überprüfe alle Triple, die diesem Container-Subject gehören
+    for (final triple in _generatedTriples) {
+      if (triple.subject == subject &&
+          triple.predicate is IriTerm &&
+          (triple.predicate as IriTerm).iri.startsWith(
+            '${RdfTerms.rdfNamespace}_',
+          )) {
+        containerTriples.add(triple);
+      }
+    }
+
+    return containerTriples.length;
   }
 
   /// Checks if an element is the RDF root element
@@ -561,21 +666,37 @@ class _StreamParsingContext {
     );
   }
 
+  /// Extracts namespace declarations from an element
+  void _extractNamespaces(XmlStartElementEvent event) {
+    for (final attr in event.attributes) {
+      if (attr.name.startsWith('xmlns:')) {
+        final prefix = attr.name.substring(6); // Remove 'xmlns:' prefix
+        _namespaces[prefix] = attr.value;
+      } else if (attr.name == 'xmlns') {
+        // Default namespace
+        _namespaces[''] = attr.value;
+      }
+    }
+  }
+
   /// Gets the namespace URI for a prefix
   String? _getNamespaceForPrefix(XmlStartElementEvent event, String? prefix) {
     if (prefix == null || prefix.isEmpty) {
       return null;
     }
 
+    // First check in current element's attributes
     final attrName = 'xmlns:$prefix';
     for (final attr in event.attributes) {
       if (attr.name == attrName) {
+        // Store in our namespace map for future use
+        _namespaces[prefix] = attr.value;
         return attr.value;
       }
     }
 
-    // In a real implementation, we'd check parent elements and use a namespace context
-    return _getDefaultNamespaceForPrefix(prefix);
+    // Check our namespace map
+    return _namespaces[prefix];
   }
 
   /// Gets the namespace for a standard prefix
@@ -586,29 +707,192 @@ class _StreamParsingContext {
       return namespace;
     }
 
-    // Fall back to standard namespaces
-    return _getDefaultNamespaceForPrefix(prefix);
+    // Fall back to our namespace map
+    return _namespaces[prefix];
   }
 
   /// Gets the default namespace for well-known prefixes
   String? _getDefaultNamespaceForPrefix(String prefix) {
-    switch (prefix) {
-      case 'rdf':
-        return RdfTerms.rdfNamespace;
-      case 'rdfs':
-        return 'http://www.w3.org/2000/01/rdf-schema#';
-      case 'xsd':
-        return 'http://www.w3.org/2001/XMLSchema#';
-      case 'owl':
-        return 'http://www.w3.org/2002/07/owl#';
-      default:
-        return null;
-    }
+    return _namespaces[prefix];
   }
 
   /// Normalizes whitespace according to XML rules
   String _normalizeWhitespace(String text) {
     return text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  /// Processes a text event
+  ///
+  /// Collects text content for literal properties.
+  void processText(XmlTextEvent event) {
+    // Use value instead of text (text is deprecated)
+    _textBuffer += event.value;
+  }
+
+  /// Handles the end of an XML element, finalizing any RDF triples
+  /// that span multiple events (e.g., literal properties).
+  _ElementResult processEndElement(XmlEndElementEvent event) {
+    final triples = <Triple>[];
+
+    // Decrement depth counter
+    if (_options.maxNestingDepth > 0) {
+      _currentDepth--;
+    }
+
+    // Match with the corresponding start element
+    if (_elementStack.isNotEmpty) {
+      final state = _elementStack.removeLast();
+
+      // Skip elements we're ignoring
+      if (state.isSkipped || state.isRdfRoot) {
+        return _ElementResult(triples: []);
+      }
+
+      // Handle literal properties
+      if (state.isLiteralProperty &&
+          state.subject != null &&
+          state.predicate != null) {
+        // Get the text content
+        String literalValue = _textBuffer.trim();
+
+        // Apply whitespace normalization if configured
+        if (_options.normalizeWhitespace) {
+          literalValue = _normalizeWhitespace(literalValue);
+        }
+
+        // Überprüfen, ob dieser Wert einen bestimmten Datentyp hat
+        final datatype = _detectDatatype(literalValue);
+
+        // Plain literal oder datatyped literal, aber nur erstellen wenn literalValue nicht leer ist
+        if (literalValue.isNotEmpty) {
+          final literal =
+              datatype != null
+                  ? LiteralTerm(literalValue, datatype: datatype)
+                  : LiteralTerm.string(literalValue);
+
+          final triple = Triple(state.subject!, state.predicate!, literal);
+          triples.add(triple);
+          // Triple in die Liste der generierten Triples aufnehmen
+          _generatedTriples.add(triple);
+        }
+      }
+      // Handle parseType="Literal"
+      else if (state.isParseTypeLiteral &&
+          state.subject != null &&
+          state.predicate != null) {
+        // For a real parser, we'd need to collect the XML content here
+        final xmlContent = _textBuffer;
+        final triple = Triple(
+          state.subject!,
+          state.predicate!,
+          LiteralTerm(xmlContent, datatype: RdfTerms.xmlLiteral),
+        );
+        triples.add(triple);
+        // Triple in die Liste der generierten Triples aufnehmen
+        _generatedTriples.add(triple);
+      }
+    }
+
+    // Reset text buffer
+    _textBuffer = '';
+
+    return _ElementResult(triples: triples);
+  }
+
+  /// Erkennt den Datentyp eines literalen Wertes
+  IriTerm? _detectDatatype(String value) {
+    // Versuche, einen Integer zu erkennen
+    if (RegExp(r'^[+-]?\d+$').hasMatch(value)) {
+      return IriTerm('http://www.w3.org/2001/XMLSchema#integer');
+    }
+
+    // Versuche, eine Dezimalzahl zu erkennen
+    if (RegExp(r'^[+-]?\d+\.\d+$').hasMatch(value)) {
+      return IriTerm('http://www.w3.org/2001/XMLSchema#decimal');
+    }
+
+    // Versuche, einen Boolean zu erkennen
+    if (value.toLowerCase() == 'true' || value.toLowerCase() == 'false') {
+      return IriTerm('http://www.w3.org/2001/XMLSchema#boolean');
+    }
+
+    // Für alle anderen Werte defaultmäßig String
+    return null;
+  }
+
+  /// Checks if an element is an RDF container element (Bag, Seq, Alt)
+  bool _isRdfContainerElement(XmlStartElementEvent event) {
+    final namespace = _getNamespace(event, 'rdf');
+    if (namespace != RdfTerms.rdfNamespace) {
+      return false;
+    }
+
+    final localName = event.localName;
+    return localName == 'Bag' || localName == 'Seq' || localName == 'Alt';
+  }
+
+  /// Gets the type IRI for a container element
+  IriTerm _getContainerTypeIri(XmlStartElementEvent event) {
+    final localName = event.localName;
+    return IriTerm('${RdfTerms.rdfNamespace}$localName');
+  }
+
+  /// Creates reification triples for a statement with rdf:ID
+  List<Triple> _createReificationTriples(String idAttr, Triple baseTriple) {
+    final triples = <Triple>[];
+
+    // Create the statement IRI from the ID
+    if (_resolvedBaseUri.isEmpty) {
+      throw UriResolutionException(
+        'Base URI is not set for rdf:ID',
+        uri: '#$idAttr',
+        baseUri: _resolvedBaseUri,
+        sourceContext: 'reification',
+      );
+    }
+
+    // Form the statement IRI
+    final statementIri = IriTerm('${_resolvedBaseUri}#$idAttr');
+
+    // Add the reification triples
+    // 1. Type statement
+    triples.add(
+      Triple(
+        statementIri,
+        RdfTerms.type,
+        IriTerm('${RdfTerms.rdfNamespace}Statement'),
+      ),
+    );
+
+    // 2. Subject
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}subject'),
+        baseTriple.subject,
+      ),
+    );
+
+    // 3. Predicate - Konvertierung notwendig, da Prädikate nicht direkt als Objekte verwendet werden können
+    final predicateIri = (baseTriple.predicate as IriTerm).iri;
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}predicate'),
+        IriTerm(predicateIri),
+      ),
+    );
+
+    // 4. Object
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}object'),
+        baseTriple.object,
+      ),
+    );
+
+    return triples;
   }
 }
 
@@ -656,6 +940,9 @@ class _ElementState {
   /// Whether this element should be skipped
   final bool isSkipped;
 
+  /// Whether this is an RDF container element (Bag, Seq, Alt)
+  final bool isContainer;
+
   /// Constructor for element state
   const _ElementState({
     required this.name,
@@ -669,5 +956,6 @@ class _ElementState {
     this.isParseTypeCollection = false,
     this.isLiteralProperty = false,
     this.isSkipped = false,
+    this.isContainer = false,
   });
 }

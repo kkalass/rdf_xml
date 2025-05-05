@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 void main() {
   group('RdfXmlFormat', () {
     test('supports correct MIME types', () {
-      const format = RdfXmlFormat();
+      final format = RdfXmlFormat();
 
       // Primary MIME type
       expect(format.primaryMimeType, equals('application/rdf+xml'));
@@ -18,7 +18,7 @@ void main() {
     });
 
     test('canParse detects RDF/XML content', () {
-      const format = RdfXmlFormat();
+      final format = RdfXmlFormat();
 
       // Valid RDF/XML content
       final validContent = '''
@@ -43,7 +43,7 @@ void main() {
     });
 
     test('creates parser and serializer instances', () {
-      const format = RdfXmlFormat();
+      final format = RdfXmlFormat();
 
       final parser = format.createParser();
       final serializer = format.createSerializer();
@@ -53,7 +53,7 @@ void main() {
     });
 
     test('parser can parse RDF/XML content', () {
-      const format = RdfXmlFormat();
+      final format = RdfXmlFormat();
       final parser = format.createParser();
 
       final content = '''
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('serializer can write RDF/XML content', () {
-      const format = RdfXmlFormat();
+      final format = RdfXmlFormat();
       final serializer = format.createSerializer();
 
       final subject = IriTerm('http://example.org/subject');

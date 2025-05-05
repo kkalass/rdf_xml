@@ -71,7 +71,7 @@ final class RdfXmlFormat implements RdfFormat {
   /// - [xmlBuilder] Optional XML builder
   /// - [parserOptions] Optional parser options
   /// - [serializerOptions] Optional serializer options
-  const RdfXmlFormat({
+  RdfXmlFormat({
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
     INamespaceManager? namespaceManager,
@@ -82,7 +82,7 @@ final class RdfXmlFormat implements RdfFormat {
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
        _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
-       _xmlBuilder = xmlBuilder ?? const DefaultRdfXmlBuilder(),
+       _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
        _parserOptions = parserOptions ?? const RdfXmlParserOptions(),
        _serializerOptions =
            serializerOptions ?? const RdfXmlSerializerOptions();

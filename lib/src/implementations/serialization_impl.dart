@@ -287,9 +287,16 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   ///
   /// Parameters:
   /// - [namespaceManager] Namespace manager for handling namespace operations
-  const DefaultRdfXmlBuilder({INamespaceManager? namespaceManager})
+  DefaultRdfXmlBuilder({INamespaceManager? namespaceManager})
     : _namespaceManager = namespaceManager ?? const DefaultNamespaceManager();
 
+  /// Current mapping of subject to triples for the current serialization
+  /// Initialized in buildDocument
+  var _currentSubjectGroups = <RdfSubject, List<Triple>>{};
+
+  /// Builds an XML document from an RDF graph
+  ///
+  /// Creates a complete XML representation of the given RDF data.
   @override
   XmlDocument buildDocument(
     RdfGraph graph,
@@ -300,6 +307,25 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
 
     // Add XML declaration
     builder.declaration(version: '1.0', encoding: 'UTF-8');
+
+    // Group triples by subject for more compact output
+    _currentSubjectGroups = _groupTriplesBySubject(graph);
+
+    // Keep track of container nodes to avoid duplicates
+    final containerNodes = <BlankNodeTerm>{};
+
+    // Precompute container nodes
+    for (final entry in _currentSubjectGroups.entries) {
+      final subject = entry.key;
+      final triples = entry.value;
+
+      for (final triple in triples) {
+        if (triple.object is BlankNodeTerm &&
+            _getContainerType(triple.object as BlankNodeTerm) != null) {
+          containerNodes.add(triple.object as BlankNodeTerm);
+        }
+      }
+    }
 
     // Start rdf:RDF element
     builder.element(
@@ -315,17 +341,20 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           builder.attribute('xml:base', baseUri);
         }
 
-        // Group triples by subject for more compact output
-        final subjectGroups = _groupTriplesBySubject(graph);
-
         // Pre-compute type information for better performance
         final subjectTypeMap = _precomputeSubjectTypes(
-          subjectGroups,
+          _currentSubjectGroups,
           namespaces,
         );
 
-        // Serialize each subject group
-        for (final entry in subjectGroups.entries) {
+        // Serialize each subject group, except containers that will be nested
+        for (final entry in _currentSubjectGroups.entries) {
+          // Skip container nodes that will be nested
+          if (entry.key is BlankNodeTerm &&
+              containerNodes.contains(entry.key)) {
+            continue;
+          }
+
           _serializeSubject(
             builder,
             entry.key,
@@ -347,11 +376,42 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   Map<RdfSubject, List<Triple>> _groupTriplesBySubject(RdfGraph graph) {
     final result = <RdfSubject, List<Triple>>{};
 
+    // First pass: Group triples by subject
     for (final triple in graph.triples) {
       result.putIfAbsent(triple.subject, () => []).add(triple);
     }
 
+    // We intentionally don't remove container nodes from the result map
+    // since we need the container triples when serializing them as nested elements
+
     return result;
+  }
+
+  /// Checks if a node is an RDF container node
+  ///
+  /// Used to identify container nodes for optimized serialization
+  bool _isContainerNode(
+    RdfSubject node,
+    Map<RdfSubject, List<Triple>> subjectGroups,
+  ) {
+    final triples = subjectGroups[node];
+    if (triples == null) return false;
+
+    // Check if it has an rdf:type triple that makes it a container
+    for (final triple in triples) {
+      if (triple.predicate is IriTerm &&
+          (triple.predicate as IriTerm).iri == RdfTerms.type.iri &&
+          triple.object is IriTerm) {
+        final typeIri = (triple.object as IriTerm).iri;
+        if (typeIri == '${RdfTerms.rdfNamespace}Bag' ||
+            typeIri == '${RdfTerms.rdfNamespace}Seq' ||
+            typeIri == '${RdfTerms.rdfNamespace}Alt') {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   /// Pre-computes type information for all subjects
@@ -480,11 +540,25 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
       // Resource reference
       builder.element(predicateQName, attributes: {'rdf:resource': object.iri});
     } else if (object is BlankNodeTerm) {
-      // Either nested blank node or reference to existing blank node
-      builder.element(
-        predicateQName,
-        attributes: {'rdf:nodeID': 'blank${identityHashCode(object)}'},
-      );
+      // Check if this blank node represents a container (Bag, Seq, Alt)
+      final containerType = _getContainerType(object);
+
+      if (containerType != null) {
+        // This is a container, serialize it with proper container syntax
+        _serializeContainer(
+          builder,
+          predicateQName,
+          object,
+          containerType,
+          namespaces,
+        );
+      } else {
+        // Regular blank node reference
+        builder.element(
+          predicateQName,
+          attributes: {'rdf:nodeID': 'blank${identityHashCode(object)}'},
+        );
+      }
     } else if (object is LiteralTerm) {
       // Literal value
       final attributes = <String, String>{};
@@ -502,6 +576,126 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         nest: object.value,
       );
     }
+  }
+
+  /// Determines if a blank node is a container and returns its type
+  ///
+  /// Uses the type information to identify container nodes (Bag, Seq, Alt).
+  String? _getContainerType(BlankNodeTerm node) {
+    final triples = _currentSubjectGroups[node];
+    if (triples == null) return null;
+
+    // Check if there's a rdf:type triple that identifies this as a container
+    for (final triple in triples) {
+      if (triple.predicate is IriTerm &&
+          (triple.predicate as IriTerm).iri == RdfTerms.type.iri &&
+          triple.object is IriTerm) {
+        final typeIri = (triple.object as IriTerm).iri;
+
+        // Check if it's one of the container types
+        if (typeIri == '${RdfTerms.rdfNamespace}Bag') return 'Bag';
+        if (typeIri == '${RdfTerms.rdfNamespace}Seq') return 'Seq';
+        if (typeIri == '${RdfTerms.rdfNamespace}Alt') return 'Alt';
+      }
+    }
+
+    return null;
+  }
+
+  /// Serializes an RDF container
+  ///
+  /// Creates container element with proper container syntax for Bag, Seq, or Alt.
+  void _serializeContainer(
+    XmlBuilder builder,
+    String predicateQName,
+    BlankNodeTerm containerNode,
+    String containerType,
+    Map<String, String> namespaces,
+  ) {
+    // Get container triples
+    final containerTriples = _currentSubjectGroups[containerNode];
+    if (containerTriples == null) {
+      // Fallback to simple reference if no container details available
+      builder.element(
+        predicateQName,
+        attributes: {'rdf:nodeID': 'blank${identityHashCode(containerNode)}'},
+      );
+      return;
+    }
+
+    // Extract and sort container items by their index
+    final containerItems = <int, Triple>{};
+
+    for (final triple in containerTriples) {
+      if (triple.predicate is IriTerm) {
+        final predIri = (triple.predicate as IriTerm).iri;
+
+        // Check if this is a container item predicate (rdf:_1, rdf:_2, etc.)
+        if (predIri.startsWith('${RdfTerms.rdfNamespace}_')) {
+          try {
+            final indexStr = predIri.substring(
+              '${RdfTerms.rdfNamespace}_'.length,
+            );
+            final index = int.parse(indexStr);
+            containerItems[index] = triple;
+          } catch (_) {
+            // Skip invalid indices
+          }
+        }
+      }
+    }
+
+    // Only create container element if we have items
+    builder.element(
+      predicateQName,
+      nest: () {
+        // Create the container element (rdf:Bag, rdf:Seq, or rdf:Alt)
+        builder.element(
+          'rdf:$containerType',
+          nest: () {
+            // Sort by index and add container items
+            final sortedIndices = containerItems.keys.toList()..sort();
+
+            for (final index in sortedIndices) {
+              final triple = containerItems[index]!;
+
+              // Add as rdf:li element
+              builder.element(
+                'rdf:li',
+                nest: () {
+                  if (triple.object is IriTerm) {
+                    // Resource reference
+                    builder.attribute(
+                      'rdf:resource',
+                      (triple.object as IriTerm).iri,
+                    );
+                  } else if (triple.object is BlankNodeTerm) {
+                    // Blank node reference
+                    builder.attribute(
+                      'rdf:nodeID',
+                      'blank${identityHashCode(triple.object)}',
+                    );
+                  } else if (triple.object is LiteralTerm) {
+                    // Literal value
+                    final literal = triple.object as LiteralTerm;
+
+                    // Add language or datatype if needed
+                    if (literal.language != null) {
+                      builder.attribute('xml:lang', literal.language!);
+                    } else if (literal.datatype.iri != RdfTerms.string.iri) {
+                      builder.attribute('rdf:datatype', literal.datatype.iri);
+                    }
+
+                    // Add the value
+                    builder.text(literal.value);
+                  }
+                },
+              );
+            }
+          },
+        );
+      },
+    );
   }
 }
 

@@ -437,7 +437,22 @@ final class RdfXmlParser implements IRdfXmlParser {
           elementName: propertyElement.name.qualified,
         );
       }
-      triples.add(Triple(subject, predicate, IriTerm(objectIri)));
+
+      // Check for rdf:ID attribute (reification)
+      final idAttr = propertyElement.getAttribute(
+        'ID',
+        namespace: RdfTerms.rdfNamespace,
+      );
+
+      // Create the base triple
+      final triple = Triple(subject, predicate, IriTerm(objectIri));
+      triples.add(triple);
+
+      // Handle reification if rdf:ID is present
+      if (idAttr != null) {
+        triples.addAll(_createReificationTriples(idAttr, triple));
+      }
+
       return;
     }
 
@@ -466,6 +481,18 @@ final class RdfXmlParser implements IRdfXmlParser {
         triples,
       );
       return;
+    }
+
+    // Check if this is an RDF container element (Bag, Seq, Alt)
+    if (propertyElement.childElements.isNotEmpty &&
+        propertyElement.childElements.first.name.local != 'li') {
+      final containerElement = propertyElement.childElements.first;
+
+      // Check if this is a container element
+      if (_isRdfContainerElement(containerElement)) {
+        _processContainer(subject, predicate, containerElement, triples);
+        return;
+      }
     }
 
     // Check for nested elements
@@ -532,6 +559,257 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Plain literal (string)
       triples.add(Triple(subject, predicate, LiteralTerm.string(literalValue)));
     }
+  }
+
+  /// Checks if an element is an RDF container element (Bag, Seq, Alt)
+  bool _isRdfContainerElement(XmlElement element) {
+    final namespace = element.namespaceUri;
+    if (namespace != RdfTerms.rdfNamespace) {
+      return false;
+    }
+
+    final localName = element.localName;
+    return localName == 'Bag' || localName == 'Seq' || localName == 'Alt';
+  }
+
+  /// Processes an RDF container element (Bag, Seq, Alt)
+  ///
+  /// Creates a blank node for the container and adds triples for the container type
+  /// and member items, transforming rdf:li elements to rdf:_n predicates.
+  void _processContainer(
+    RdfSubject subject,
+    RdfPredicate predicate,
+    XmlElement containerElement,
+    List<Triple> triples,
+  ) {
+    // Create blank node for container
+    final containerNode = BlankNodeTerm();
+
+    // Link container to subject
+    triples.add(Triple(subject, predicate, containerNode));
+
+    // Add type triple
+    final containerType = IriTerm(
+      '${RdfTerms.rdfNamespace}${containerElement.localName}',
+    );
+    triples.add(Triple(containerNode, RdfTerms.type, containerType));
+
+    // Process container items
+    int itemIndex = 1;
+    for (final itemElement in containerElement.childElements) {
+      // Check if this is an rdf:li element
+      if (itemElement.localName == 'li' &&
+          itemElement.namespaceUri == RdfTerms.rdfNamespace) {
+        // Create predicate (rdf:_1, rdf:_2, etc.)
+        final itemPredicate = IriTerm('${RdfTerms.rdfNamespace}_$itemIndex');
+
+        // Process item value
+        final resourceAttr = itemElement.getAttribute(
+          'resource',
+          namespace: RdfTerms.rdfNamespace,
+        );
+
+        if (resourceAttr != null) {
+          // Resource reference
+          final objectIri = _uriResolver.resolveUri(
+            resourceAttr,
+            _resolvedBaseUri,
+          );
+          triples.add(Triple(containerNode, itemPredicate, IriTerm(objectIri)));
+        } else if (itemElement.childElements.isNotEmpty) {
+          // Nested resource
+          final nestedNode = BlankNodeTerm();
+          triples.add(Triple(containerNode, itemPredicate, nestedNode));
+
+          for (final childElement in itemElement.childElements) {
+            _processNode(childElement, triples, subject: nestedNode);
+          }
+        } else {
+          // Literal value
+          String value = itemElement.innerText;
+          if (_options.normalizeWhitespace) {
+            value = _normalizeWhitespace(value);
+          }
+
+          // Check for datatype attribute
+          final datatypeAttr = itemElement.getAttribute(
+            'datatype',
+            namespace: RdfTerms.rdfNamespace,
+          );
+
+          // Check for language tag
+          final langAttr = itemElement.getAttribute(
+            'lang',
+            namespace: 'http://www.w3.org/XML/1998/namespace',
+          );
+
+          if (datatypeAttr != null) {
+            final datatype = IriTerm(
+              _uriResolver.resolveUri(datatypeAttr, _resolvedBaseUri),
+            );
+            triples.add(
+              Triple(
+                containerNode,
+                itemPredicate,
+                LiteralTerm(value, datatype: datatype),
+              ),
+            );
+          } else if (langAttr != null) {
+            triples.add(
+              Triple(
+                containerNode,
+                itemPredicate,
+                LiteralTerm.withLanguage(value, langAttr),
+              ),
+            );
+          } else {
+            triples.add(
+              Triple(containerNode, itemPredicate, LiteralTerm.string(value)),
+            );
+          }
+        }
+
+        itemIndex++;
+      }
+    }
+  }
+
+  /// Creates reification triples for a statement
+  ///
+  /// Creates four triples representing the reified statement:
+  /// - statement rdf:type rdf:Statement
+  /// - statement rdf:subject <subject>
+  /// - statement rdf:predicate <predicate>
+  /// - statement rdf:object <object>
+  List<Triple> _createReificationTriples(String idAttr, Triple baseTriple) {
+    final triples = <Triple>[];
+
+    if (_resolvedBaseUri.isEmpty) {
+      throw RdfStructureException('Base URI is not set for rdf:ID resolution');
+    }
+
+    // Create the statement IRI
+    final statementIri = IriTerm('${_resolvedBaseUri}#$idAttr');
+
+    // Add the reification triples
+    triples.add(
+      Triple(
+        statementIri,
+        RdfTerms.type,
+        IriTerm('${RdfTerms.rdfNamespace}Statement'),
+      ),
+    );
+
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}subject'),
+        baseTriple.subject,
+      ),
+    );
+
+    // Convert predicate to object
+    final predicateIri = (baseTriple.predicate as IriTerm).iri;
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}predicate'),
+        IriTerm(predicateIri),
+      ),
+    );
+
+    triples.add(
+      Triple(
+        statementIri,
+        IriTerm('${RdfTerms.rdfNamespace}object'),
+        baseTriple.object,
+      ),
+    );
+
+    return triples;
+  }
+
+  /// Gets the subject term for an element
+  ///
+  /// Extracts the subject IRI or blank node from element attributes
+  /// according to RDF/XML rules (rdf:about, rdf:ID, or blank node).
+  RdfSubject _getSubject(XmlElement element) {
+    // Check for rdf:about attribute
+    final aboutAttr = element.getAttribute(
+      'about',
+      namespace: RdfTerms.rdfNamespace,
+    );
+    if (aboutAttr != null) {
+      try {
+        final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
+        if (iri.isEmpty) {
+          throw RdfStructureException(
+            'Invalid rdf:about URI: $aboutAttr',
+            elementName: element.name.qualified,
+          );
+        }
+        return IriTerm(iri);
+      } catch (e) {
+        _uriLogger.severe('Failed to resolve rdf:about URI', e);
+        throw UriResolutionException(
+          'Failed to resolve rdf:about URI',
+          uri: aboutAttr,
+          baseUri: _resolvedBaseUri,
+          sourceContext: element.name.qualified,
+        );
+      }
+    }
+
+    // Check for rdf:ID attribute
+    final idAttr = element.getAttribute('ID', namespace: RdfTerms.rdfNamespace);
+    if (idAttr != null) {
+      try {
+        // rdf:ID creates a URI relative to the document base URI
+        if (_resolvedBaseUri.isEmpty) {
+          throw RdfStructureException(
+            'Base URI is not set for rdf:ID resolution',
+            elementName: element.name.qualified,
+          );
+        }
+        final iri = '${_resolvedBaseUri}#$idAttr';
+        return IriTerm(iri);
+      } catch (e) {
+        _uriLogger.severe('Failed to create IRI from rdf:ID', e);
+        throw UriResolutionException(
+          'Failed to create IRI from rdf:ID',
+          uri: '#$idAttr',
+          baseUri: _resolvedBaseUri,
+          sourceContext: element.name.qualified,
+        );
+      }
+    }
+
+    // Check for rdf:nodeID attribute
+    final nodeIdAttr = element.getAttribute(
+      'nodeID',
+      namespace: RdfTerms.rdfNamespace,
+    );
+    if (nodeIdAttr != null) {
+      return _blankNodeManager.getBlankNode(nodeIdAttr);
+    }
+
+    // No identifier, create a blank node
+    return BlankNodeTerm();
+  }
+
+  /// Gets a predicate IRI from a property element
+  ///
+  /// Extracts the predicate IRI using the element's namespace and local name.
+  RdfPredicate _getPredicateFromElement(XmlElement element) {
+    final namespaceUri = element.namespaceUri ?? '';
+    final localName = element.localName;
+    if (namespaceUri.isEmpty) {
+      throw RdfStructureException(
+        'Element without namespace URI: ${element.name.qualified}',
+        elementName: element.name.qualified,
+      );
+    }
+    return IriTerm('$namespaceUri$localName');
   }
 
   /// Normalizes whitespace according to XML rules
@@ -661,88 +939,5 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Process the next item recursively
       _buildRdfList(nextNode, items, index + 1, triples);
     }
-  }
-
-  /// Gets a predicate IRI from a property element
-  ///
-  /// Extracts the predicate IRI using the element's namespace and local name.
-  RdfPredicate _getPredicateFromElement(XmlElement element) {
-    final namespaceUri = element.name.namespaceUri ?? '';
-    final localName = element.name.local;
-    if (namespaceUri.isEmpty) {
-      throw RdfStructureException(
-        'Element without namespace URI: ${element.name.qualified}',
-        elementName: element.name.qualified,
-      );
-    }
-    return IriTerm('$namespaceUri$localName');
-  }
-
-  /// Gets the subject term for an element
-  ///
-  /// Extracts the subject IRI or blank node from element attributes
-  /// according to RDF/XML rules (rdf:about, rdf:ID, or blank node).
-  RdfSubject _getSubject(XmlElement element) {
-    // Check for rdf:about attribute
-    final aboutAttr = element.getAttribute(
-      'about',
-      namespace: RdfTerms.rdfNamespace,
-    );
-    if (aboutAttr != null) {
-      try {
-        final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
-        if (iri.isEmpty) {
-          throw RdfStructureException(
-            'Invalid rdf:about URI: $aboutAttr',
-            elementName: element.name.qualified,
-          );
-        }
-        return IriTerm(iri);
-      } catch (e) {
-        _uriLogger.severe('Failed to resolve rdf:about URI', e);
-        throw UriResolutionException(
-          'Failed to resolve rdf:about URI',
-          uri: aboutAttr,
-          baseUri: _resolvedBaseUri,
-          sourceContext: element.name.qualified,
-        );
-      }
-    }
-
-    // Check for rdf:ID attribute
-    final idAttr = element.getAttribute('ID', namespace: RdfTerms.rdfNamespace);
-    if (idAttr != null) {
-      try {
-        // rdf:ID creates a URI relative to the document base URI
-        if (_resolvedBaseUri.isEmpty) {
-          throw RdfStructureException(
-            'Base URI is not set for rdf:ID resolution',
-            elementName: element.name.qualified,
-          );
-        }
-        final iri = '${_resolvedBaseUri}#$idAttr';
-        return IriTerm(iri);
-      } catch (e) {
-        _uriLogger.severe('Failed to create IRI from rdf:ID', e);
-        throw UriResolutionException(
-          'Failed to create IRI from rdf:ID',
-          uri: '#$idAttr',
-          baseUri: _resolvedBaseUri,
-          sourceContext: element.name.qualified,
-        );
-      }
-    }
-
-    // Check for rdf:nodeID attribute
-    final nodeIdAttr = element.getAttribute(
-      'nodeID',
-      namespace: RdfTerms.rdfNamespace,
-    );
-    if (nodeIdAttr != null) {
-      return _blankNodeManager.getBlankNode(nodeIdAttr);
-    }
-
-    // No identifier, create a blank node
-    return BlankNodeTerm();
   }
 }

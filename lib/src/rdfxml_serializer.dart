@@ -68,7 +68,7 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlSerializerOptions? options,
   }) : _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
-       _xmlBuilder = xmlBuilder ?? const DefaultRdfXmlBuilder(),
+       _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
        _options = options ?? const RdfXmlSerializerOptions();
 
   /// Writes an RDF graph to RDF/XML format

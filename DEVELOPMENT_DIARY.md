@@ -340,6 +340,17 @@ After implementing code or tests you of course execute `dart analyze`, `dart for
 Please execute the tests in this project with `dart test`. There are quite a few failing tests. Please fix each failing test by fixing the code. Only change the test if you do find out that the expectation in the test is actually really wrong. 
 ```
 
+TODO: 
+
+* stream_parsing.dart has a hardcoded map of namespaces. This is bad. If those standard namespaces are intended, we should pass in the RdfNamespaceMappings class
+
+---
+
+## 2025-05-05
+
+after some "continue" follow ups of the last prompt, the agent finished eventually, but still there are only 59/75 passing tests.
+
+Seems like I need to get involved more now. Lets start with the namespaces hardcoding.
 
 ### TODO: Documentation (2)
 

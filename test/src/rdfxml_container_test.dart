@@ -4,6 +4,49 @@ import 'package:test/test.dart';
 
 import 'test_utils.dart';
 
+/// Debugging helper method to understand why the tests generate 8 triples
+/// instead of the expected 5.
+void debugContainerTriples(List<Triple> triples) {
+  // Create a graph
+  final graph = RdfGraph(triples: triples);
+
+  // Serialize to RDF/XML
+  final serializer = RdfXmlSerializer();
+  final xml = serializer.write(graph);
+
+  // Print XML for debugging
+  print('\n--- Serialized XML ---');
+  print(xml);
+
+  // Re-parse
+  final parser = RdfXmlParser(xml);
+  final reparsedTriples = parser.parse();
+
+  // Print reparsed triples for debugging
+  print('\n--- Reparsed Triples (${reparsedTriples.length}) ---');
+  for (var i = 0; i < reparsedTriples.length; i++) {
+    print('$i: ${reparsedTriples[i]}');
+  }
+
+  // Find duplicate subject-predicate pairs
+  final subjectPredicatePairs = <String, List<Triple>>{};
+  for (final triple in reparsedTriples) {
+    final key = '${triple.subject} - ${triple.predicate}';
+    subjectPredicatePairs.putIfAbsent(key, () => []).add(triple);
+  }
+
+  // Print duplicate subject-predicate pairs
+  print('\n--- Duplicate subject-predicate pairs ---');
+  for (final entry in subjectPredicatePairs.entries) {
+    if (entry.value.length > 1) {
+      print('${entry.key}: ${entry.value.length} occurrences');
+      for (final triple in entry.value) {
+        print('  $triple');
+      }
+    }
+  }
+}
+
 void main() {
   group('RDF Container Elements', () {
     test('parses rdf:Bag container correctly', () {
@@ -260,6 +303,9 @@ void main() {
           LiteralTerm.string('Item 3'),
         ),
       ];
+
+      // Debug the container serialization
+      debugContainerTriples(triples);
 
       final graph = RdfGraph(triples: triples);
 
