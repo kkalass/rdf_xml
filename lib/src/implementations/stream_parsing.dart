@@ -45,6 +45,7 @@ class _StreamParsingContext {
     required FunctionalBlankNodeManager blankNodeManager,
     required RdfXmlParserOptions options,
     required String? baseUri,
+    required RdfNamespaceMappings namespaceMappings,
   }) : _uriResolver = uriResolver,
        _blankNodeManager = blankNodeManager,
        _options =
@@ -60,14 +61,7 @@ class _StreamParsingContext {
     _resolvedBaseUri = _baseUri ?? '';
 
     // Initialize with standard namespaces
-    _namespaces['rdf'] = RdfTerms.rdfNamespace;
-    _namespaces['rdfs'] = 'http://www.w3.org/2000/01/rdf-schema#';
-    _namespaces['xsd'] = 'http://www.w3.org/2001/XMLSchema#';
-    _namespaces['owl'] = 'http://www.w3.org/2002/07/owl#';
-    _namespaces['dc'] = 'http://purl.org/dc/elements/1.1/';
-    _namespaces['dcterms'] = 'http://purl.org/dc/terms/';
-    _namespaces['foaf'] = 'http://xmlns.com/foaf/0.1/';
-    _namespaces['ex'] = 'http://example.org/';
+    _namespaces.addAll(namespaceMappings.asMap());
   }
 
   /// Processes a start element event
