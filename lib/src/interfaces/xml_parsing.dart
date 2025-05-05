@@ -43,13 +43,7 @@ abstract interface class IUriResolver {
   /// Resolves a potentially relative URI against the base URI
   ///
   /// Returns an absolute URI by combining the base URI with the relative reference.
-  String resolveUri(String uri, String baseUri);
-
-  /// Resolves the base URI for a document
-  ///
-  /// Determines the base URI by checking for xml:base attributes and
-  /// falling back to the provided parameter if needed.
-  String resolveBaseUri(XmlDocument document, String? providedBaseUri);
+  String resolveUri(String uri, String? baseUri);
 }
 
 /// Manages blank node creation and retrieval

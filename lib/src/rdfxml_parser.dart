@@ -66,7 +66,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   final String _input;
 
   /// Base URI for resolving relative URIs
-  final String? _baseUri;
+  final String? _documentUri;
 
   /// XML document provider for parsing XML
   final IXmlDocumentProvider _xmlDocumentProvider;
@@ -82,9 +82,6 @@ final class RdfXmlParser implements IRdfXmlParser {
 
   /// XML document parsed from input
   late final XmlDocument _document;
-
-  /// Base URI resolved from document and constructor parameter
-  late final String _resolvedBaseUri;
 
   /// Current parsing depth for nested elements
   int _currentDepth = 0;
@@ -106,7 +103,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     IBlankNodeManager? blankNodeManager,
     RdfNamespaceMappings? namespaceMappings,
     RdfXmlParserOptions? options,
-  }) : _baseUri = baseUri,
+  }) : _documentUri = baseUri,
        _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
@@ -114,11 +111,23 @@ final class RdfXmlParser implements IRdfXmlParser {
        _options = options ?? const RdfXmlParserOptions() {
     try {
       _document = _xmlDocumentProvider.parseXml(_input);
-      _resolvedBaseUri = _uriResolver.resolveBaseUri(_document, _baseUri);
     } catch (e) {
       if (e is XmlParseException) rethrow;
       throw XmlParseException('Failed to parse XML document: ${e.toString()}');
     }
+  }
+
+  String? getBaseUri(XmlElement element) {
+    // Get the base URI from the xml:base attribute
+
+    // If xml namespace is not declared correctly, we cannot match the
+    // base iri attribute with name/namespace but need to use the qualified
+    // name as fallback.
+    return element.getAttribute(
+          'xml:base',
+          namespace: 'http://www.w3.org/XML/1998/namespace',
+        ) ??
+        element.getAttribute('xml:base');
   }
 
   /// Parses the RDF/XML document and returns a list of triples
@@ -130,14 +139,16 @@ final class RdfXmlParser implements IRdfXmlParser {
 
     final triples = <Triple>[];
     _currentDepth = 0;
-
+    var baseUri = _documentUri;
     try {
+      baseUri = getBaseUri(_document.rootElement) ?? baseUri;
       // Find the root RDF element
       final rdfElement = _findRdfRootElement();
+      baseUri = getBaseUri(rdfElement) ?? baseUri;
 
       // Process all child nodes of the RDF element
       for (final node in rdfElement.childElements) {
-        _processNode(node, triples);
+        _processNode(node, baseUri, triples);
       }
 
       // Validate output if required
@@ -151,7 +162,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Enhanced error logging with context information
       _logger.severe(
         'Error parsing RDF/XML: $e\n'
-        'Base URI: $_resolvedBaseUri\n'
+        'Base URI: ${baseUri ?? "<UNKNOWN>"}\n'
         'Stack trace: $stackTrace',
       );
 
@@ -268,6 +279,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// according to the RDF/XML syntax rules.
   void _processNode(
     XmlElement element,
+    String? baseUri,
     List<Triple> triples, {
     RdfSubject? subject,
   }) {
@@ -292,7 +304,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           element.name.namespaceUri == RdfTerms.rdfNamespace;
 
       // Get the subject of this element
-      final currentSubject = subject ?? _getSubject(element);
+      final currentSubject = subject ?? _getSubject(element, baseUri);
 
       // If this is a typed resource, add a type triple
       // We explicitly handle certain elements from the RDF namespace differently
@@ -340,7 +352,8 @@ final class RdfXmlParser implements IRdfXmlParser {
 
       // Process child elements as properties
       for (final childElement in element.childElements) {
-        _processProperty(currentSubject, childElement, triples);
+        var childBaseUri = getBaseUri(childElement) ?? baseUri;
+        _processProperty(currentSubject, childBaseUri, childElement, triples);
       }
     } finally {
       // Always decrement depth counter when done with this node
@@ -359,18 +372,19 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// - RDF containers and collections
   void _processProperty(
     RdfSubject subject,
+    String? baseUri,
     XmlElement propertyElement,
     List<Triple> triples,
   ) {
     final predicate = _getPredicateFromElement(propertyElement);
-
+    baseUri = getBaseUri(propertyElement) ?? baseUri;
     // Check for rdf:resource attribute (simple resource reference)
     final resourceAttr = propertyElement.getAttribute(
       'resource',
       namespace: RdfTerms.rdfNamespace,
     );
     if (resourceAttr != null) {
-      final objectIri = _uriResolver.resolveUri(resourceAttr, _resolvedBaseUri);
+      final objectIri = _uriResolver.resolveUri(resourceAttr, baseUri);
       if (objectIri.isEmpty) {
         throw RdfStructureException(
           'Invalid rdf:resource URI: $resourceAttr',
@@ -390,7 +404,7 @@ final class RdfXmlParser implements IRdfXmlParser {
 
       // Handle reification if rdf:ID is present
       if (idAttr != null) {
-        triples.addAll(_createReificationTriples(idAttr, triple));
+        triples.addAll(_createReificationTriples(idAttr, triple, baseUri));
       }
 
       return;
@@ -416,6 +430,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       _handleParseType(
         subject,
         predicate,
+        baseUri,
         propertyElement,
         parseTypeAttr,
         triples,
@@ -427,10 +442,16 @@ final class RdfXmlParser implements IRdfXmlParser {
     if (propertyElement.childElements.isNotEmpty &&
         propertyElement.childElements.first.name.local != 'li') {
       final containerElement = propertyElement.childElements.first;
-
+      final containerBaseUri = getBaseUri(containerElement) ?? baseUri;
       // Check if this is a container element
       if (_isRdfContainerElement(containerElement)) {
-        _processContainer(subject, predicate, containerElement, triples);
+        _processContainer(
+          subject,
+          predicate,
+          containerBaseUri,
+          containerElement,
+          triples,
+        );
         return;
       }
     }
@@ -444,7 +465,12 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Process each child element as part of the nested resource
       for (final childElement in propertyElement.childElements) {
         // For a nested resource, we pass the blank node as the new subject
-        _processNode(childElement, triples, subject: nestedSubject);
+        _processNode(
+          childElement,
+          getBaseUri(childElement) ?? baseUri,
+          triples,
+          subject: nestedSubject,
+        );
       }
       return;
     }
@@ -471,7 +497,7 @@ final class RdfXmlParser implements IRdfXmlParser {
 
     if (datatypeAttr != null) {
       // Typed literal
-      var resolveUri = _uriResolver.resolveUri(datatypeAttr, _resolvedBaseUri);
+      var resolveUri = _uriResolver.resolveUri(datatypeAttr, baseUri);
       if (resolveUri.isEmpty) {
         throw RdfStructureException(
           'Invalid rdf:datatype URI: $datatypeAttr',
@@ -519,12 +545,13 @@ final class RdfXmlParser implements IRdfXmlParser {
   void _processContainer(
     RdfSubject subject,
     RdfPredicate predicate,
+    String? baseUri,
     XmlElement containerElement,
     List<Triple> triples,
   ) {
+    baseUri = getBaseUri(containerElement) ?? baseUri;
     // Create blank node for container
     final containerNode = BlankNodeTerm();
-
     // Link container to subject
     triples.add(Triple(subject, predicate, containerNode));
 
@@ -548,13 +575,10 @@ final class RdfXmlParser implements IRdfXmlParser {
           'resource',
           namespace: RdfTerms.rdfNamespace,
         );
-
+        var itemBaseUri = getBaseUri(itemElement) ?? baseUri;
         if (resourceAttr != null) {
           // Resource reference
-          final objectIri = _uriResolver.resolveUri(
-            resourceAttr,
-            _resolvedBaseUri,
-          );
+          final objectIri = _uriResolver.resolveUri(resourceAttr, itemBaseUri);
           triples.add(Triple(containerNode, itemPredicate, IriTerm(objectIri)));
         } else if (itemElement.childElements.isNotEmpty) {
           // Nested resource
@@ -562,7 +586,13 @@ final class RdfXmlParser implements IRdfXmlParser {
           triples.add(Triple(containerNode, itemPredicate, nestedNode));
 
           for (final childElement in itemElement.childElements) {
-            _processNode(childElement, triples, subject: nestedNode);
+            var childBaseUri = getBaseUri(childElement) ?? itemBaseUri;
+            _processNode(
+              childElement,
+              childBaseUri,
+              triples,
+              subject: nestedNode,
+            );
           }
         } else {
           // Literal value
@@ -585,7 +615,7 @@ final class RdfXmlParser implements IRdfXmlParser {
 
           if (datatypeAttr != null) {
             final datatype = IriTerm(
-              _uriResolver.resolveUri(datatypeAttr, _resolvedBaseUri),
+              _uriResolver.resolveUri(datatypeAttr, itemBaseUri),
             );
             triples.add(
               Triple(
@@ -621,15 +651,19 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// - statement rdf:subject <subject>
   /// - statement rdf:predicate <predicate>
   /// - statement rdf:object <object>
-  List<Triple> _createReificationTriples(String idAttr, Triple baseTriple) {
+  List<Triple> _createReificationTriples(
+    String idAttr,
+    Triple baseTriple,
+    String? baseUri,
+  ) {
     final triples = <Triple>[];
 
-    if (_resolvedBaseUri.isEmpty) {
+    if (baseUri == null || baseUri.isEmpty) {
       throw RdfStructureException('Base URI is not set for rdf:ID resolution');
     }
 
     // Create the statement IRI
-    final statementIri = IriTerm('${_resolvedBaseUri}#$idAttr');
+    final statementIri = IriTerm('${baseUri}#$idAttr');
 
     // Add the reification triples
     triples.add(
@@ -673,7 +707,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   ///
   /// Extracts the subject IRI or blank node from element attributes
   /// according to RDF/XML rules (rdf:about, rdf:ID, or blank node).
-  RdfSubject _getSubject(XmlElement element) {
+  RdfSubject _getSubject(XmlElement element, String? baseUri) {
     // Check for rdf:about attribute
     final aboutAttr = element.getAttribute(
       'about',
@@ -681,7 +715,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     );
     if (aboutAttr != null) {
       try {
-        final iri = _uriResolver.resolveUri(aboutAttr, _resolvedBaseUri);
+        final iri = _uriResolver.resolveUri(aboutAttr, baseUri);
         if (iri.isEmpty) {
           throw RdfStructureException(
             'Invalid rdf:about URI: $aboutAttr',
@@ -694,7 +728,7 @@ final class RdfXmlParser implements IRdfXmlParser {
         throw UriResolutionException(
           'Failed to resolve rdf:about URI',
           uri: aboutAttr,
-          baseUri: _resolvedBaseUri,
+          baseUri: baseUri ?? '<UNKNOWN>',
           sourceContext: element.name.qualified,
         );
       }
@@ -705,20 +739,20 @@ final class RdfXmlParser implements IRdfXmlParser {
     if (idAttr != null) {
       try {
         // rdf:ID creates a URI relative to the document base URI
-        if (_resolvedBaseUri.isEmpty) {
+        if (baseUri == null || baseUri.isEmpty) {
           throw RdfStructureException(
             'Base URI is not set for rdf:ID resolution',
             elementName: element.name.qualified,
           );
         }
-        final iri = '${_resolvedBaseUri}#$idAttr';
+        final iri = '${baseUri}#$idAttr';
         return IriTerm(iri);
       } catch (e) {
         _uriLogger.severe('Failed to create IRI from rdf:ID', e);
         throw UriResolutionException(
           'Failed to create IRI from rdf:ID',
           uri: '#$idAttr',
-          baseUri: _resolvedBaseUri,
+          baseUri: baseUri ?? '<UNKNOWN>',
           sourceContext: element.name.qualified,
         );
       }
@@ -769,10 +803,12 @@ final class RdfXmlParser implements IRdfXmlParser {
   void _handleParseType(
     RdfSubject subject,
     RdfPredicate predicate,
+    String? baseUri,
     XmlElement element,
     String parseType,
     List<Triple> triples,
   ) {
+    baseUri = getBaseUri(element) ?? baseUri;
     switch (parseType) {
       case 'Resource':
         // Create a blank node and treat content as a nested resource
@@ -781,7 +817,13 @@ final class RdfXmlParser implements IRdfXmlParser {
 
         // Process each child element
         for (final childElement in element.childElements) {
-          _processNode(childElement, triples, subject: nestedSubject);
+          var childBaseUri = getBaseUri(childElement) ?? baseUri;
+          _processNode(
+            childElement,
+            childBaseUri,
+            triples,
+            subject: nestedSubject,
+          );
         }
         break;
 
@@ -799,7 +841,13 @@ final class RdfXmlParser implements IRdfXmlParser {
 
       case 'Collection':
         // Treat content as an RDF collection (list)
-        _processCollection(subject, predicate, element.childElements, triples);
+        _processCollection(
+          subject,
+          predicate,
+          baseUri,
+          element.childElements,
+          triples,
+        );
         break;
 
       default:
@@ -817,7 +865,13 @@ final class RdfXmlParser implements IRdfXmlParser {
           triples.add(Triple(subject, predicate, nestedSubject));
 
           for (final childElement in element.childElements) {
-            _processNode(childElement, triples, subject: nestedSubject);
+            var childBaseUri = getBaseUri(childElement) ?? baseUri;
+            _processNode(
+              childElement,
+              childBaseUri,
+              triples,
+              subject: nestedSubject,
+            );
           }
         }
     }
@@ -830,6 +884,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   void _processCollection(
     RdfSubject subject,
     RdfPredicate predicate,
+    String? baseUri,
     Iterable<XmlElement> items,
     List<Triple> triples,
   ) {
@@ -847,7 +902,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     triples.add(Triple(subject, predicate, firstNode));
 
     // Process all items by building triples
-    _buildRdfList(firstNode, itemsList, 0, triples);
+    _buildRdfList(firstNode, baseUri, itemsList, 0, triples);
   }
 
   /// Recursively builds an RDF list structure
@@ -856,17 +911,19 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// avoiding mutable state where possible.
   void _buildRdfList(
     BlankNodeTerm currentNode,
+    String? baseUri,
     List<XmlElement> items,
     int index,
     List<Triple> triples,
   ) {
     final item = items[index];
+    baseUri = getBaseUri(item) ?? baseUri;
     final isLastItem = index == items.length - 1;
 
     // Create a node for the item and process it
-    final itemSubject = _getSubject(item);
+    final itemSubject = _getSubject(item, baseUri);
     triples.add(Triple(currentNode, RdfTerms.first, itemSubject));
-    _processNode(item, triples);
+    _processNode(item, baseUri, triples);
 
     if (isLastItem) {
       // Terminate the list with rdf:nil
@@ -877,7 +934,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       triples.add(Triple(currentNode, RdfTerms.rest, nextNode));
 
       // Process the next item recursively
-      _buildRdfList(nextNode, items, index + 1, triples);
+      _buildRdfList(nextNode, baseUri, items, index + 1, triples);
     }
   }
 }

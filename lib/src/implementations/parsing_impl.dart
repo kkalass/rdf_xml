@@ -29,45 +29,19 @@ final class DefaultUriResolver implements IUriResolver {
   /// Creates a new DefaultUriResolver
   const DefaultUriResolver();
 
-  // FIXME: memleak?
-  /// Cache for document base URIs
-  static final Map<XmlDocument, String> _baseUriCache = {};
-
   @override
-  String resolveBaseUri(XmlDocument document, String? providedBaseUri) {
-    // Check cache first for better performance
-    if (_baseUriCache.containsKey(document)) {
-      return _baseUriCache[document]!;
-    }
-
-    // Check for xml:base attribute on the document element
-    final xmlBase = document.rootElement.getAttribute(
-      'base',
-      namespace: 'http://www.w3.org/XML/1998/namespace',
-    );
-
-    // FIXME: do we have a test for this?
-    // According to W3C specs, xml:base takes precedence over provided base URI
-    final result = xmlBase ?? providedBaseUri ?? '';
-
-    // Cache the result for future lookups
-    _baseUriCache[document] = result;
-    return result;
-  }
-
-  @override
-  String resolveUri(String uri, String baseUri) {
-    // FIXME: why don't we use nullable baseUri
-    // FIXME: is it really the expected behavior to expect the baseUri to
-    // FIXME: be provided? Wouldn't it be better to use the default base URI from the resolveBaseUri?
-    // Handle empty base URI cases
-    if (baseUri.isEmpty) {
-      return uri;
-    }
-
+  String resolveUri(String uri, String? baseUri) {
     // Return absolute URIs immediately
     if (_isAbsoluteUri(uri)) {
       return uri;
+    }
+
+    // Handle empty base URI cases
+    if (baseUri == null || baseUri.isEmpty) {
+      throw RdfParserException(
+        "There was no xml:base attribute in the document. You need to provide the documentUri to the parser. I cannot resolve the relative uri $uri.",
+        format: "rdf/xml",
+      );
     }
 
     // Handle standard cases using Uri class when possible for robustness
