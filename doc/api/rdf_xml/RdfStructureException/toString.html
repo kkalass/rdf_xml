@@ -89,10 +89,12 @@ mainly for debugging or logging.</p>
   <pre class="language-dart"><code class="language-dart">@override
 String toString() {
   final element = elementName != null ? &#39; in element &lt;$elementName&gt;&#39; : &#39;&#39;;
+  final causeInfo = cause != null ? &#39; (Caused by: ${cause.toString()})&#39; : &#39;&#39;;
+
   if (sourceContext != null) {
-    return &#39;RDF Structure Error in $sourceContext$element: $message&#39;;
+    return &#39;RDF Structure Error in $sourceContext$element: $message$causeInfo&#39;;
   }
-  return &#39;RDF Structure Error$element: $message&#39;;
+  return &#39;RDF Structure Error$element: $message$causeInfo&#39;;
 }</code></pre>
 </section>
 
@@ -121,7 +123,7 @@ String toString() {
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.0-dev
+      0.1.0
   </span>
   
 </footer>

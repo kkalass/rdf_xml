@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rdf_xml</a></li>
     <li><a href="../../rdf_xml">rdf_xml.dart</a></li>
     <li><a href="../../rdf_xml/RdfXmlFormat-class.html">RdfXmlFormat</a></li>
-    <li class="self-crumb">RdfXmlFormat const constructor</li>
+    <li class="self-crumb">RdfXmlFormat constructor</li>
   </ol>
   <div class="self-name">RdfXmlFormat</div>
   <form class="search navbar-right" role="search">
@@ -56,13 +56,14 @@
 </h1></div>
 
     <section class="multi-line-signature">
-      const
-      <span class="name ">RdfXmlFormat</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="-param-xmlDocumentProvider"><span class="type-annotation">IXmlDocumentProvider?</span> <span class="parameter-name">xmlDocumentProvider</span>, </span></li>
-<li><span class="parameter" id="-param-uriResolver"><span class="type-annotation">IUriResolver?</span> <span class="parameter-name">uriResolver</span>, </span></li>
-<li><span class="parameter" id="-param-namespaceManager"><span class="type-annotation">INamespaceManager?</span> <span class="parameter-name">namespaceManager</span>, </span></li>
-<li><span class="parameter" id="-param-xmlBuilder"><span class="type-annotation">IRdfXmlBuilder?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
+      
+      <span class="name ">RdfXmlFormat</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="-param-xmlDocumentProvider"><span class="type-annotation"><a href="../../rdf_xml/IXmlDocumentProvider-class.html">IXmlDocumentProvider</a>?</span> <span class="parameter-name">xmlDocumentProvider</span>, </span></li>
+<li><span class="parameter" id="-param-uriResolver"><span class="type-annotation"><a href="../../rdf_xml/IUriResolver-class.html">IUriResolver</a>?</span> <span class="parameter-name">uriResolver</span>, </span></li>
+<li><span class="parameter" id="-param-namespaceManager"><span class="type-annotation"><a href="../../rdf_xml/INamespaceManager-class.html">INamespaceManager</a>?</span> <span class="parameter-name">namespaceManager</span>, </span></li>
+<li><span class="parameter" id="-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="-param-parserOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlParserOptions-class.html">RdfXmlParserOptions</a>?</span> <span class="parameter-name">parserOptions</span>, </span></li>
 <li><span class="parameter" id="-param-serializerOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a>?</span> <span class="parameter-name">serializerOptions</span>, </span></li>
+<li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.6.10/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
 </ol>})
     </section>
     
@@ -83,18 +84,25 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const RdfXmlFormat({
+  <pre class="language-dart"><code class="language-dart">RdfXmlFormat({
   IXmlDocumentProvider? xmlDocumentProvider,
   IUriResolver? uriResolver,
   INamespaceManager? namespaceManager,
   IRdfXmlBuilder? xmlBuilder,
   RdfXmlParserOptions? parserOptions,
   RdfXmlSerializerOptions? serializerOptions,
+  RdfNamespaceMappings? namespaceMappings,
 }) : _xmlDocumentProvider =
          xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
      _uriResolver = uriResolver ?? const DefaultUriResolver(),
-     _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
-     _xmlBuilder = xmlBuilder ?? const DefaultRdfXmlBuilder(),
+     _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
+     _namespaceManager =
+         namespaceManager ??
+         DefaultNamespaceManager(
+           namespaceMappings:
+               namespaceMappings ?? const RdfNamespaceMappings(),
+         ),
+     _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
      _parserOptions = parserOptions ?? const RdfXmlParserOptions(),
      _serializerOptions =
          serializerOptions ?? const RdfXmlSerializerOptions();</code></pre>
@@ -113,7 +121,7 @@
     <li><a href="../../index.html">rdf_xml</a></li>
     <li><a href="../../rdf_xml">rdf_xml</a></li>
     <li><a href="../../rdf_xml/RdfXmlFormat-class.html">RdfXmlFormat</a></li>
-    <li class="self-crumb">RdfXmlFormat const constructor</li>
+    <li class="self-crumb">RdfXmlFormat constructor</li>
 </ol>
 
     <h5>RdfXmlFormat class</h5>
@@ -125,7 +133,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.0-dev
+      0.1.0
   </span>
   
 </footer>

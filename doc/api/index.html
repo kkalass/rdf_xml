@@ -46,10 +46,7 @@
   <div id="dartdoc-main-content" class="main-content">
       
 <section class="desc markdown">
-  <div align="center">
-  <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" width="96" height="96">
-</div>
-<h1 id="rdf_xml">rdf_xml</h1>
+  <h1 id="rdf_xml">rdf_xml</h1>
 <p><a href="https://pub.dev/packages/rdf_xml"><img src="https://img.shields.io/pub/v/rdf_xml.svg" alt="pub package"></a>
 <a href="https://github.com/kkalass/rdf_xml/actions"><img src="https://github.com/kkalass/rdf_xml/actions/workflows/ci.yml/badge.svg" alt="build"></a>
 <a href="https://codecov.io/gh/kkalass/rdf_xml"><img src="https://codecov.io/gh/kkalass/rdf_xml/branch/main/graph/badge.svg" alt="codecov"></a>
@@ -71,7 +68,7 @@
 </code></pre>
 <p>Or add to your <code>pubspec.yaml</code>:</p>
 <pre class="language-yaml"><code class="language-yaml">dependencies:
-  rdf_xml: ^1.0.0
+  rdf_xml: ^0.1.0
 </code></pre>
 <h2 id="-usage">📖 Usage</h2>
 <h3 id="parsing-rdfxml">Parsing RDF/XML</h3>
@@ -96,6 +93,67 @@ void main() {
   // Print the parsed triples
   for (final triple in rdfGraph.triples) {
     print(triple);
+  }
+}
+</code></pre>
+<h3 id="parsing-from-a-file">Parsing from a File</h3>
+<pre class="language-dart"><code class="language-dart">import 'dart:io';
+import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+Future&lt;void&gt; parseFromFile(String filePath) async {
+  final file = File(filePath);
+  final xmlContent = await file.readAsString();
+  
+  // Parse with base URI set to the file location
+  final parser = RdfXmlParser(
+    xmlContent, 
+    baseUri: 'file://${file.absolute.path}',
+  );
+  
+  final triples = parser.parse();
+  final graph = RdfGraph.fromTriples(triples);
+  
+  print('Parsed ${graph.size} triples from $filePath');
+}
+</code></pre>
+<h3 id="working-with-named-graphs">Working with Named Graphs</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+void main() {
+  final xmlContent = '''
+    &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:foaf="http://xmlns.com/foaf/0.1/"&gt;
+      &lt;foaf:Person rdf:about="http://example.org/person/alice"&gt;
+        &lt;foaf:name&gt;Alice&lt;/foaf:name&gt;
+        &lt;foaf:knows rdf:resource="http://example.org/person/bob"/&gt;
+      &lt;/foaf:Person&gt;
+    &lt;/rdf:RDF&gt;
+  ''';
+
+  // Parse the content
+  final parser = RdfXmlFormat().createParser();
+  final graph = parser.parse(xmlContent);
+  
+  // Create a named graph
+  final namedGraph = NamedGraph(
+    IriTerm('http://example.org/graphs/people'),
+    graph,
+  );
+  
+  // Add to a dataset
+  final dataset = RdfDataset.empty();
+  dataset.addNamedGraph(namedGraph);
+  
+  // Query the dataset
+  final people = dataset.findByPredicateObject(
+    IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+    IriTerm('http://xmlns.com/foaf/0.1/Person'),
+  );
+  
+  for (final person in people) {
+    print('Found person: ${person.subject}');
   }
 }
 </code></pre>
@@ -221,6 +279,10 @@ final customSerializer = RdfXmlSerializer(
 <li>Blank nodes (anonymous and labeled)</li>
 <li>RDF reification</li>
 </ul>
+<h2 id="-roadmap--next-steps">🛣️ Roadmap / Next Steps</h2>
+<ul>
+<li>Stream parsing?</li>
+</ul>
 <h2 id="-contributing">🤝 Contributing</h2>
 <p>Contributions, bug reports, and feature requests are welcome!</p>
 <ul>
@@ -275,7 +337,7 @@ final customSerializer = RdfXmlSerializer(
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.0-dev
+      0.1.0
   </span>
   
 </footer>

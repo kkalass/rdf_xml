@@ -62,7 +62,7 @@
         <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-<span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.6.9/rdf/RdfParser-class.html">RdfParser</a></span>
+<span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.6.10/rdf/RdfParser-class.html">RdfParser</a></span>
 <span class="name ">createParser</span>(<wbr>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -83,6 +83,7 @@ to an RdfGraph object.</p>
 RdfParser createParser() {
   return _RdfXmlFormatParserAdapter(
     xmlDocumentProvider: _xmlDocumentProvider,
+    rdfNamespaceMappings: _namespaceMappings,
     uriResolver: _uriResolver,
     options: _parserOptions,
   );
@@ -114,7 +115,7 @@ RdfParser createParser() {
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.0-dev
+      0.1.0
   </span>
   
 </footer>

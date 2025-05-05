@@ -75,6 +75,7 @@ in an XML-compatible syntax.</p>
 <li>Container elements (rdf:Bag, rdf:Seq, rdf:Alt)</li>
 <li>Collection elements (rdf:List)</li>
 <li>Blank nodes and reification</li>
+<li>Stream-based processing for large RDF/XML documents</li>
 </ul>
 <p>To use this package, import it and either:</p>
 <ol>
@@ -86,6 +87,13 @@ import 'package:rdf_xml/rdf_xml.dart';
 // Create a parser directly
 final parser = RdfXmlFormat().createParser();
 final rdfGraph = parser.parse(rdfXmlContent);
+
+// For large documents, use streaming parser
+final streamingParser = RdfXmlFormat().createStreamingParser();
+await for (final triple in streamingParser.parseAsStream(rdfXmlContent)) {
+  // Process each triple as it's parsed
+  processTriple(triple);
+}
 
 // Create a serializer directly
 final serializer = RdfXmlFormat().createSerializer();
@@ -111,12 +119,60 @@ final serializer = registry.getSerializer('application/rdf+xml');
     <section class="summary offset-anchor" id="classes">
       <h2>Classes</h2>
       <dl>
-          <dt id="RdfTerms">
-  <span class="name "><a href="../rdf_xml/RdfTerms-class.html">RdfTerms</a></span> 
+          <dt id="IBlankNodeManager">
+  <span class="name "><a href="../rdf_xml/IBlankNodeManager-class.html">IBlankNodeManager</a></span> 
 
 </dt>
 <dd>
-  Core RDF vocabulary predicates
+  Manages blank node creation and retrieval
+</dd>
+
+          <dt id="INamespaceManager">
+  <span class="name "><a href="../rdf_xml/INamespaceManager-class.html">INamespaceManager</a></span> 
+
+</dt>
+<dd>
+  Provides namespace management functionality
+</dd>
+
+          <dt id="IRdfXmlBuilder">
+  <span class="name "><a href="../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a></span> 
+
+</dt>
+<dd>
+  Provides XML building functionality for RDF/XML serialization
+</dd>
+
+          <dt id="IRdfXmlParser">
+  <span class="name "><a href="../rdf_xml/IRdfXmlParser-class.html">IRdfXmlParser</a></span> 
+
+</dt>
+<dd>
+  Contract for RDF/XML parsing functionality
+</dd>
+
+          <dt id="IRdfXmlSerializer">
+  <span class="name "><a href="../rdf_xml/IRdfXmlSerializer-class.html">IRdfXmlSerializer</a></span> 
+
+</dt>
+<dd>
+  Contract for RDF/XML serialization functionality
+</dd>
+
+          <dt id="IUriResolver">
+  <span class="name "><a href="../rdf_xml/IUriResolver-class.html">IUriResolver</a></span> 
+
+</dt>
+<dd>
+  Handles URI resolution for RDF/XML processing
+</dd>
+
+          <dt id="IXmlDocumentProvider">
+  <span class="name "><a href="../rdf_xml/IXmlDocumentProvider-class.html">IXmlDocumentProvider</a></span> 
+
+</dt>
+<dd>
+  Provides XML document parsing functionality
 </dd>
 
           <dt id="RdfXmlFormat">
@@ -127,28 +183,12 @@ final serializer = registry.getSerializer('application/rdf+xml');
   Format plugin for RDF/XML
 </dd>
 
-          <dt id="RdfXmlParser">
-  <span class="name "><a href="../rdf_xml/RdfXmlParser-class.html">RdfXmlParser</a></span> 
-
-</dt>
-<dd>
-  Parser for RDF/XML format
-</dd>
-
           <dt id="RdfXmlParserOptions">
   <span class="name "><a href="../rdf_xml/RdfXmlParserOptions-class.html">RdfXmlParserOptions</a></span> 
 
 </dt>
 <dd>
   Parser options for RDF/XML processing
-</dd>
-
-          <dt id="RdfXmlSerializer">
-  <span class="name "><a href="../rdf_xml/RdfXmlSerializer-class.html">RdfXmlSerializer</a></span> 
-
-</dt>
-<dd>
-  Serializer for RDF/XML format
 </dd>
 
           <dt id="RdfXmlSerializerOptions">
@@ -242,7 +282,7 @@ final serializer = registry.getSerializer('application/rdf+xml');
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.0-dev
+      0.1.0
   </span>
   
 </footer>
