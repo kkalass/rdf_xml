@@ -270,6 +270,10 @@ This library supports all features of the RDF/XML syntax:
 - Blank nodes (anonymous and labeled)
 - RDF reification
 
+## 🛣️ Roadmap / Next Steps
+
+- Stream parsing?
+
 ## 🤝 Contributing
 
 Contributions, bug reports, and feature requests are welcome!

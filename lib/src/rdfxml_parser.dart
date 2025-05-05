@@ -45,9 +45,6 @@ import 'implementations/parsing_impl.dart'
         DefaultUriResolver,
         FunctionalBlankNodeManager;
 
-// Make the _StreamParsingContext and related classes available
-part 'implementations/stream_parsing.dart';
-
 /// Parser for RDF/XML format
 ///
 /// Implements the RDF/XML parsing algorithm according to the W3C specification.
@@ -173,73 +170,6 @@ final class RdfXmlParser implements IRdfXmlParser {
         cause: e,
       );
     }
-  }
-
-  /// Parses the RDF/XML document as a stream of triples
-  ///
-  /// Provides a memory-efficient way to process large documents
-  /// by yielding triples incrementally as they are parsed.
-  @override
-  Stream<Triple> parseAsStream() async* {
-    _logger.fine('Parsing RDF/XML document as stream');
-
-    _currentDepth = 0;
-
-    try {
-      // Parse the XML document as a stream of events
-      final xmlEvents = _xmlDocumentProvider.parseXmlEvents(_input);
-
-      // Create a context to track state during streaming
-      final context = _createStreamParsingContext();
-
-      // Process the XML events
-      await for (final event in xmlEvents) {
-        if (event is XmlStartElementEvent) {
-          // Process start element
-          final elementResult = await context.processStartElement(event);
-          for (final triple in elementResult.triples) {
-            yield triple;
-          }
-        } else if (event is XmlEndElementEvent) {
-          // Process end element
-          final elementResult = context.processEndElement(event);
-          for (final triple in elementResult.triples) {
-            yield triple;
-          }
-        } else if (event is XmlTextEvent && !event.value.trim().isEmpty) {
-          // Process text nodes (for literal properties)
-          context.processText(event);
-        }
-      }
-
-      _logger.fine('Completed streaming parse of RDF/XML document');
-    } catch (e, stackTrace) {
-      // Enhanced error logging with context information
-      _logger.severe(
-        'Error parsing RDF/XML stream: $e\n'
-        'Stack trace: $stackTrace',
-      );
-
-      // Rethrow specialized exceptions, but wrap generic ones with more context
-      if (e is RdfXmlException) {
-        rethrow;
-      }
-      throw RdfStructureException(
-        'Error parsing RDF/XML stream: ${e.toString()}',
-        cause: e,
-      );
-    }
-  }
-
-  /// Creates a new stream parsing context for handling XML events
-  _StreamParsingContext _createStreamParsingContext() {
-    return _StreamParsingContext(
-      namespaceMappings: _namespaceMappings,
-      uriResolver: _uriResolver,
-      blankNodeManager: _blankNodeManager,
-      options: _options,
-      baseUri: _baseUri,
-    );
   }
 
   /// Validates the parsed triples for RDF conformance

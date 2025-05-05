@@ -350,7 +350,10 @@ TODO:
 
 after some "continue" follow ups of the last prompt, the agent finished eventually, but still there are only 59/75 passing tests.
 
-Seems like I need to get involved more now. Lets start with the namespaces hardcoding.
+Seems like I need to get involved more now. Lets start with the namespaces hardcoding. After fixing the namespace stuff, lets re-rexecute the developer agent and let it try again to fix issues.
+
+Ok - I stopped the support for streaming. This is something that apparently is too difficult for the Agent and I do not really need it at the moment. It was a (sensible) suggestion of the agent, but the code got 
+messier and messier, so I removed it alltogether now.
 
 ### TODO: Documentation (2)
 

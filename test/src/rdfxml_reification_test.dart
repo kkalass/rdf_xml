@@ -286,40 +286,5 @@ void main() {
       expect(metadataTriples, hasLength(1));
       expect(metadataTriples.first.object, equals(LiteralTerm.string('Alice')));
     });
-
-    test('streaming parser handles reification correctly', () async {
-      final xml = '''
-        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-                 xmlns:ex="http://example.org/">
-          <rdf:Description rdf:about="http://example.org/statement1">
-            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement"/>
-            <rdf:subject rdf:resource="http://example.org/JohnDoe"/>
-            <rdf:predicate rdf:resource="http://example.org/authorOf"/>
-            <rdf:object rdf:resource="http://example.org/Book1"/>
-            <ex:assertedBy>Alice</ex:assertedBy>
-          </rdf:Description>
-        </rdf:RDF>
-      ''';
-
-      // Standard parse for comparison
-      final parser = RdfXmlParser(xml);
-      final standardTriples = parser.parse();
-
-      // Stream parse
-      final streamParser = RdfXmlParser(xml);
-      final streamTriples = await streamParser.parseAsStream().toList();
-
-      // Compare results - should have same number of triples
-      expect(streamTriples.length, equals(standardTriples.length));
-
-      // Both methods should yield the same triples (may be in different order)
-      for (final triple in standardTriples) {
-        expect(
-          streamTriples,
-          contains(triple),
-          reason: 'Stream parsing should contain triple: $triple',
-        );
-      }
-    });
   });
 }
