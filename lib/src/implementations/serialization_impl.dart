@@ -194,23 +194,84 @@ final class DefaultNamespaceManager implements INamespaceManager {
     RdfGraph graph,
     Map<String, String> customPrefixes,
   ) {
-    // Start with standard namespaces
-    final result = Map<String, String>.from(_namespaceMappings.asMap());
-
-    // Add custom prefix mappings (overrides standard namespaces)
-    result.addAll(customPrefixes);
-
     // Optimize by using a Set to track processed IRIs
     final processedIris = <String>{};
 
+    // Track which namespaces are actually used
+    final usedNamespaces = <String, String>{};
+
+    // Always include RDF namespace, as it's required for RDF/XML
+    final rdfNamespace = RdfTerms.rdfNamespace;
+    usedNamespaces['rdf'] = rdfNamespace;
+
+    // Track all prefixes we might need
+    final allNamespaces = Map<String, String>.from(_namespaceMappings.asMap());
+    allNamespaces.addAll(customPrefixes);
+
     // Extract namespaces from IRI terms in the graph
     for (final triple in graph.triples) {
-      _extractNamespaceFromTerm(triple.subject, result, processedIris);
-      _extractNamespaceFromTerm(triple.predicate, result, processedIris);
-      _extractNamespaceFromTerm(triple.object, result, processedIris);
+      _collectUsedNamespace(
+        triple.subject,
+        allNamespaces,
+        usedNamespaces,
+        processedIris,
+      );
+      _collectUsedNamespace(
+        triple.predicate,
+        allNamespaces,
+        usedNamespaces,
+        processedIris,
+      );
+      _collectUsedNamespace(
+        triple.object,
+        allNamespaces,
+        usedNamespaces,
+        processedIris,
+      );
     }
 
-    return result;
+    return usedNamespaces;
+  }
+
+  /// Collects namespaces that are actually used in the document
+  void _collectUsedNamespace(
+    RdfTerm term,
+    Map<String, String> allNamespaces,
+    Map<String, String> usedNamespaces,
+    Set<String> processedIris,
+  ) {
+    if (term is! IriTerm) {
+      return;
+    }
+
+    final iri = term.iri;
+
+    // Skip if already processed
+    if (processedIris.contains(iri)) {
+      return;
+    }
+    processedIris.add(iri);
+
+    // Check if this IRI uses a known namespace
+    final qname = iriToQName(iri, allNamespaces);
+    if (qname != null) {
+      // Extract prefix from QName
+      final prefixEnd = qname.indexOf(':');
+      if (prefixEnd > 0) {
+        final prefix = qname.substring(0, prefixEnd);
+
+        // Find the namespace for this prefix
+        final namespace = allNamespaces[prefix];
+        if (namespace != null) {
+          // Add this namespace to used namespaces
+          usedNamespaces[prefix] = namespace;
+          return;
+        }
+      }
+    }
+
+    // If we get here, we need to create a new namespace entry
+    _extractNamespace(iri, usedNamespaces);
   }
 
   /// Extracts namespace from a term if it's an IRI, using a cache and tracking processed IRIs

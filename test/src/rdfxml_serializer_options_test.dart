@@ -160,5 +160,45 @@ void main() {
         isTrue,
       ); // Still use namespaces for compactness
     });
+
+    test('only used namespaces are declared in XML output', () {
+      // Create custom prefixes - we'll only use some of them
+      final customPrefixes = {
+        'ex': 'http://example.org/',
+        'dc': 'http://purl.org/dc/terms/',
+        'foaf': 'http://xmlns.com/foaf/0.1/',
+        'unused': 'http://unused.example.org/',
+      };
+
+      // Set up a graph that only uses some of the namespaces
+      final resource = IriTerm('http://example.org/resource');
+      final triples = [
+        Triple(resource, RdfTerms.type, IriTerm('http://example.org/Type')),
+        Triple(
+          resource,
+          IriTerm('http://purl.org/dc/terms/title'),
+          LiteralTerm.string('Resource Title'),
+        ),
+        // No triples using the 'foaf' or 'unused' namespaces
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      // Serialize with the namespaces
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph, customPrefixes: customPrefixes);
+
+      // The XML should contain the used namespaces
+      expect(xml, contains('xmlns:ex="http://example.org/"'));
+      expect(xml, contains('xmlns:dc="http://purl.org/dc/terms/"'));
+      expect(
+        xml,
+        contains('xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"'),
+      ); // rdf is always included
+
+      // The XML should NOT contain the unused namespaces
+      expect(xml, isNot(contains('xmlns:foaf="http://xmlns.com/foaf/0.1/"')));
+      expect(xml, isNot(contains('xmlns:unused="http://unused.example.org/"')));
+    });
   });
 }
