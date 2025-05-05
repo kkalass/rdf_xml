@@ -300,9 +300,19 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Get the subject of this element
       final currentSubject = subject ?? _getSubject(element);
 
-      // If this is a typed resource (not rdf:Description), add a type triple
+      // If this is a typed resource, add a type triple
+      // We explicitly handle certain elements from the RDF namespace differently
+      final isRdfNamespace = element.name.namespaceUri == RdfTerms.rdfNamespace;
+      final rdfElementsWithoutTypeTriples = {
+        'Description',
+        'RDF',
+        'li',
+        'Property',
+      };
+
       if (!isDescription &&
-          element.name.namespaceUri != RdfTerms.rdfNamespace) {
+          (!isRdfNamespace ||
+              !rdfElementsWithoutTypeTriples.contains(element.name.local))) {
         if ((element.name.namespaceUri ?? '').isEmpty) {
           throw RdfStructureException(
             'Element without namespace URI: ${element.name.qualified}',

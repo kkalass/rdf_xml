@@ -6,7 +6,7 @@ class RdfTestUtils {
   static List<Triple> triplesWithSubjectPredicate(
     RdfGraph graph,
     RdfSubject subject,
-    RdfObject predicate,
+    RdfPredicate predicate,
   ) {
     return graph.triples
         .where((t) => t.subject == subject && t.predicate == predicate)
