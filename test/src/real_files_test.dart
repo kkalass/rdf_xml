@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/rdf_xml.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';

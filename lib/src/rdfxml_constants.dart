@@ -16,52 +16,44 @@ class RdfTerms {
   static const String xsdNamespace = 'http://www.w3.org/2001/XMLSchema#';
 
   /// The rdf:type predicate
-  static final IriTerm type = IriTerm.prevalidated('${rdfNamespace}type');
+  static const IriTerm type = IriTerm.prevalidated('${rdfNamespace}type');
 
   /// The rdf:first predicate (used in RDF lists)
-  static final IriTerm first = IriTerm.prevalidated('${rdfNamespace}first');
+  static const IriTerm first = IriTerm.prevalidated('${rdfNamespace}first');
 
   /// The rdf:rest predicate (used in RDF lists)
-  static final IriTerm rest = IriTerm.prevalidated('${rdfNamespace}rest');
+  static const IriTerm rest = IriTerm.prevalidated('${rdfNamespace}rest');
 
   /// The rdf:nil resource (terminator for RDF lists)
-  static final IriTerm nil = IriTerm.prevalidated('${rdfNamespace}nil');
+  static const IriTerm nil = IriTerm.prevalidated('${rdfNamespace}nil');
 
   /// The rdf:XMLLiteral datatype
-  static final IriTerm xmlLiteral = IriTerm.prevalidated(
+  static const IriTerm xmlLiteral = IriTerm.prevalidated(
     '${rdfNamespace}XMLLiteral',
   );
 
   /// The xsd:string datatype
-  static final IriTerm string = IriTerm.prevalidated('${xsdNamespace}string');
+  static const IriTerm string = IriTerm.prevalidated('${xsdNamespace}string');
 
   /// The rdf:Statement resource (for reification)
-  static final IriTerm statement = IriTerm.prevalidated(
+  static const IriTerm Statement = IriTerm.prevalidated(
     '${rdfNamespace}Statement',
   );
 
   /// The rdf:subject predicate (for reification)
-  static final IriTerm subject = IriTerm.prevalidated('${rdfNamespace}subject');
+  static const IriTerm subject = IriTerm.prevalidated('${rdfNamespace}subject');
 
   /// The rdf:predicate predicate (for reification)
-  static final IriTerm predicate = IriTerm.prevalidated(
+  static const IriTerm predicate = IriTerm.prevalidated(
     '${rdfNamespace}predicate',
   );
 
   /// The rdf:object predicate (for reification)
-  static final IriTerm object = IriTerm.prevalidated('${rdfNamespace}object');
+  static const IriTerm object = IriTerm.prevalidated('${rdfNamespace}object');
 
-  /// Standard namespaces used in RDF
-  static final Map<String, String> standardNamespaces = {
-    'rdf': rdfNamespace,
-    'xsd': xsdNamespace,
-    'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
-    'owl': 'http://www.w3.org/2002/07/owl#',
-    'dc': 'http://purl.org/dc/elements/1.1/',
-    'dcterms': 'http://purl.org/dc/terms/',
-    'foaf': 'http://xmlns.com/foaf/0.1/',
-    'ex': 'http://example.org/',
-  };
+  static const IriTerm Bag = IriTerm.prevalidated('${rdfNamespace}Bag');
+  static const IriTerm Seq = IriTerm.prevalidated('${rdfNamespace}Seq');
+  static const IriTerm Alt = IriTerm.prevalidated('${rdfNamespace}Alt');
 
   /// Private constructor to prevent instantiation
   RdfTerms._();

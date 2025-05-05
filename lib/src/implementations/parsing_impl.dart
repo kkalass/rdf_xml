@@ -29,6 +29,7 @@ final class DefaultUriResolver implements IUriResolver {
   /// Creates a new DefaultUriResolver
   const DefaultUriResolver();
 
+  // FIXME: memleak?
   /// Cache for document base URIs
   static final Map<XmlDocument, String> _baseUriCache = {};
 
@@ -45,6 +46,7 @@ final class DefaultUriResolver implements IUriResolver {
       namespace: 'http://www.w3.org/XML/1998/namespace',
     );
 
+    // FIXME: do we have a test for this?
     // According to W3C specs, xml:base takes precedence over provided base URI
     final result = xmlBase ?? providedBaseUri ?? '';
 
@@ -55,6 +57,9 @@ final class DefaultUriResolver implements IUriResolver {
 
   @override
   String resolveUri(String uri, String baseUri) {
+    // FIXME: why don't we use nullable baseUri
+    // FIXME: is it really the expected behavior to expect the baseUri to
+    // FIXME: be provided? Wouldn't it be better to use the default base URI from the resolveBaseUri?
     // Handle empty base URI cases
     if (baseUri.isEmpty) {
       return uri;
@@ -142,6 +147,7 @@ final class DefaultUriResolver implements IUriResolver {
 ///
 /// Provides a functional approach to blank node management using immutable context.
 final class FunctionalBlankNodeManager implements IBlankNodeManager {
+  // FIXME: is it clear and documented that this is mutable and not thread-safe? Additionally, it is only legal for one document.
   /// The current parsing context
   var _context = RdfXmlParsingContext.empty();
 

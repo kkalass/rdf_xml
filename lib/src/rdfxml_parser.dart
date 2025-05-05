@@ -75,7 +75,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   final IUriResolver _uriResolver;
 
   /// Blank node manager for handling blank nodes
-  final FunctionalBlankNodeManager _blankNodeManager;
+  final IBlankNodeManager _blankNodeManager;
 
   /// Parser options for configuring behavior
   final RdfXmlParserOptions _options;
@@ -103,7 +103,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     String? baseUri,
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
-    FunctionalBlankNodeManager? blankNodeManager,
+    IBlankNodeManager? blankNodeManager,
     RdfNamespaceMappings? namespaceMappings,
     RdfXmlParserOptions? options,
   }) : _baseUri = baseUri,

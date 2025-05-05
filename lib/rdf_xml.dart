@@ -54,6 +54,7 @@
 library rdf_xml;
 
 export 'src/interfaces/xml_parsing.dart';
+export 'src/interfaces/serialization.dart';
 export 'src/rdfxml_format.dart' show RdfXmlFormat;
 export 'src/configuration.dart';
 export 'src/exceptions.dart';

@@ -1,5 +1,4 @@
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/rdf_xml.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';
@@ -40,7 +39,7 @@ void main() {
             t.subject == IriTerm('http://example.org/statement1') &&
             t.predicate == RdfTerms.type,
       );
-      expect(typeTriple.object, equals(RdfTerms.statement));
+      expect(typeTriple.object, equals(RdfTerms.Statement));
 
       // Check the reified subject
       final subjectTriple = triples.firstWhere(
@@ -127,7 +126,7 @@ void main() {
             (t.subject as IriTerm).iri.contains('statement1') &&
             t.predicate == RdfTerms.type,
       );
-      expect(typeTriple.object, equals(RdfTerms.statement));
+      expect(typeTriple.object, equals(RdfTerms.Statement));
 
       // Get the statement IRI
       final statementIri = (typeTriple.subject as IriTerm).iri;
@@ -179,7 +178,7 @@ void main() {
       // Create the reification triples
       final triples = <Triple>[
         originalTriple,
-        Triple(statementNode, RdfTerms.type, RdfTerms.statement),
+        Triple(statementNode, RdfTerms.type, RdfTerms.Statement),
         Triple(statementNode, RdfTerms.subject, subject),
         Triple(statementNode, RdfTerms.predicate, predicate),
         Triple(statementNode, RdfTerms.object, object),
@@ -231,7 +230,7 @@ void main() {
         (t) =>
             t.subject == statementNode &&
             t.predicate == RdfTerms.type &&
-            t.object == RdfTerms.statement,
+            t.object == RdfTerms.Statement,
       );
       expect(
         typeFound,
@@ -305,7 +304,7 @@ void main() {
       // Create the reification triples
       final triples = <Triple>[
         originalTriple,
-        Triple(statementNode, RdfTerms.type, RdfTerms.statement),
+        Triple(statementNode, RdfTerms.type, RdfTerms.Statement),
         Triple(statementNode, RdfTerms.subject, subject),
         Triple(statementNode, RdfTerms.predicate, predicate),
         Triple(statementNode, RdfTerms.object, object),
@@ -356,7 +355,7 @@ void main() {
 
       // We should have all 6 original triples after parsing
       // (The original statement + 5 reification triples)
-      expect(reparsedTriples.length, equals(6));
+      expect(reparsedTriples.length, equals(triples.length));
 
       // Verify the original triple is present
       final originalExists = reparsedTriples.any(
