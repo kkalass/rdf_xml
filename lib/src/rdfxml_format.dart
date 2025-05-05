@@ -53,6 +53,8 @@ final class RdfXmlFormat implements RdfFormat {
   /// Namespace manager for handling namespace declarations
   final INamespaceManager _namespaceManager;
 
+  final RdfNamespaceMappings _namespaceMappings;
+
   /// XML builder for creating XML documents
   final IRdfXmlBuilder _xmlBuilder;
 
@@ -78,10 +80,17 @@ final class RdfXmlFormat implements RdfFormat {
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlParserOptions? parserOptions,
     RdfXmlSerializerOptions? serializerOptions,
+    RdfNamespaceMappings? namespaceMappings,
   }) : _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
-       _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
+       _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
+       _namespaceManager =
+           namespaceManager ??
+           DefaultNamespaceManager(
+             namespaceMappings:
+                 namespaceMappings ?? const RdfNamespaceMappings(),
+           ),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
        _parserOptions = parserOptions ?? const RdfXmlParserOptions(),
        _serializerOptions =
@@ -101,6 +110,7 @@ final class RdfXmlFormat implements RdfFormat {
   RdfParser createParser() {
     return _RdfXmlFormatParserAdapter(
       xmlDocumentProvider: _xmlDocumentProvider,
+      rdfNamespaceMappings: _namespaceMappings,
       uriResolver: _uriResolver,
       options: _parserOptions,
     );
@@ -115,6 +125,7 @@ final class RdfXmlFormat implements RdfFormat {
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
       options: _parserOptions,
+      namespaceMappings: _namespaceMappings,
     );
   }
 
@@ -198,12 +209,16 @@ final class _RdfXmlFormatParserAdapter implements RdfParser {
   /// Parser options for configuring behavior
   final RdfXmlParserOptions _options;
 
+  final RdfNamespaceMappings _rdfNamespaceMappings;
+
   /// Creates a new adapter for RdfXmlParser
   const _RdfXmlFormatParserAdapter({
     required IXmlDocumentProvider xmlDocumentProvider,
     required IUriResolver uriResolver,
     required RdfXmlParserOptions options,
+    required RdfNamespaceMappings rdfNamespaceMappings,
   }) : _xmlDocumentProvider = xmlDocumentProvider,
+       _rdfNamespaceMappings = rdfNamespaceMappings,
        _uriResolver = uriResolver,
        _options = options;
 
@@ -211,6 +226,7 @@ final class _RdfXmlFormatParserAdapter implements RdfParser {
   RdfGraph parse(String input, {String? documentUrl}) {
     final parser = RdfXmlParser(
       input,
+      namespaceMappings: _rdfNamespaceMappings,
       baseUri: documentUrl,
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
@@ -271,20 +287,25 @@ final class _RdfXmlFormatStreamingParserAdapter implements StreamingRdfParser {
   /// Parser options for configuring behavior
   final RdfXmlParserOptions _options;
 
+  final RdfNamespaceMappings _namespaceMappings;
+
   /// Creates a new adapter for RdfXmlParser with streaming capabilities
   const _RdfXmlFormatStreamingParserAdapter({
     required IXmlDocumentProvider xmlDocumentProvider,
     required IUriResolver uriResolver,
     required RdfXmlParserOptions options,
+    required RdfNamespaceMappings namespaceMappings,
   }) : _xmlDocumentProvider = xmlDocumentProvider,
        _uriResolver = uriResolver,
-       _options = options;
+       _options = options,
+       _namespaceMappings = namespaceMappings;
 
   @override
   RdfGraph parse(String input, {String? documentUrl}) {
     final parser = RdfXmlParser(
       input,
       baseUri: documentUrl,
+      namespaceMappings: _namespaceMappings,
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
       options: _options,
@@ -301,6 +322,7 @@ final class _RdfXmlFormatStreamingParserAdapter implements StreamingRdfParser {
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
       options: _options,
+      namespaceMappings: _namespaceMappings,
     );
     yield* parser.parseAsStream();
   }

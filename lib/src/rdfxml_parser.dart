@@ -82,6 +82,9 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Blank node manager for handling blank nodes
   final FunctionalBlankNodeManager _blankNodeManager;
 
+  // Default namespace mappings
+  final RdfNamespaceMappings _namespaceMappings;
+
   /// Parser options for configuring behavior
   final RdfXmlParserOptions _options;
 
@@ -109,8 +112,10 @@ final class RdfXmlParser implements IRdfXmlParser {
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
     FunctionalBlankNodeManager? blankNodeManager,
+    RdfNamespaceMappings? namespaceMappings,
     RdfXmlParserOptions? options,
   }) : _baseUri = baseUri,
+       _namespaceMappings = namespaceMappings ?? RdfNamespaceMappings(),
        _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
@@ -229,6 +234,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Creates a new stream parsing context for handling XML events
   _StreamParsingContext _createStreamParsingContext() {
     return _StreamParsingContext(
+      namespaceMappings: _namespaceMappings,
       uriResolver: _uriResolver,
       blankNodeManager: _blankNodeManager,
       options: _options,

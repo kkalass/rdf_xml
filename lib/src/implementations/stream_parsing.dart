@@ -705,11 +705,6 @@ class _StreamParsingContext {
     return _namespaces[prefix];
   }
 
-  /// Gets the default namespace for well-known prefixes
-  String? _getDefaultNamespaceForPrefix(String prefix) {
-    return _namespaces[prefix];
-  }
-
   /// Normalizes whitespace according to XML rules
   String _normalizeWhitespace(String text) {
     return text.trim().replaceAll(RegExp(r'\s+'), ' ');
