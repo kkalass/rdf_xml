@@ -30,20 +30,18 @@ library rdfxml_parser;
 import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
-import 'package:xml/xml_events.dart'; // Added import for XML events
 
 import 'configuration.dart';
 import 'exceptions.dart';
-import 'implementations/parsing_impl.dart';
-import 'interfaces/xml_parsing.dart';
-import 'rdfxml_constants.dart';
-
 // Import the necessary parts of parsing_impl
 import 'implementations/parsing_impl.dart'
     show
         DefaultXmlDocumentProvider,
         DefaultUriResolver,
         FunctionalBlankNodeManager;
+import 'implementations/parsing_impl.dart';
+import 'interfaces/xml_parsing.dart';
+import 'rdfxml_constants.dart';
 
 /// Parser for RDF/XML format
 ///
@@ -79,9 +77,6 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Blank node manager for handling blank nodes
   final FunctionalBlankNodeManager _blankNodeManager;
 
-  // Default namespace mappings
-  final RdfNamespaceMappings _namespaceMappings;
-
   /// Parser options for configuring behavior
   final RdfXmlParserOptions _options;
 
@@ -112,7 +107,6 @@ final class RdfXmlParser implements IRdfXmlParser {
     RdfNamespaceMappings? namespaceMappings,
     RdfXmlParserOptions? options,
   }) : _baseUri = baseUri,
-       _namespaceMappings = namespaceMappings ?? RdfNamespaceMappings(),
        _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),

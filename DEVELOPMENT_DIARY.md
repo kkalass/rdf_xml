@@ -12,7 +12,7 @@ Initially I had asked the Agent within the rdf_core library to implement rdf/xml
 
 ### Initial Promt for rdf_xml
 
-My initial toplevel promt in rdf_core was: 
+My initial toplevel promt in rdf_core was:
 
 ```llm
 Please implement both a parser and a serializer for rdf/xml
@@ -162,7 +162,7 @@ Interestingly, this did lead into a new round of changes, amongst others about p
 
 ### Expert Review and Fixes (3)
 
-Ok, check again if our senior software engineer is happy now (new toplevel). 
+Ok, check again if our senior software engineer is happy now (new toplevel).
 
 ```llm
 You are a very experienced senior dart developer who values clean and idiomatic code. You have a very good sense for clean architecture and stick to best practices and well known principles like KISS, SOLID, Inversion of Control (IoC) etc. You know that hardcoded special cases and in general code that is considered a "hack" or "code smell" are very bad and you are brilliant in coming up with excelent, clean alternatives. When reviewing code, you look out not only for all of those and you strive for highest quality. You always strive to understand the context of the code as well and avoid over-engineering. 
@@ -266,7 +266,7 @@ Thanks. Unfortunately, this broke compilation. Please execute `dart analyze` to 
 When code and tests compile, please run the tests and make sure that all will pass.
 ```
 
-I had to interrupt because it failed with a non-helpful error that lead the agent into a wrong direction. In addition, I had to interrupt again because it was relaxing a test for the wrong reasons and then it even added code to hardcode to 'http://example.org' in order to make the tests pass.
+I had to interrupt because it failed with a non-helpful error that lead the agent into a wrong direction. In addition, I had to interrupt again because it was relaxing a test for the wrong reasons and then it even added code to hardcode to '<http://example.org>' in order to make the tests pass.
 
 Actually, it went into some sort of endless loop, incapable of fixing the issues.
 
@@ -340,7 +340,7 @@ After implementing code or tests you of course execute `dart analyze`, `dart for
 Please execute the tests in this project with `dart test`. There are quite a few failing tests. Please fix each failing test by fixing the code. Only change the test if you do find out that the expectation in the test is actually really wrong. 
 ```
 
-TODO: 
+TODO:
 
 * stream_parsing.dart has a hardcoded map of namespaces. This is bad. If those standard namespaces are intended, we should pass in the RdfNamespaceMappings class
 
@@ -352,7 +352,7 @@ after some "continue" follow ups of the last prompt, the agent finished eventual
 
 Seems like I need to get involved more now. Lets start with the namespaces hardcoding. After fixing the namespace stuff, lets re-rexecute the developer agent and let it try again to fix issues.
 
-Ok - I stopped the support for streaming. This is something that apparently is too difficult for the Agent and I do not really need it at the moment. It was a (sensible) suggestion of the agent, but the code got 
+Ok - I stopped the support for streaming. This is something that apparently is too difficult for the Agent and I do not really need it at the moment. It was a (sensible) suggestion of the agent, but the code got
 messier and messier, so I removed it alltogether now.
 
 ### TODO: Documentation (2)
@@ -374,7 +374,6 @@ After fixing the sourcecode documentation, please make sure that the README is r
 
 In addition, also update if neccessary our really great and modern landingpage in doc/ directory, which also includes  links to the api documentation which you can generate by calling `dart doc -o doc/api .`. The documentation in doc of course also should only contain examples where you are sure that they are correct and use existing APIs (maybe by putting them in the example directory if they are not there yet).
 ```
-
 
 ### TODO: Expert Review - Final (?) Quality Checks v2
 

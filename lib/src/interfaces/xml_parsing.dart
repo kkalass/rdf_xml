@@ -15,7 +15,6 @@ library rdfxml.interfaces.xml_parsing;
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
-import 'package:xml/xml_events.dart'; // Added import for XML events
 
 /// Contract for RDF/XML parsing functionality
 abstract interface class IRdfXmlParser {

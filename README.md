@@ -1,7 +1,3 @@
-<div align="center">
-  <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" width="96" height="96"/>
-</div>
-
 # rdf_xml
 
 [![pub package](https://img.shields.io/pub/v/rdf_xml.svg)](https://pub.dev/packages/rdf_xml)

@@ -2,8 +2,6 @@ import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 import 'package:test/test.dart';
 
-import 'test_utils.dart';
-
 void main() {
   group('RDF Reification Tests', () {
     test('parses RDF reification statements correctly', () {
@@ -227,9 +225,6 @@ void main() {
       final parser = RdfXmlParser(xml, baseUri: 'http://example.org/doc');
       final reparsedTriples = parser.parse();
 
-      // Create a new graph with the parsed triples
-      final reparsedGraph = RdfGraph(triples: reparsedTriples);
-
       // Print the reparsed triples for debugging
       print('Reparsed triples:');
       for (final triple in reparsedTriples) {
@@ -243,9 +238,9 @@ void main() {
       // Check the original statement is preserved - directly
       final originalFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == subject.toString() &&
-            t.predicate.toString() == predicate.toString() &&
-            t.object.toString() == object.toString(),
+            t.subject == subject &&
+            t.predicate == predicate &&
+            t.object == object,
       );
       expect(
         originalFound,
@@ -256,10 +251,10 @@ void main() {
       // Check the statement type - directly
       final typeFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == statementNode.toString() &&
-            t.predicate.toString() == RdfTerms.type.toString() &&
-            t.object.toString() ==
-                'IriTerm(http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement)',
+            t.subject == statementNode &&
+            t.predicate == RdfTerms.type &&
+            t.object ==
+                IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement'),
       );
       expect(
         typeFound,
@@ -270,10 +265,10 @@ void main() {
       // Check the reification components - directly
       final subjectFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == statementNode.toString() &&
-            t.predicate.toString() ==
-                'IriTerm(http://www.w3.org/1999/02/22-rdf-syntax-ns#subject)' &&
-            t.object.toString() == subject.toString(),
+            t.subject == statementNode &&
+            t.predicate ==
+                IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#subject') &&
+            t.object == subject,
       );
       expect(
         subjectFound,
@@ -283,10 +278,12 @@ void main() {
 
       final predicateFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == statementNode.toString() &&
-            t.predicate.toString() ==
-                'IriTerm(http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate)' &&
-            t.object.toString() == predicate.toString(),
+            t.subject == statementNode &&
+            t.predicate ==
+                IriTerm(
+                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate',
+                ) &&
+            t.object == predicate,
       );
       expect(
         predicateFound,
@@ -296,10 +293,10 @@ void main() {
 
       final objectFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == statementNode.toString() &&
-            t.predicate.toString() ==
-                'IriTerm(http://www.w3.org/1999/02/22-rdf-syntax-ns#object)' &&
-            t.object.toString() == object.toString(),
+            t.subject == statementNode &&
+            t.predicate ==
+                IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#object') &&
+            t.object == object,
       );
       expect(
         objectFound,
@@ -310,74 +307,103 @@ void main() {
       // Check the metadata assertion - directly
       final metadataFound = reparsedTriples.any(
         (t) =>
-            t.subject.toString() == statementNode.toString() &&
-            t.predicate.toString() ==
-                'IriTerm(http://example.org/assertedBy)' &&
-            (t.object.toString() == 'LiteralTerm(Alice)' ||
-                t.object.toString().contains('Alice')),
+            t.subject == statementNode &&
+            t.predicate == IriTerm('http://example.org/assertedBy') &&
+            t.object == LiteralTerm.string('Alice'),
       );
       expect(
         metadataFound,
         isTrue,
         reason: 'Metadata triple not found in reparsed data',
       );
+    });
 
-      /* Original implementation using helper method - commented out due to equality issues
-      // Check the original statement is preserved
-      final originalStatement = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        subject,
-        predicate,
-      );
-      expect(originalStatement, hasLength(1));
-      expect(originalStatement.first.object, equals(object));
+    test('serializes reified statements using rdf:ID syntax when possible', () {
+      // Create the original triple
+      final subject = IriTerm('http://example.org/JohnDoe');
+      final predicate = IriTerm('http://example.org/authorOf');
+      final object = IriTerm('http://example.org/Book1');
+      final originalTriple = Triple(subject, predicate, object);
 
-      // Check the statement type
-      final typeTriples = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        statementNode,
-        RdfTerms.type,
-      );
-      expect(typeTriples, hasLength(1));
-      expect(
-        typeTriples.first.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement')),
+      // Create the reification statement
+      final statementIri = 'http://example.org/statement1';
+      final statementNode = IriTerm(statementIri);
+
+      // Create the reification triples
+      final triples = <Triple>[
+        originalTriple,
+        Triple(
+          statementNode,
+          RdfTerms.type,
+          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement'),
+        ),
+        Triple(
+          statementNode,
+          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'),
+          subject,
+        ),
+        Triple(
+          statementNode,
+          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate'),
+          predicate,
+        ),
+        Triple(
+          statementNode,
+          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#object'),
+          object,
+        ),
+        Triple(
+          statementNode,
+          IriTerm('http://example.org/assertedBy'),
+          LiteralTerm.string('Alice'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      // Set up custom namespaces for cleaner output
+      final customPrefixes = {'ex': 'http://example.org/'};
+
+      // Serialize to RDF/XML
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(
+        graph,
+        baseUri: 'http://example.org/doc',
+        customPrefixes: customPrefixes,
       );
 
-      // Check the reification components
-      final subjectTriples = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        statementNode,
-        IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#subject'),
-      );
-      expect(subjectTriples, hasLength(1));
-      expect(subjectTriples.first.object, equals(subject));
+      // The output should use rdf:ID for reification
+      expect(xml, contains('ex:authorOf rdf:ID="statement1"'));
 
-      final predicateTriples = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        statementNode,
-        IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate'),
-      );
-      expect(predicateTriples, hasLength(1));
-      expect(predicateTriples.first.object, equals(predicate));
+      // It should not contain an explicit rdf:Statement element
+      expect(xml, isNot(contains('<rdf:Statement')));
 
-      final objectTriples = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        statementNode,
-        IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#object'),
-      );
-      expect(objectTriples, hasLength(1));
-      expect(objectTriples.first.object, equals(object));
+      // Parse back to verify round-trip correctness
+      final parser = RdfXmlParser(xml, baseUri: 'http://example.org/doc');
+      final reparsedTriples = parser.parse();
 
-      // Check the metadata assertion
-      final metadataTriples = RdfTestUtils.triplesWithSubjectPredicate(
-        reparsedGraph,
-        statementNode,
-        IriTerm('http://example.org/assertedBy'),
+      // We should have all 6 original triples after parsing
+      // (The original statement + 5 reification triples)
+      expect(reparsedTriples.length, equals(6));
+
+      // Verify the original triple is present
+      final originalExists = reparsedTriples.any(
+        (t) =>
+            t.subject == subject &&
+            t.predicate == predicate &&
+            t.object == object,
       );
-      expect(metadataTriples, hasLength(1));
-      expect(metadataTriples.first.object, equals(LiteralTerm.string('Alice')));
-      */
+      expect(originalExists, isTrue);
+
+      // Verify the reification statement type is present
+      final typeExists = reparsedTriples.any(
+        (t) =>
+            (t.subject as IriTerm).iri.contains('statement1') &&
+            t.predicate == RdfTerms.type &&
+            t.object ==
+                IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement'),
+      );
+      expect(typeExists, isTrue);
     });
   });
 }

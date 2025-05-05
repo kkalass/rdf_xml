@@ -6,7 +6,6 @@ library rdfxml.parsing.implementations;
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
-import 'package:xml/xml_events.dart';
 
 import '../interfaces/xml_parsing.dart';
 import 'parsing_context.dart';
@@ -20,12 +19,6 @@ final class DefaultXmlDocumentProvider implements IXmlDocumentProvider {
 
   @override
   XmlDocument parseXml(String input) => XmlDocument.parse(input);
-
-  @override
-  Stream<XmlEvent> parseXmlEvents(String input) {
-    // Use parseEvents function and convert to a stream
-    return Stream.fromIterable(parseEvents(input));
-  }
 }
 
 /// Default implementation of IUriResolver
