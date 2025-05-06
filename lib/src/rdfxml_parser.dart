@@ -650,9 +650,9 @@ final class RdfXmlParser implements IRdfXmlParser {
   ///
   /// Creates four triples representing the reified statement:
   /// - statement rdf:type rdf:Statement
-  /// - statement rdf:subject <subject>
-  /// - statement rdf:predicate <predicate>
-  /// - statement rdf:object <object>
+  /// - statement rdf:subject &lt;subject&gt;
+  /// - statement rdf:predicate &lt;predicate&gt;
+  /// - statement rdf:object &lt;object&gt;
   List<Triple> _createReificationTriples(
     String idAttr,
     Triple baseTriple,
