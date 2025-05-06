@@ -1,6 +1,6 @@
 name: rdf_xml
 description: A rdf/xml parser and serializer for https://pub.dev/packages/rdf_core .
-version: 0.2.2-dev
+version: 0.2.2
 homepage: https://kkalass.github.io/rdf_xml/
 repository: https://github.com/kkalass/rdf_xml
 issue_tracker: https://github.com/kkalass/rdf_xml/issues
