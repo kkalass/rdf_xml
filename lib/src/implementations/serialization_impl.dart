@@ -1133,6 +1133,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
               );
 
             case LiteralTerm literal:
+              // Handle literal in collection directly
               _buildLiteralTerm(builder, 'rdf:Description', null, literal);
           }
         }

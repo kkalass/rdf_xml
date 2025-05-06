@@ -922,10 +922,57 @@ final class RdfXmlParser implements IRdfXmlParser {
     baseUri = getBaseUri(item) ?? baseUri;
     final isLastItem = index == items.length - 1;
 
-    // Create a node for the item and process it
-    final itemSubject = _getSubject(item, baseUri);
-    triples.add(Triple(currentNode, RdfTerms.first, itemSubject));
-    _processNode(item, baseUri, triples);
+    // Handle the item based on its content and structure
+    RdfObject itemObject;
+
+    if (item.childElements.isEmpty &&
+        item.localName == 'Description' &&
+        item.namespaceUri == RdfTerms.rdfNamespace &&
+        item.attributes
+            .where(
+              (a) =>
+                  a.namespaceUri == RdfTerms.rdfNamespace &&
+                  !(a.localName == 'parseType' || a.localName == 'datatype'),
+            )
+            .isEmpty) {
+      // Plain content in rdf:Description element - treat as literal
+      String literalValue = item.innerText;
+
+      // Apply whitespace normalization if configured
+      if (_options.normalizeWhitespace) {
+        literalValue = _normalizeWhitespace(literalValue);
+      }
+
+      // Check for language tag
+      final langAttr = getLangAttribute(item);
+
+      // Check for datatype attribute
+      final datatypeAttr = item.getAttribute(
+        'datatype',
+        namespace: RdfTerms.rdfNamespace,
+      );
+
+      if (datatypeAttr != null) {
+        // Typed literal
+        final datatype = IriTerm(
+          _uriResolver.resolveUri(datatypeAttr, baseUri),
+        );
+        itemObject = LiteralTerm(literalValue, datatype: datatype);
+      } else if (langAttr != null) {
+        // Language-tagged literal
+        itemObject = LiteralTerm.withLanguage(literalValue, langAttr);
+      } else {
+        // Plain string literal
+        itemObject = LiteralTerm.string(literalValue);
+      }
+    } else {
+      // Regular resource node
+      itemObject = _getSubject(item, baseUri);
+      _processNode(item, baseUri, triples);
+    }
+
+    // Add the triple connecting this list node to the item
+    triples.add(Triple(currentNode, RdfTerms.first, itemObject));
 
     if (isLastItem) {
       // Terminate the list with rdf:nil

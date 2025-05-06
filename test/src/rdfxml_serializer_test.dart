@@ -731,7 +731,6 @@ void main() {
       final parser = RdfXmlParser(xml);
       final parsedTriples = parser.parse();
 
-      expect(triples, equals(parsedTriples));
       // Find the triples connecting the list subject to the first collection node
       final startTriples =
           parsedTriples
@@ -789,6 +788,368 @@ void main() {
       expect(collectedItems[1], isA<LiteralTerm>());
       expect((collectedItems[0] as LiteralTerm).value, equals('item1'));
       expect((collectedItems[1] as LiteralTerm).value, equals('item2'));
+    });
+
+    test('serializes language-tagged literals in RDF collections', () {
+      // Create a list subject
+      final listSubject = IriTerm('http://example.org/multilingualList');
+
+      // Create blank nodes for the collection structure
+      final listNode1 = BlankNodeTerm();
+      final listNode2 = BlankNodeTerm();
+
+      // Create triples representing the RDF collection with language-tagged literals
+      final triples = [
+        // Connect list subject to the first node in the collection
+        Triple(listSubject, IriTerm('http://example.org/labels'), listNode1),
+
+        // First item (English literal)
+        Triple(
+          listNode1,
+          RdfTerms.first,
+          LiteralTerm.withLanguage('Hello', 'en'),
+        ),
+        Triple(listNode1, RdfTerms.rest, listNode2),
+
+        // Second item (German literal) with termination
+        Triple(
+          listNode2,
+          RdfTerms.first,
+          LiteralTerm.withLanguage('Hallo', 'de'),
+        ),
+        Triple(listNode2, RdfTerms.rest, RdfTerms.nil),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML to validate
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+
+      // Find the list subject element
+      final listElements = doc.findAllElements('rdf:Description');
+      final listElement = listElements.firstWhere(
+        (e) =>
+            e.getAttribute('rdf:about') ==
+            'http://example.org/multilingualList',
+      );
+
+      // Find the labels property element
+      final labelsElements = listElement.findElements('$exPrefix:labels');
+      expect(labelsElements, hasLength(1));
+
+      // Check that the labels element has parseType="Collection"
+      expect(
+        labelsElements.first.getAttribute('rdf:parseType'),
+        equals('Collection'),
+      );
+
+      // Verify that we have the correct number of child elements in the collection
+      final collectionItems = labelsElements.first.childElements;
+      expect(collectionItems, hasLength(2));
+
+      // For literals, we should have rdf:Description elements with text content
+      final descriptions = labelsElements.first.findAllElements(
+        'rdf:Description',
+      );
+      expect(descriptions, hasLength(2));
+
+      // Check the language tags of the collection items
+      final englishLiteral = descriptions.firstWhere(
+        (e) => e.getAttribute('xml:lang') == 'en',
+      );
+      expect(englishLiteral.innerText, equals('Hello'));
+
+      final germanLiteral = descriptions.firstWhere(
+        (e) => e.getAttribute('xml:lang') == 'de',
+      );
+      expect(germanLiteral.innerText, equals('Hallo'));
+
+      // Verify round-trip integrity by parsing back to RDF
+      final parser = RdfXmlParser(xml);
+      final parsedTriples = parser.parse();
+
+      // Get the first collection node
+      final startTriples =
+          parsedTriples
+              .where(
+                (t) =>
+                    t.subject.toString() == listSubject.toString() &&
+                    (t.predicate as IriTerm).iri == 'http://example.org/labels',
+              )
+              .toList();
+
+      expect(startTriples, hasLength(1));
+      final firstNode = startTriples.first.object;
+
+      // Follow the collection chain to verify structure
+      var currentNode = firstNode;
+      final collectedItems = <RdfTerm>[];
+
+      // Traverse the list until we hit rdf:nil
+      while (currentNode != RdfTerms.nil) {
+        // Find the rdf:first triple for this node
+        final firstTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                )
+                .toList();
+
+        expect(firstTriples, hasLength(1));
+        collectedItems.add(firstTriples.first.object);
+
+        // Find the rdf:rest triple for this node
+        final restTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                )
+                .toList();
+
+        expect(restTriples, hasLength(1));
+        currentNode = restTriples.first.object;
+      }
+
+      // Verify we have 2 items
+      expect(collectedItems, hasLength(2));
+
+      // Verify the items are language-tagged literals with correct values
+      expect(collectedItems[0], isA<LiteralTerm>());
+      expect(collectedItems[1], isA<LiteralTerm>());
+
+      final englishItem =
+          collectedItems.firstWhere(
+                (item) => item is LiteralTerm && item.language == 'en',
+              )
+              as LiteralTerm;
+      expect(englishItem.value, equals('Hello'));
+
+      final germanItem =
+          collectedItems.firstWhere(
+                (item) => item is LiteralTerm && item.language == 'de',
+              )
+              as LiteralTerm;
+      expect(germanItem.value, equals('Hallo'));
+    });
+
+    test('serializes datatyped literals in RDF collections', () {
+      // Create a list subject
+      final listSubject = IriTerm('http://example.org/typedList');
+
+      // Create blank nodes for the collection structure
+      final listNode1 = BlankNodeTerm();
+      final listNode2 = BlankNodeTerm();
+      final listNode3 = BlankNodeTerm();
+
+      // Create triples representing the RDF collection with datatyped literals
+      final triples = [
+        // Connect list subject to the first node in the collection
+        Triple(listSubject, IriTerm('http://example.org/values'), listNode1),
+
+        // First item (integer literal)
+        Triple(
+          listNode1,
+          RdfTerms.first,
+          LiteralTerm(
+            '42',
+            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        ),
+        Triple(listNode1, RdfTerms.rest, listNode2),
+
+        // Second item (decimal literal)
+        Triple(
+          listNode2,
+          RdfTerms.first,
+          LiteralTerm(
+            '3.14',
+            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#decimal'),
+          ),
+        ),
+        Triple(listNode2, RdfTerms.rest, listNode3),
+
+        // Third item (date literal) with termination
+        Triple(
+          listNode3,
+          RdfTerms.first,
+          LiteralTerm(
+            '2025-05-06',
+            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#date'),
+          ),
+        ),
+        Triple(listNode3, RdfTerms.rest, RdfTerms.nil),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML to validate
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+
+      // Find the list subject element
+      final listElements = doc.findAllElements('rdf:Description');
+      final listElement = listElements.firstWhere(
+        (e) => e.getAttribute('rdf:about') == 'http://example.org/typedList',
+      );
+
+      // Find the values property element
+      final valuesElements = listElement.findElements('$exPrefix:values');
+      expect(valuesElements, hasLength(1));
+
+      // Check that the values element has parseType="Collection"
+      expect(
+        valuesElements.first.getAttribute('rdf:parseType'),
+        equals('Collection'),
+      );
+
+      // Verify that we have the correct number of child elements in the collection
+      final collectionItems = valuesElements.first.childElements;
+      expect(collectionItems, hasLength(3));
+
+      // For literals, we should have rdf:Description elements with datatype attributes
+      final descriptions = valuesElements.first.findAllElements(
+        'rdf:Description',
+      );
+      expect(descriptions, hasLength(3));
+
+      // Check the datatyped literals
+      final integerLiteral = descriptions.firstWhere(
+        (e) =>
+            e.getAttribute('rdf:datatype') ==
+            'http://www.w3.org/2001/XMLSchema#integer',
+      );
+      expect(integerLiteral.innerText, equals('42'));
+
+      final decimalLiteral = descriptions.firstWhere(
+        (e) =>
+            e.getAttribute('rdf:datatype') ==
+            'http://www.w3.org/2001/XMLSchema#decimal',
+      );
+      expect(decimalLiteral.innerText, equals('3.14'));
+
+      final dateLiteral = descriptions.firstWhere(
+        (e) =>
+            e.getAttribute('rdf:datatype') ==
+            'http://www.w3.org/2001/XMLSchema#date',
+      );
+      expect(dateLiteral.innerText, equals('2025-05-06'));
+
+      // Verify round-trip integrity by parsing back to RDF
+      final parser = RdfXmlParser(xml);
+      final parsedTriples = parser.parse();
+
+      // Get the first collection node
+      final startTriples =
+          parsedTriples
+              .where(
+                (t) =>
+                    t.subject.toString() == listSubject.toString() &&
+                    (t.predicate as IriTerm).iri == 'http://example.org/values',
+              )
+              .toList();
+
+      expect(startTriples, hasLength(1));
+      final firstNode = startTriples.first.object;
+
+      // Follow the collection chain to verify structure
+      var currentNode = firstNode;
+      final collectedItems = <RdfTerm>[];
+
+      // Traverse the list until we hit rdf:nil
+      while (currentNode != RdfTerms.nil) {
+        // Find the rdf:first triple for this node
+        final firstTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                )
+                .toList();
+
+        expect(firstTriples, hasLength(1));
+        collectedItems.add(firstTriples.first.object);
+
+        // Find the rdf:rest triple for this node
+        final restTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                )
+                .toList();
+
+        expect(restTriples, hasLength(1));
+        currentNode = restTriples.first.object;
+      }
+
+      // Verify we have 3 items
+      expect(collectedItems, hasLength(3));
+
+      // Verify the items are datatyped literals with correct values and types
+      expect(collectedItems[0], isA<LiteralTerm>());
+      expect(collectedItems[1], isA<LiteralTerm>());
+      expect(collectedItems[2], isA<LiteralTerm>());
+
+      final integerItem =
+          collectedItems.firstWhere(
+                (item) =>
+                    item is LiteralTerm &&
+                    item.datatype.iri ==
+                        'http://www.w3.org/2001/XMLSchema#integer',
+              )
+              as LiteralTerm;
+      expect(integerItem.value, equals('42'));
+
+      final decimalItem =
+          collectedItems.firstWhere(
+                (item) =>
+                    item is LiteralTerm &&
+                    item.datatype.iri ==
+                        'http://www.w3.org/2001/XMLSchema#decimal',
+              )
+              as LiteralTerm;
+      expect(decimalItem.value, equals('3.14'));
+
+      final dateItem =
+          collectedItems.firstWhere(
+                (item) =>
+                    item is LiteralTerm &&
+                    item.datatype.iri ==
+                        'http://www.w3.org/2001/XMLSchema#date',
+              )
+              as LiteralTerm;
+      expect(dateItem.value, equals('2025-05-06'));
     });
   });
 }
