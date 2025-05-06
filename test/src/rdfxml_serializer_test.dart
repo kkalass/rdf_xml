@@ -308,5 +308,180 @@ void main() {
       expect(cityElements, hasLength(1));
       expect(cityElements.first.innerText, equals('Springfield'));
     });
+
+    test('correctly handles language tags in nested resources', () {
+      // Create a publication with multilingual title and abstract,
+      // plus nested authors with multilingual names
+      final publication = IriTerm('http://example.org/publication/1');
+      final author1 = BlankNodeTerm();
+      final author2 = IriTerm('http://example.org/person/jane');
+
+      final triples = [
+        // Publication metadata with language tags
+        Triple(
+          publication,
+          RdfTerms.type,
+          IriTerm('http://example.org/Publication'),
+        ),
+        Triple(
+          publication,
+          IriTerm('http://example.org/title'),
+          LiteralTerm.withLanguage('Machine Learning Fundamentals', 'en'),
+        ),
+        Triple(
+          publication,
+          IriTerm('http://example.org/title'),
+          LiteralTerm.withLanguage('Grundlagen des maschinellen Lernens', 'de'),
+        ),
+
+        // Link to authors
+        Triple(publication, IriTerm('http://example.org/author'), author1),
+        Triple(publication, IriTerm('http://example.org/author'), author2),
+
+        // Author 1 (blank node) with multilingual names
+        Triple(author1, RdfTerms.type, IriTerm('http://example.org/Person')),
+        Triple(
+          author1,
+          IriTerm('http://example.org/name'),
+          LiteralTerm.withLanguage('John Smith', 'en'),
+        ),
+        Triple(
+          author1,
+          IriTerm('http://example.org/name'),
+          LiteralTerm.withLanguage('Johann Schmidt', 'de'),
+        ),
+
+        // Author 2 (IRI) with multilingual names
+        Triple(author2, RdfTerms.type, IriTerm('http://example.org/Person')),
+        Triple(
+          author2,
+          IriTerm('http://example.org/name'),
+          LiteralTerm.withLanguage('Jane Doe', 'en'),
+        ),
+        Triple(
+          author2,
+          IriTerm('http://example.org/name'),
+          LiteralTerm.withLanguage('Jana Musterfrau', 'de'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Uncomment to debug the XML structure
+      // print('\n--- Generated XML ---\n$xml\n---------------------');
+
+      // Parse the XML to validate
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+      expect(
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      // Check the publication titles
+      final publicationElements = doc.findAllElements('$exPrefix:Publication');
+      expect(publicationElements, hasLength(1));
+
+      final titleElements = publicationElements.first.findElements(
+        '$exPrefix:title',
+      );
+      expect(titleElements, hasLength(2));
+
+      // Verify both language versions exist using any or where clauses to be more robust
+      final englishTitles =
+          titleElements
+              .where((e) => e.getAttribute('xml:lang') == 'en')
+              .toList();
+      expect(
+        englishTitles.isNotEmpty,
+        isTrue,
+        reason: 'No English title found',
+      );
+      expect(
+        englishTitles.first.innerText,
+        equals('Machine Learning Fundamentals'),
+      );
+
+      final germanTitles =
+          titleElements
+              .where((e) => e.getAttribute('xml:lang') == 'de')
+              .toList();
+      expect(germanTitles.isNotEmpty, isTrue, reason: 'No German title found');
+      expect(
+        germanTitles.first.innerText,
+        equals('Grundlagen des maschinellen Lernens'),
+      );
+
+      // Check author elements
+      final authorElements = publicationElements.first.findElements(
+        '$exPrefix:author',
+      );
+      expect(authorElements, hasLength(2));
+
+      // Find the nodeID references to match with Person elements later
+      final authorNodeIds =
+          authorElements
+              .where((e) => e.getAttribute('rdf:nodeID') != null)
+              .map((e) => e.getAttribute('rdf:nodeID'))
+              .toList();
+
+      // Find all Person elements that represent authors
+      final personElements = doc.findAllElements('$exPrefix:Person');
+
+      // Find Person elements with language tags
+      bool foundEnglishName = false;
+      bool foundGermanName = false;
+      bool foundJaneDoe = false;
+      bool foundJanaMusterfrau = false;
+
+      // Check all person elements for multilingual names
+      for (final person in personElements) {
+        final nameElements = person.findElements('$exPrefix:name');
+
+        for (final nameElem in nameElements) {
+          final langAttr = nameElem.getAttribute('xml:lang');
+          final nameText = nameElem.innerText;
+
+          if (langAttr == 'en') {
+            if (nameText == 'John Smith') foundEnglishName = true;
+            if (nameText == 'Jane Doe') foundJaneDoe = true;
+          } else if (langAttr == 'de') {
+            if (nameText == 'Johann Schmidt') foundGermanName = true;
+            if (nameText == 'Jana Musterfrau') foundJanaMusterfrau = true;
+          }
+        }
+      }
+
+      // Verify we found all expected multilingual names
+      expect(
+        foundEnglishName,
+        isTrue,
+        reason: 'English name "John Smith" not found',
+      );
+      expect(
+        foundGermanName,
+        isTrue,
+        reason: 'German name "Johann Schmidt" not found',
+      );
+      expect(foundJaneDoe, isTrue, reason: 'English name "Jane Doe" not found');
+      expect(
+        foundJanaMusterfrau,
+        isTrue,
+        reason: 'German name "Jana Musterfrau" not found',
+      );
+    });
   });
 }

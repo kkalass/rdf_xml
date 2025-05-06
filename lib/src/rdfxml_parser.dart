@@ -124,7 +124,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     // base iri attribute with name/namespace but need to use the qualified
     // name as fallback.
     return element.getAttribute(
-          'xml:base',
+          'base',
           namespace: 'http://www.w3.org/XML/1998/namespace',
         ) ??
         element.getAttribute('xml:base');
@@ -490,10 +490,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     }
 
     // Check for XML language attribute (xml:lang)
-    final langAttr = propertyElement.getAttribute(
-      'lang',
-      namespace: 'http://www.w3.org/XML/1998/namespace',
-    );
+    final langAttr = getLangAttribute(propertyElement);
 
     if (datatypeAttr != null) {
       // Typed literal
@@ -525,6 +522,14 @@ final class RdfXmlParser implements IRdfXmlParser {
       // Plain literal (string)
       triples.add(Triple(subject, predicate, LiteralTerm.string(literalValue)));
     }
+  }
+
+  String? getLangAttribute(XmlElement propertyElement) {
+    return propertyElement.getAttribute(
+          'lang',
+          namespace: 'http://www.w3.org/XML/1998/namespace',
+        ) ??
+        propertyElement.getAttribute('xml:lang');
   }
 
   /// Checks if an element is an RDF container element (Bag, Seq, Alt)
@@ -608,10 +613,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           );
 
           // Check for language tag
-          final langAttr = itemElement.getAttribute(
-            'lang',
-            namespace: 'http://www.w3.org/XML/1998/namespace',
-          );
+          final langAttr = getLangAttribute(itemElement);
 
           if (datatypeAttr != null) {
             final datatype = IriTerm(

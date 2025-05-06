@@ -67,6 +67,39 @@ void main() {
       expect(nameTriple.object, equals(LiteralTerm.string('John Doe')));
     });
 
+    test('handles language tags in dc:description', () {
+      final xmlContent = '''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="http://purl.org/dc/elements/1.1/"
+             xml:base="http://example.org/data/">
+      
+      <!-- Resource with multiple properties -->
+      <rdf:Description rdf:about="resource1">
+        <dc:description xml:lang="en">An example showing configuration options</dc:description>
+      </rdf:Description>
+      
+    </rdf:RDF>
+  ''';
+      final parser = RdfXmlParser(xmlContent);
+      final triples = parser.parse();
+      expect(triples.length, equals(1));
+      expect(
+        triples[0].subject,
+        equals(IriTerm('http://example.org/data/resource1')),
+      );
+      expect(
+        triples[0].predicate,
+        equals(IriTerm('http://purl.org/dc/elements/1.1/description')),
+      );
+      expect(triples[0].object, isA<LiteralTerm>());
+      expect(
+        (triples[0].object as LiteralTerm).value,
+        equals('An example showing configuration options'),
+      );
+      expect((triples[0].object as LiteralTerm).language, equals('en'));
+    });
+
     test('handles language tags', () {
       final xml = '''
         <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"

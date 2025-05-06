@@ -45,9 +45,8 @@ void main() {
 
       final parser = RdfXmlParser(xmlContent);
       final triples = parser.parse();
-
-      // Prüfe, ob die Triples die Sprachinformationen enthalten
-      // Dies dient zur Diagnose des Problems
+      // Check if the triples contain language information
+      // This serves to diagnose the problem
       final langTriples =
           triples.where((t) {
             if (t.object is LiteralTerm) {
@@ -56,21 +55,21 @@ void main() {
             }
             return false;
           }).toList();
-
-      // Ausgabe aller Sprach-markierten Literale
+      expect(
+        langTriples,
+        isNotEmpty,
+        reason: 'Language-tagged literals should be present.',
+      );
+      // Output of all language-tagged literals
       for (final triple in langTriples) {
         final lit = triple.object as LiteralTerm;
-        print('Literal mit Sprachtag: ${lit.value} (${lit.language})');
+        print('Literal with language tag: ${lit.value} (${lit.language})');
       }
 
       final serializer = RdfXmlSerializer();
       final serializedXml = serializer.write(
         RdfGraph.fromTriples(triples),
         baseUri: 'http://example.org/data/',
-        customPrefixes: {
-          //'ex': 'http://example.org/terms#',
-          //'dc': 'http://purl.org/dc/elements/1.1/',
-        },
       );
 
       // Parse both XML documents for structured comparison
