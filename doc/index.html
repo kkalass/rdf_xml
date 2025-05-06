@@ -38,6 +38,7 @@
       height: 100%;
       background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon fill="rgba(255,255,255,0.1)" points="0,100 100,0 100,100"/></svg>');
       background-size: cover;
+      pointer-events: none;
     }
     
     .hero h1 {
@@ -176,7 +177,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
     <div class="container">
       <a class="navbar-brand" href="#">
-        <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" width="40" height="40">
+        <img src="logo.svg" alt="rdf_xml logo" width="40" height="40">
         RDF/XML
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -213,7 +214,7 @@
       <div class="row align-items-center">
         <div class="col-lg-8">
           <h1>RDF/XML for Dart</h1>
-          <p>A high-performance RDF/XML parser and serializer implementing the W3C standard</p>
+          <p>A high-performance RDF/XML parser and serializer for <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> implementing the W3C standard </p>
           <a href="https://pub.dev/packages/rdf_xml" class="btn btn-light btn-lg me-3">
             <i class="bi bi-box"></i> pub.dev
           </a>
@@ -222,7 +223,7 @@
           </a>
         </div>
         <div class="col-lg-4 d-none d-lg-block text-center">
-          <img src="https://kkalass.github.io/rdf_xml/logo.svg" alt="rdf_xml logo" class="img-fluid" width="200">
+          <img src="logo.svg" alt="rdf_xml logo" class="img-fluid" width="200">
         </div>
       </div>
     </div>
@@ -247,7 +248,7 @@
             <div class="card-body text-center">
               <i class="bi bi-speedometer feature-icon"></i>
               <h3 class="h5">High Performance</h3>
-              <p>Optimized for both speed and memory efficiency with configurable performance options.</p>
+              <p>Optimized for both speed and memory efficiency.</p>
             </div>
           </div>
         </div>
@@ -329,9 +330,10 @@
     &lt;/rdf:RDF&gt;
   '''</span>;
 
-  <span class="code-comment">// Create a parser directly</span>
-  <span class="code-keyword">final</span> parser = <span class="code-type">RdfXmlFormat</span>().createParser();
-  <span class="code-keyword">final</span> rdfGraph = parser.parse(xmlContent);
+  <span class="code-comment">// Register the format with the registry</span>
+  <span class="code-keyword">final</span> rdfCore = <span class="code-type">RdfCore</span>.withStandardFormats();
+  rdfCore = rdfCore.registerFormat(<span class="code-type">RdfXmlFormat</span>());
+  <span class="code-keyword">final</span> rdfGraph = rdfCore.parse(xmlContent);
   
   <span class="code-comment">// Print the parsed triples</span>
   <span class="code-keyword">for</span> (<span class="code-keyword">final</span> triple <span class="code-keyword">in</span> rdfGraph.triples) {
@@ -540,7 +542,7 @@
       <div class="row">
         <div class="col-md-6">
           <h3 class="h5">RDF/XML for Dart</h3>
-          <p>A high-performance RDF/XML parser and serializer for the rdf_core library.</p>
+          <p>A high-performance RDF/XML parser and serializer for the <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> library.</p>
           <p>
             <a href="https://pub.dev/packages/rdf_xml" class="text-white me-3">
               <i class="bi bi-box"></i> pub.dev

@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/kkalass/rdf_xml/branch/main/graph/badge.svg)](https://codecov.io/gh/kkalass/rdf_xml)
 [![license](https://img.shields.io/github/license/kkalass/rdf_xml.svg)](https://github.com/kkalass/rdf_xml/blob/main/LICENSE)
 
-A high-performance RDF/XML parser and serializer for the [rdf_core](https://pub.dev/packages/rdf_core) library, offering a complete implementation of the W3C RDF/XML specification.
+A RDF/XML parser and serializer for the [rdf_core](https://pub.dev/packages/rdf_core) library, offering a complete implementation of the W3C RDF/XML specification.
 
 [🌐 **Official Documentation**](https://kkalass.github.io/rdf_xml/)
 
@@ -52,9 +52,11 @@ void main() {
     </rdf:RDF>
   ''';
 
-  // Create a parser directly
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(xmlContent);
+  // Register the format with the registry
+  final rdfCore = RdfCore.withStandardFormats();
+  rdfCore.registerFormat(RdfXmlFormat());
+
+  final rdfGraph = rdfCore.parse(xmlContent);
   
   // Print the parsed triples
   for (final triple in rdfGraph.triples) {
@@ -63,27 +65,6 @@ void main() {
 }
 ```
 
-### Parsing from a File
-
-```dart
-import 'dart:io';
-import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/rdf_xml.dart';
-
-Future<void> parseFromFile(String filePath) async {
-  final file = File(filePath);
-  final xmlContent = await file.readAsString();
-  
-  // Parse with base URI set to the file location
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(
-    xmlContent, 
-    documentUrl: 'file://${file.absolute.path}',
-  );
-  
-  print('Parsed ${rdfGraph.size} triples from $filePath');
-}
-```
 
 ### Serializing to RDF/XML
 
@@ -106,38 +87,36 @@ void main() {
     ),
   ]);
 
-  // Create a serializer with readable formatting
-  final serializer = RdfXmlFormat.readable().createSerializer();
-  
-  // Serialize with custom prefixes
-  final rdfXml = serializer.write(
-    graph,
-    customPrefixes: {
-      'dc': 'http://purl.org/dc/elements/1.1/',
-      'ex': 'http://example.org/',
-    },
-  );
+  // Register the format with the registry
+  final rdfCore = RdfCore.withStandardFormats();
+  rdfCore.registerFormat(RdfXmlFormat());
+
+  // Serialize
+  final rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml",);
   
   print(rdfXml);
 }
 ```
 
-### Using with the Format Registry
+### Parsing from a File
 
 ```dart
+import 'dart:io';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 
-void main() {
-  // Register the format with the registry
-  final registry = RdfFormatRegistry();
-  registry.registerFormat(RdfXmlFormat());
+Future<void> parseFromFile(String filePath) async {
+  final file = File(filePath);
+  final xmlContent = await file.readAsString();
   
-  // Get a parser by MIME type
-  final parser = registry.getParser('application/rdf+xml');
-  final serializer = registry.getSerializer('application/rdf+xml');
+  // Parse with base URI set to the file location
+  final parser = RdfXmlFormat().createParser();
+  final rdfGraph = parser.parse(
+    xmlContent, 
+    documentUrl: 'file://${file.absolute.path}',
+  );
   
-  // ...use parser and serializer
+  print('Parsed ${rdfGraph.size} triples from $filePath');
 }
 ```
 
@@ -177,7 +156,6 @@ final customSerializer = RdfXmlFormat(
   serializerOptions: RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 4,
-    useNamespaces: true,
     useTypedNodes: true,
   ),
 ).createSerializer();

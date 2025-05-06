@@ -115,46 +115,6 @@ Future&lt;void&gt; parseFromFile(String filePath) async {
   print('Parsed ${rdfGraph.size} triples from $filePath');
 }
 </code></pre>
-<h3 id="working-with-named-graphs">Working with Named Graphs</h3>
-<pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/rdf_xml.dart';
-
-void main() {
-  final xmlContent = '''
-    &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-             xmlns:foaf="http://xmlns.com/foaf/0.1/"&gt;
-      &lt;foaf:Person rdf:about="http://example.org/person/alice"&gt;
-        &lt;foaf:name&gt;Alice&lt;/foaf:name&gt;
-        &lt;foaf:knows rdf:resource="http://example.org/person/bob"/&gt;
-      &lt;/foaf:Person&gt;
-    &lt;/rdf:RDF&gt;
-  ''';
-
-  // Parse the content
-  final parser = RdfXmlFormat().createParser();
-  final graph = parser.parse(xmlContent);
-  
-  // Create a named graph
-  final namedGraph = NamedGraph(
-    IriTerm('http://example.org/graphs/people'),
-    graph,
-  );
-  
-  // Add to a dataset
-  final dataset = RdfDataset.empty();
-  dataset.addNamedGraph(namedGraph);
-  
-  // Query the dataset
-  final people = dataset.findByPredicateObject(
-    IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-    IriTerm('http://xmlns.com/foaf/0.1/Person'),
-  );
-  
-  for (final person in people) {
-    print('Found person: ${person.subject}');
-  }
-}
-</code></pre>
 <h3 id="serializing-to-rdfxml">Serializing to RDF/XML</h3>
 <pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
@@ -309,7 +269,7 @@ final customSerializer = RdfXmlFormat(
 <footer>
   <span class="no-break">
     rdf_xml
-      0.1.1
+      0.1.2-dev
   </span>
   
 </footer>

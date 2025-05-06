@@ -1,5 +1,6 @@
 // Basic usage of the rdf_xml package
-// Shows how to parse and serialize RDF/XML data
+// Shows how to integrate with RdfCore and
+// then parse and serialize RDF/XML data
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
@@ -25,9 +26,11 @@ void main() {
 
   print('--- PARSING EXAMPLE ---\n');
 
-  // Create a parser directly
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(xmlContent);
+  // Register the format with the registry
+  final rdfCore = RdfCore.withStandardFormats();
+  rdfCore.registerFormat(RdfXmlFormat());
+
+  final rdfGraph = rdfCore.parse(xmlContent);
 
   // Print the parsed triples
   print('Parsed ${rdfGraph.size} triples:');
@@ -37,32 +40,12 @@ void main() {
 
   print('\n--- SERIALIZATION EXAMPLE ---\n');
 
-  // Create a serializer with readable formatting
-  final serializer = RdfXmlFormat.readable().createSerializer();
-
   // Serialize with custom prefixes
-  final rdfXml = serializer.write(
+  final rdfXml = rdfCore.serialize(
     rdfGraph,
-    customPrefixes: {
-      'dc': 'http://purl.org/dc/elements/1.1/',
-      'foaf': 'http://xmlns.com/foaf/0.1/',
-      'ex': 'http://example.org/',
-    },
+    contentType: "application/rdf+xml",
   );
 
   print('Serialized RDF/XML:');
   print(rdfXml);
-
-  print('\n--- FORMAT REGISTRY EXAMPLE ---\n');
-
-  // Register the format with the registry
-  final registry = RdfFormatRegistry();
-  registry.registerFormat(RdfXmlFormat());
-
-  // Get a parser and serializer by MIME type
-  final registryParser = registry.getParser('application/rdf+xml');
-  final registrySerializer = registry.getSerializer('application/rdf+xml');
-
-  print('Parser from registry: ${registryParser.runtimeType}');
-  print('Serializer from registry: ${registrySerializer.runtimeType}');
 }
