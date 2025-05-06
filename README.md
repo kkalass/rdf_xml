@@ -30,7 +30,7 @@ Or add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  rdf_xml: ^0.1.1
+  rdf_xml: ^0.2.0
 ```
 
 ## 📖 Usage
