@@ -6,11 +6,14 @@ library rdfxml.serialization.implementations;
 
 import 'dart:math';
 
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
 import '../interfaces/serialization.dart';
 import '../rdfxml_constants.dart';
+
+final _logger = Logger('rdf.serializer.rdfxml');
 
 /// Helper class to store reification information
 ///
@@ -37,6 +40,18 @@ class _ReificationInfo {
   });
 }
 
+/// Information about a RDF Collection
+///
+/// Used to track RDF collection items for serialization.
+class _CollectionInfo {
+  /// The items in the collection in order
+  final List<RdfObject> items;
+  final List<BlankNodeTerm> nodeChain;
+
+  /// Creates a new RDF collection info
+  const _CollectionInfo({required this.items, required this.nodeChain});
+}
+
 final class _SubjectGroup {
   final RdfSubject subject;
   final String? _baseUrl;
@@ -45,7 +60,7 @@ final class _SubjectGroup {
   late String? qname;
   _ReificationInfo? _reificationInfo;
   bool? _isReification;
-
+  bool? _isCollectionNode;
   _SubjectGroup.computedQName(
     this.subject,
     this._baseUrl,
@@ -81,6 +96,39 @@ final class _SubjectGroup {
       return types.first;
     }
     return null;
+  }
+
+  RdfObject? get collectionFirst {
+    if (subject is BlankNodeTerm) {
+      final predicates = _graph.findTriples(predicate: RdfTerms.first);
+      if (predicates.length != 1) {
+        return null;
+      }
+      return predicates.first.object;
+    }
+    return null;
+  }
+
+  RdfObject? get collectionRest {
+    if (subject is BlankNodeTerm) {
+      final rest = _graph.findTriples(predicate: RdfTerms.rest);
+      if (rest.length != 1) {
+        return null;
+      }
+      return rest.first.object;
+    }
+    return null;
+  }
+
+  bool get isCollectionNode {
+    if (_isCollectionNode == null) {
+      _isCollectionNode =
+          subject is BlankNodeTerm &&
+          length == 2 &&
+          collectionFirst != null &&
+          collectionRest != null;
+    }
+    return _isCollectionNode!;
   }
 
   bool get isContainerType {
@@ -172,6 +220,8 @@ final class _SubjectGroup {
   }
 
   List<Triple> get triples => _graph.triples;
+
+  int get length => _graph.triples.length;
 
   List<Triple> findTriples({RdfPredicate? predicate, RdfObject? object}) {
     return _graph.findTriples(predicate: predicate, object: object).toList();
@@ -530,6 +580,10 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   /// Maps from statement signature (subject+predicate+object) to statement URI
   var _reifiedStatementsMap = <String, _ReificationInfo>{};
 
+  /// Map from blank node to collection info
+  var _collectionsMap = <BlankNodeTerm, _CollectionInfo>{};
+  var _collectionChainNodes = <BlankNodeTerm>{};
+
   /// Builds an XML document from an RDF graph
   ///
   /// Creates a complete XML representation of the given RDF data.
@@ -552,6 +606,11 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
 
     // Detect reification patterns in the graph
     _reifiedStatementsMap = _identifyReificationPatterns(_currentSubjectGroups);
+
+    // Detect RDF collections in the graph
+    _collectionsMap = _identifyCollectionPatterns();
+    _collectionChainNodes =
+        _collectionsMap.values.expand((col) => col.nodeChain).toSet();
 
     // Track blank nodes that are serialized as nested resources
     final processedBlankNodes = <BlankNodeTerm>{};
@@ -578,9 +637,8 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             continue;
           }
 
-          // Skip blank nodes that were already processed as nested resources
-          if (sg.subject is BlankNodeTerm &&
-              processedBlankNodes.contains(sg.subject)) {
+          // Skip all blank nodes in first pass
+          if (sg.subject is BlankNodeTerm) {
             continue;
           }
 
@@ -607,6 +665,15 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           }
 
           _serializeSubject(builder, sg, namespaces, processedBlankNodes);
+        }
+
+        // Second pass: serialize  nodes that were not processed inline
+        for (final sg in _currentSubjectGroups.values) {
+          // process blank nodes that were not already processed as nested resources
+          if (sg.subject is BlankNodeTerm &&
+              !processedBlankNodes.contains(sg.subject)) {
+            _serializeSubject(builder, sg, namespaces, processedBlankNodes);
+          }
         }
       },
     );
@@ -692,6 +759,10 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     return result;
   }
 
+  Map<BlankNodeTerm, String> _blankNodeIds = {};
+  String _blankNodeId(BlankNodeTerm node) =>
+      _blankNodeIds.putIfAbsent(node, () => 'b${_blankNodeIds.length + 1}');
+
   /// Serializes a subject group as an XML element
   ///
   /// Creates an element for the subject and adds nested elements for predicates.
@@ -714,25 +785,9 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         // Add subject identification
         switch (subject) {
           case IriTerm _:
-            // Check if the IRI is relative to the base URI, and if so, use the relative form
-            final iri = subject.iri;
-            final baseUri = _currentBaseUri;
-
-            if (baseUri != null && iri.startsWith(baseUri)) {
-              // Create relative URI if possible
-              final relativeUri = iri.substring(baseUri.length);
-
-              // If it's empty after removing base, use '/'
-              final uriToUse = relativeUri.isEmpty ? '/' : relativeUri;
-              builder.attribute('rdf:about', uriToUse);
-            } else {
-              builder.attribute('rdf:about', iri);
-            }
+            builder.attribute('rdf:about', getResourceReference(subject));
           case BlankNodeTerm _:
-            builder.attribute(
-              'rdf:nodeID',
-              'blank${identityHashCode(subject)}',
-            );
+            builder.attribute('rdf:nodeID', _blankNodeId(subject));
         }
 
         // Add all predicates except the type that's already encoded in the element name
@@ -779,38 +834,20 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     }
 
     // Check if this predicate-object pair is reified
-    final statementSignature = _getStatementKey(
-      subjectGroup.subject,
-      predicate,
-      object,
-    );
-    final reificationInfo = _reifiedStatementsMap[statementSignature];
-    // Note: the localId is handled here, the other triples will be handled as
-    // a normal SubjectNode
-    final localId = reificationInfo?.localId;
+    String? localId = getLocalId(subjectGroup.subject, predicate, object);
 
     // Handle different object types
     switch (object) {
       case IriTerm _:
-        // Resource reference
-        // Check if the IRI is relative to the base URI, and use relative form if possible
-        final iri = object.iri;
-        final baseUri = _currentBaseUri;
-        String resourceUri = iri;
-
-        if (baseUri != null && iri.startsWith(baseUri)) {
-          final relativeUri = iri.substring(baseUri.length);
-          resourceUri = relativeUri.isEmpty ? '/' : relativeUri;
-        }
-
         builder.element(
           predicateQName,
           attributes: {
-            'rdf:resource': resourceUri,
+            'rdf:resource': getResourceReference(object),
             if (localId != null) 'rdf:ID': localId,
           },
         );
       case BlankNodeTerm _:
+
         // Check if this blank node is a container or a typed node with properties
         var containerGroup = _currentSubjectGroups[object];
         if (containerGroup != null && containerGroup.isContainerType) {
@@ -822,46 +859,92 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             object,
             containerGroup.containerType!,
             namespaces,
-          );
-        } else if (containerGroup != null && containerGroup.typeIri != null) {
-          // This is a typed node - serialize it inline
-          _serializeNestedResource(
-            builder,
-            predicateQName,
-            containerGroup,
-            namespaces,
-            localId,
             processedBlankNodes,
           );
+        } else if (_collectionsMap.containsKey(object)) {
+          // Check if the object is the start of a collection
+          _serializeCollection(
+            builder,
+            predicateQName,
+            localId,
+            object,
+            namespaces,
+            processedBlankNodes,
+          );
+        } else if (_collectionChainNodes.contains(object)) {
+          // skip - this should not be referenced here and be rendered as part of a collection anyways
+          // This node is part of a collection chain and should not be serialized separately
+          _logger.warning(
+            'Found collection chain node $object referenced directly. '
+            'This should be handled as part of a collection.',
+          );
+          _buildBlankNodeReference(
+            builder,
+            predicateQName,
+            object,
+            localId: localId,
+          );
         } else {
-          // Regular blank node reference
+          // Nested Regular blank node subject
           builder.element(
             predicateQName,
             attributes: {
               if (localId != null) 'rdf:ID': localId,
-              'rdf:nodeID': 'blank${identityHashCode(object)}',
+              // rdf:nodeID is not needed here, as we will serialize the blank node inline
+            },
+            nest: () {
+              if (containerGroup != null && containerGroup.typeIri != null) {
+                /// Serializes a nested resource inline instead of as a separate top-level element
+                ///
+                /// This creates a more readable and intuitive RDF/XML structure for nested resources
+
+                processedBlankNodes.add(object);
+
+                _serializeSubject(
+                  builder,
+                  containerGroup,
+                  namespaces,
+                  processedBlankNodes,
+                );
+              }
             },
           );
         }
       case LiteralTerm literal:
-        // Literal value
-        final attributes = <String, String>{
-          if (localId != null) 'rdf:ID': localId,
-        };
-
-        // Handle language tag or datatype
-        if (literal.language != null) {
-          attributes['xml:lang'] = literal.language!;
-        } else if (literal.datatype.iri != RdfTerms.string.iri) {
-          attributes['rdf:datatype'] = literal.datatype.iri;
-        }
-
-        builder.element(
-          predicateQName,
-          attributes: attributes,
-          nest: literal.value,
-        );
+        _buildLiteralTerm(builder, predicateQName, localId, literal);
     }
+  }
+
+  String? getLocalId(
+    RdfSubject subject,
+    RdfPredicate predicate,
+    RdfObject object,
+  ) {
+    final statementSignature = _getStatementKey(subject, predicate, object);
+    final reificationInfo = _reifiedStatementsMap[statementSignature];
+    // Note: the localId is handled here, the other triples will be handled as
+    // a normal SubjectNode
+    final localId = reificationInfo?.localId;
+    return localId;
+  }
+
+  void _buildLiteralTerm(
+    XmlBuilder builder,
+    String qName,
+    String? localId,
+    LiteralTerm literal,
+  ) {
+    builder.element(
+      qName,
+      attributes: {
+        if (localId != null) 'rdf:ID': localId,
+        if (literal.datatype != RdfTerms.string &&
+            literal.datatype != RdfTerms.langString)
+          'rdf:datatype': literal.datatype.iri,
+        if (literal.language != null) 'xml:lang': literal.language!,
+      },
+      nest: literal.value,
+    );
   }
 
   /// Serializes an RDF container
@@ -874,24 +957,24 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     BlankNodeTerm containerNode,
     String containerType,
     Map<String, String> namespaces,
+    Set<BlankNodeTerm> processedBlankNodes,
   ) {
     // Get container triples
     final containerGroup = _currentSubjectGroups[containerNode];
     if (containerGroup == null) {
       // Fallback to simple reference if no container details available
-      builder.element(
+      _buildBlankNodeReference(
+        builder,
         predicateQName,
-        attributes: {
-          if (localId != null) 'rdf:ID': localId,
-          'rdf:nodeID': 'blank${identityHashCode(containerNode)}',
-        },
+        containerNode,
+        localId: localId,
       );
       return;
     }
 
     // Extract and sort container items by their index
     final containerItems = <int, Triple>{};
-
+    final notHandledTriples = <Triple>[];
     for (final triple in containerGroup.triples) {
       if (triple.predicate is IriTerm) {
         final predIri = (triple.predicate as IriTerm).iri;
@@ -904,13 +987,37 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             );
             final index = int.parse(indexStr);
             containerItems[index] = triple;
-          } catch (_) {
-            // Skip invalid indices
+          } catch (e) {
+            // Log warning for invalid indices
+            _logger.warning('Invalid container item index in $predIri: $e');
+            notHandledTriples.add(triple);
           }
+        } else if (triple.predicate == RdfTerms.type &&
+            triple.object == containerGroup.typeIri) {
+          // Ignore type triple, this will be handled by the element name
+          // through the containerType
+        } else {
+          notHandledTriples.add(triple);
         }
+      } else {
+        // Not a valid container item predicate
+        notHandledTriples.add(triple);
       }
     }
 
+    if (notHandledTriples.isNotEmpty) {
+      // lets rather skip this and just use a reference - this does not look
+      // like a consistent and valid container
+      _buildBlankNodeReference(
+        builder,
+        predicateQName,
+        containerNode,
+        localId: localId,
+      );
+      return;
+    }
+
+    processedBlankNodes.add(containerNode);
     // Only create container element if we have items
     builder.element(
       predicateQName,
@@ -925,46 +1032,20 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
 
             for (final index in sortedIndices) {
               final triple = containerItems[index]!;
-
+              final qName = 'rdf:li';
               // Add as rdf:li element
-              builder.element(
-                'rdf:li',
-                nest: () {
-                  switch (triple.object) {
-                    case IriTerm _:
-                      // Resource reference
-                      final iri = (triple.object as IriTerm).iri;
-                      final baseUri = _currentBaseUri;
-                      String resourceUri = iri;
-
-                      if (baseUri != null && iri.startsWith(baseUri)) {
-                        final relativeUri = iri.substring(baseUri.length);
-                        resourceUri = relativeUri.isEmpty ? '/' : relativeUri;
-                      }
-
-                      builder.attribute('rdf:resource', resourceUri);
-                    case BlankNodeTerm _:
-                      // Blank node reference
-                      builder.attribute(
-                        'rdf:nodeID',
-                        'blank${identityHashCode(triple.object)}',
-                      );
-                    case LiteralTerm _:
-                      // Literal value
-                      final literal = triple.object as LiteralTerm;
-
-                      // Add language or datatype if needed
-                      if (literal.language != null) {
-                        builder.attribute('xml:lang', literal.language!);
-                      } else if (literal.datatype.iri != RdfTerms.string.iri) {
-                        builder.attribute('rdf:datatype', literal.datatype.iri);
-                      }
-
-                      // Add the value
-                      builder.text(literal.value);
-                  }
-                },
-              );
+              switch (triple.object) {
+                case IriTerm iri:
+                  builder.element(
+                    qName,
+                    attributes: {'rdf:resource': getResourceReference(iri)},
+                  );
+                case BlankNodeTerm blankNodeTerm:
+                  // Blank node reference
+                  _buildBlankNodeReference(builder, qName, blankNodeTerm);
+                case LiteralTerm literal:
+                  _buildLiteralTerm(builder, qName, null, literal);
+              }
             }
           },
         );
@@ -972,166 +1053,226 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     );
   }
 
-  /// Serializes a nested resource inline instead of as a separate top-level element
-  ///
-  /// This creates a more readable and intuitive RDF/XML structure for nested resources
-  void _serializeNestedResource(
+  void _buildBlankNodeReference(
     XmlBuilder builder,
     String predicateQName,
-    _SubjectGroup resourceGroup,
-    Map<String, String> namespaces,
+    BlankNodeTerm containerNode, {
     String? localId,
+  }) {
+    builder.element(
+      predicateQName,
+      attributes: {
+        if (localId != null) 'rdf:ID': localId,
+        'rdf:nodeID': _blankNodeId(containerNode),
+      },
+    );
+  }
+
+  /// Serializes an RDF collection
+  ///
+  /// Creates an XML element with rdf:parseType="Collection" that represents the
+  /// collection in a more compact and readable form than the triple representation
+  void _serializeCollection(
+    XmlBuilder builder,
+    String predicateQName,
+    String? localId,
+    BlankNodeTerm collectionNode,
+    Map<String, String> namespaces,
     Set<BlankNodeTerm> processedBlankNodes,
   ) {
-    final typeIri = resourceGroup.typeIri;
-    final typeQName = resourceGroup.qname;
-
-    // Special case for roundtrip test - check if this is part of a specific test pattern
-    // In the real world, both serialization styles are valid, but for test compatibility
-    // we need to match the exact style expected by the test
-    final isRoundtripTestCase = _isRoundtripTestPattern(
-      predicateQName,
-      typeQName,
-    );
-
-    // Mark this blank node as processed so it won't be serialized again at top level
-    if (resourceGroup.subject is BlankNodeTerm) {
-      processedBlankNodes.add(resourceGroup.subject as BlankNodeTerm);
+    // Get collection info
+    final collectionInfo = _collectionsMap[collectionNode];
+    if (collectionInfo == null) {
+      // Fallback to simple reference if no collection details available
+      _buildBlankNodeReference(
+        builder,
+        predicateQName,
+        collectionNode,
+        localId: localId,
+      );
+      return;
     }
 
-    if (isRoundtripTestCase) {
-      // For the roundtrip test case, use the same structure as the original XML
-      builder.element(
-        predicateQName,
-        attributes: {if (localId != null) 'rdf:ID': localId},
-        nest: () {
-          builder.element(
-            typeQName!,
-            nest: () {
-              // Add all predicates except the type triple
-              for (final triple in resourceGroup.triples) {
-                if (triple.predicate == RdfTerms.type &&
-                    triple.object == typeIri) {
-                  continue; // Skip type triple that's encoded in element name
-                }
+    // Mark all collection nodes as processed so they won't be serialized at top level
+    processedBlankNodes.addAll(collectionInfo.nodeChain);
 
-                _serializePredicate(
-                  builder,
-                  resourceGroup,
-                  triple.predicate,
-                  triple.object,
-                  namespaces,
-                  processedBlankNodes,
+    // Create collection element with parseType="Collection"
+    builder.element(
+      predicateQName,
+      attributes: {
+        'rdf:parseType': 'Collection',
+        if (localId != null) 'rdf:ID': localId,
+      },
+      nest: () {
+        // Add each item in the collection
+        for (final item in collectionInfo.items) {
+          switch (item) {
+            case IriTerm _:
+              // Resource reference
+              builder.element(
+                'rdf:Description',
+                attributes: {'rdf:about': getResourceReference(item)},
+              );
+            case BlankNodeTerm blankNode:
+              // Check if this is a typed node
+              final nodeGroup = _currentSubjectGroups[blankNode];
+
+              if (nodeGroup == null) {
+                throw RdfSerializerException(
+                  'Blank node $blankNode not found in subject groups.',
+                  format: "rdf/xml",
                 );
               }
-            },
-          );
-        },
-      );
-    } else {
-      // For general case, use the reference style that most tests expect
-      final blankNodeId = 'blank${identityHashCode(resourceGroup.subject)}';
+              // Mark as processed
+              processedBlankNodes.add(blankNode);
+              _serializeSubject(
+                builder,
+                nodeGroup,
+                namespaces,
+                processedBlankNodes,
+              );
 
-      builder.element(
-        predicateQName,
-        attributes: {
-          if (localId != null) 'rdf:ID': localId,
-          'rdf:nodeID': blankNodeId,
-        },
-      );
+            case LiteralTerm literal:
+              _buildLiteralTerm(builder, 'rdf:Description', null, literal);
+          }
+        }
+      },
+    );
+  }
 
-      // Serialize the resource separately with the same nodeID
-      if (typeQName != null) {
-        _serializeTypedBlankNode(
-          builder,
-          resourceGroup,
-          typeQName,
-          blankNodeId,
-          namespaces,
-          processedBlankNodes,
+  String getResourceReference(IriTerm item) {
+    final iri = item.iri;
+    final baseUri = _currentBaseUri;
+    String resourceUri = iri;
+
+    if (baseUri != null && iri.startsWith(baseUri)) {
+      final relativeUri = iri.substring(baseUri.length);
+      resourceUri = relativeUri.isEmpty ? '/' : relativeUri;
+    }
+    return resourceUri;
+  }
+
+  List<BlankNodeTerm>? _buildCollectionChain(
+    Set<BlankNodeTerm> processedChains,
+    BlankNodeTerm startNode,
+  ) {
+    // Initial chain contains just the start node
+    var currentChain = <BlankNodeTerm>[startNode];
+    var currentNode = startNode;
+
+    // Follow the rdf:rest chain to build the complete list of nodes
+    while (true) {
+      // Mark this node as processed
+      processedChains.add(currentNode);
+
+      // Get the rest value for this node
+      final group = _currentSubjectGroups[currentNode];
+      if (group == null) {
+        _logger.warning(
+          'WARNING: Collection node $currentNode not found in subject groups. Chain may be incomplete.',
         );
+        return null;
+      }
+
+      final rest = group.collectionRest;
+      if (rest == null) {
+        _logger.warning(
+          'WARNING: Collection node $currentNode has no rdf:rest property. Chain is incomplete.',
+        );
+        return null;
+      }
+
+      // Avoid circular references
+      if (processedChains.contains(rest)) {
+        _logger.warning(
+          'WARNING: Circular reference detected in collection chain at node $currentNode -> $rest. Aborting chain.',
+        );
+        return null;
+      }
+
+      if (rest == RdfTerms.nil) {
+        // Valid end of collection
+        return currentChain;
+      } else if (rest is BlankNodeTerm &&
+          _currentSubjectGroups.containsKey(rest) &&
+          _currentSubjectGroups[rest]!.isCollectionNode) {
+        // Continue the chain
+        currentNode = rest;
+        currentChain.add(rest);
       } else {
-        _serializeUnTypedBlankNode(
-          builder,
-          resourceGroup,
-          blankNodeId,
-          namespaces,
-          processedBlankNodes,
+        // Invalid chain - not a proper collection structure
+        _logger.warning(
+          'WARNING: Invalid collection structure detected at node $currentNode. '
+          'The rdf:rest value $rest is not a recognized collection node or rdf:nil.',
         );
+        return null;
       }
     }
   }
 
-  /// Helper method to detect specific patterns that need special handling in tests
-  bool _isRoundtripTestPattern(String predicateQName, String? typeQName) {
-    // Specific pattern for the roundtrip test with a Document and nested Person
-    return predicateQName == 'ex:author' && typeQName == 'ex:Person';
-  }
+  /// Identifies collections in the RDF graph
+  ///
+  /// Detects patterns of rdf:first/rdf:rest/rdf:nil that represent RDF collections
+  /// and stores them for efficient serialization with rdf:parseType="Collection"
+  Map<BlankNodeTerm, _CollectionInfo> _identifyCollectionPatterns() {
+    // Map of blank nodes to collection info
+    final result = <BlankNodeTerm, _CollectionInfo>{};
 
-  /// Serializes a typed blank node as a separate element
-  void _serializeTypedBlankNode(
-    XmlBuilder builder,
-    _SubjectGroup resourceGroup,
-    String typeQName,
-    String nodeId,
-    Map<String, String> namespaces,
-    Set<BlankNodeTerm> processedBlankNodes,
-  ) {
-    final typeIri = resourceGroup.typeIri;
+    // Step 1: Identify all blank nodes that have rdf:first and rdf:rest properties
+    // These are potential collection nodes
+    final collectionGroups =
+        _currentSubjectGroups.values
+            .where((sg) => sg.isCollectionNode)
+            .toList();
+    final nonStartTerms =
+        collectionGroups.map((sg) => sg.collectionRest!).toSet();
+    final startTerms =
+        collectionGroups
+            .where((sg) => !nonStartTerms.contains(sg.subject))
+            .map((sg) => sg.subject as BlankNodeTerm)
+            .toSet();
 
-    // Create element with the type name
-    builder.element(
-      typeQName,
-      nest: () {
-        // Add nodeID attribute
-        builder.attribute('rdf:nodeID', nodeId);
+    // Step 2: Build the complete chains by following rdf:rest links
+    final validCollections = <BlankNodeTerm, List<BlankNodeTerm>>{};
+    final processedChains = <BlankNodeTerm>{};
 
-        // Add all predicates except the type triple
-        for (final triple in resourceGroup.triples) {
-          if (triple.predicate == RdfTerms.type && triple.object == typeIri) {
-            continue; // Skip type triple that's encoded in element name
-          }
+    for (final startNode in startTerms) {
+      // Skip if already processed
+      if (processedChains.contains(startNode)) {
+        _logger.warning(
+          'WARNING: Collection node $startNode already processed. Possible circular reference.',
+        );
+        continue;
+      }
 
-          _serializePredicate(
-            builder,
-            resourceGroup,
-            triple.predicate,
-            triple.object,
-            namespaces,
-            processedBlankNodes,
-          );
-        }
-      },
-    );
-  }
+      var currentChain = _buildCollectionChain(processedChains, startNode);
+      if (currentChain != null) {
+        validCollections[startNode] = currentChain;
+      }
+    }
 
-  /// Serializes an untyped blank node as a separate element
-  void _serializeUnTypedBlankNode(
-    XmlBuilder builder,
-    _SubjectGroup resourceGroup,
-    String nodeId,
-    Map<String, String> namespaces,
-    Set<BlankNodeTerm> processedBlankNodes,
-  ) {
-    // Create element with rdf:Description
-    builder.element(
-      'rdf:Description',
-      nest: () {
-        // Add nodeID attribute
-        builder.attribute('rdf:nodeID', nodeId);
+    // Step 3: Extract collection items from each valid chain
+    for (final entry in validCollections.entries) {
+      final startNode = entry.key;
+      final nodeChain = entry.value;
 
-        // Add all predicates
-        for (final triple in resourceGroup.triples) {
-          _serializePredicate(
-            builder,
-            resourceGroup,
-            triple.predicate,
-            triple.object,
-            namespaces,
-            processedBlankNodes,
-          );
-        }
-      },
-    );
+      // Extract items from each node in order
+      final collectionItems = <RdfObject>[];
+
+      for (final node in nodeChain) {
+        final group = _currentSubjectGroups[node]!;
+        final first = group.collectionFirst!;
+        // Add the item
+        collectionItems.add(first);
+      }
+
+      // Create collection info
+      result[startNode] = _CollectionInfo(
+        items: collectionItems,
+        nodeChain: nodeChain,
+      );
+    }
+
+    return result;
   }
 }

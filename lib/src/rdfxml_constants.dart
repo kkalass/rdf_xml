@@ -12,6 +12,10 @@ class RdfTerms {
   static const String rdfNamespace =
       'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 
+  static const IriTerm langString = IriTerm.prevalidated(
+    '${rdfNamespace}langString',
+  );
+
   /// The XSD namespace
   static const String xsdNamespace = 'http://www.w3.org/2001/XMLSchema#';
 

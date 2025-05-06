@@ -154,12 +154,6 @@ final class RdfXmlSerializerOptions {
   /// Only used when prettyPrint is true.
   final int indentSpaces;
 
-  /// Whether to use XML namespaces to create compact output
-  ///
-  /// When true, the serializer uses namespace prefixes to create more compact output.
-  /// When false, it uses full URIs for all elements and attributes.
-  final bool useNamespaces;
-
   /// Whether to use typed nodes for rdf:type triples
   ///
   /// When true, the serializer uses the type IRI as element name
@@ -172,7 +166,7 @@ final class RdfXmlSerializerOptions {
   const RdfXmlSerializerOptions({
     this.prettyPrint = true,
     this.indentSpaces = 2,
-    this.useNamespaces = true,
+
     this.useTypedNodes = true,
   });
 
@@ -184,7 +178,7 @@ final class RdfXmlSerializerOptions {
   factory RdfXmlSerializerOptions.readable() => const RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 2,
-    useNamespaces: true,
+
     useTypedNodes: true,
   );
 
@@ -196,7 +190,7 @@ final class RdfXmlSerializerOptions {
   factory RdfXmlSerializerOptions.compact() => const RdfXmlSerializerOptions(
     prettyPrint: false,
     indentSpaces: 0,
-    useNamespaces: true,
+
     useTypedNodes: true,
   );
 
@@ -207,7 +201,7 @@ final class RdfXmlSerializerOptions {
   factory RdfXmlSerializerOptions.compatible() => const RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 2,
-    useNamespaces: true,
+
     useTypedNodes: false, // Verwendet nur rdf:Description mit rdf:type
   );
 
@@ -223,7 +217,7 @@ final class RdfXmlSerializerOptions {
     return RdfXmlSerializerOptions(
       prettyPrint: prettyPrint ?? this.prettyPrint,
       indentSpaces: indentSpaces ?? this.indentSpaces,
-      useNamespaces: useNamespaces ?? this.useNamespaces,
+
       useTypedNodes: useTypedNodes ?? this.useTypedNodes,
     );
   }
@@ -234,19 +228,16 @@ final class RdfXmlSerializerOptions {
     return other is RdfXmlSerializerOptions &&
         other.prettyPrint == prettyPrint &&
         other.indentSpaces == indentSpaces &&
-        other.useNamespaces == useNamespaces &&
         other.useTypedNodes == useTypedNodes;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(prettyPrint, indentSpaces, useNamespaces, useTypedNodes);
+  int get hashCode => Object.hash(prettyPrint, indentSpaces, useTypedNodes);
 
   @override
   String toString() =>
       'RdfXmlSerializerOptions('
       'prettyPrint: $prettyPrint, '
       'indentSpaces: $indentSpaces, '
-      'useNamespaces: $useNamespaces, '
       'useTypedNodes: $useTypedNodes)';
 }

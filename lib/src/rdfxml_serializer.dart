@@ -91,14 +91,11 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
         _logger.warning('Serializing empty graph to RDF/XML');
       }
 
-      // Build namespace declarations based on options
-      final namespaces =
-          _options.useNamespaces
-              ? _namespaceManager.buildNamespaceDeclarations(
-                graph,
-                customPrefixes,
-              )
-              : <String, String>{};
+      // Build namespace declarations
+      final namespaces = _namespaceManager.buildNamespaceDeclarations(
+        graph,
+        customPrefixes,
+      );
 
       // Build XML document
       final document = _xmlBuilder.buildDocument(graph, baseUri, namespaces);

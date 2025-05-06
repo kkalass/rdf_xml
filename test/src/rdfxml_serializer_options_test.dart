@@ -99,7 +99,7 @@ void main() {
 
       // With namespaces enabled - the default
       final withNamespaces = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(useNamespaces: true),
+        options: const RdfXmlSerializerOptions(),
       );
       final xmlWithNamespaces = withNamespaces.write(graph);
 
@@ -150,15 +150,11 @@ void main() {
       final readableOptions = RdfXmlSerializerOptions.readable();
       expect(readableOptions.prettyPrint, isTrue);
       expect(readableOptions.indentSpaces, equals(2));
-      expect(readableOptions.useNamespaces, isTrue);
 
       // Test the compact factory
       final compactOptions = RdfXmlSerializerOptions.compact();
       expect(compactOptions.prettyPrint, isFalse);
-      expect(
-        compactOptions.useNamespaces,
-        isTrue,
-      ); // Still use namespaces for compactness
+      // Still use namespaces for compactness
     });
 
     test('only used namespaces are declared in XML output', () {

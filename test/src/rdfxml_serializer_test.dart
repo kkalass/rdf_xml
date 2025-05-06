@@ -431,13 +431,6 @@ void main() {
       );
       expect(authorElements, hasLength(2));
 
-      // Find the nodeID references to match with Person elements later
-      final authorNodeIds =
-          authorElements
-              .where((e) => e.getAttribute('rdf:nodeID') != null)
-              .map((e) => e.getAttribute('rdf:nodeID'))
-              .toList();
-
       // Find all Person elements that represent authors
       final personElements = doc.findAllElements('$exPrefix:Person');
 
@@ -482,6 +475,320 @@ void main() {
         isTrue,
         reason: 'German name "Jana Musterfrau" not found',
       );
+    });
+
+    test('serializes RDF collections', () {
+      // Create a list subject
+      final listSubject = IriTerm('http://example.org/list');
+
+      // Create blank nodes for the collection structure
+      final listNode1 = BlankNodeTerm();
+      final listNode2 = BlankNodeTerm();
+      final listNode3 = BlankNodeTerm();
+
+      // Create collection item resources
+      final item1 = IriTerm('http://example.org/item/1');
+      final item2 = IriTerm('http://example.org/item/2');
+      final item3 = IriTerm('http://example.org/item/3');
+
+      // Create triples representing the RDF collection structure
+      final triples = [
+        // Connect list subject to the first node in the collection
+        Triple(listSubject, IriTerm('http://example.org/items'), listNode1),
+
+        // First item chain
+        Triple(listNode1, RdfTerms.first, item1),
+        Triple(listNode1, RdfTerms.rest, listNode2),
+
+        // Second item chain
+        Triple(listNode2, RdfTerms.first, item2),
+        Triple(listNode2, RdfTerms.rest, listNode3),
+
+        // Third item chain with termination
+        Triple(listNode3, RdfTerms.first, item3),
+        Triple(listNode3, RdfTerms.rest, RdfTerms.nil),
+
+        // Add some properties to items to verify they're properly serialized
+        Triple(
+          item1,
+          IriTerm('http://example.org/label'),
+          LiteralTerm.string('First Item'),
+        ),
+        Triple(
+          item2,
+          IriTerm('http://example.org/label'),
+          LiteralTerm.string('Second Item'),
+        ),
+        Triple(
+          item3,
+          IriTerm('http://example.org/label'),
+          LiteralTerm.string('Third Item'),
+        ),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML to validate
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+      expect(
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      // Find the list subject element
+      final listElements = doc.findAllElements('rdf:Description');
+      final listElement = listElements.firstWhere(
+        (e) => e.getAttribute('rdf:about') == 'http://example.org/list',
+      );
+
+      // Find the items property element
+      final itemsElements = listElement.findElements('$exPrefix:items');
+      expect(itemsElements, hasLength(1));
+
+      // Check that the items element has parseType="Collection"
+      expect(
+        itemsElements.first.getAttribute('rdf:parseType'),
+        equals('Collection'),
+      );
+
+      // Verify that we have the correct number of child elements in the collection
+      final collectionItems = itemsElements.first.childElements;
+      expect(collectionItems, hasLength(3));
+
+      // Verify that collection items are in the correct order with correct URIs
+      final collectionItemUris =
+          collectionItems.map((e) => e.getAttribute('rdf:about')).toList();
+
+      expect(
+        collectionItemUris,
+        equals([
+          'http://example.org/item/1',
+          'http://example.org/item/2',
+          'http://example.org/item/3',
+        ]),
+      );
+
+      // Verify round-trip integrity by parsing back to RDF
+      final parser = RdfXmlParser(xml);
+      final parsedTriples = parser.parse();
+
+      // Find the triples connecting the list subject to the first collection node
+      final startTriples =
+          parsedTriples
+              .where(
+                (t) =>
+                    t.subject.toString() == listSubject.toString() &&
+                    (t.predicate as IriTerm).iri == 'http://example.org/items',
+              )
+              .toList();
+
+      expect(startTriples, hasLength(1));
+
+      // Get the first collection node
+      final firstNode = startTriples.first.object;
+      expect(firstNode, isA<BlankNodeTerm>());
+
+      // Follow the chain to verify the collection structure
+      // Start with first node and follow the chain
+      var currentNode = firstNode;
+      final collectedItems = <RdfTerm>[];
+
+      // Traverse the list until we hit rdf:nil
+      while (currentNode != RdfTerms.nil) {
+        // Find the rdf:first triple for this node
+        final firstTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                )
+                .toList();
+
+        expect(firstTriples, hasLength(1));
+        collectedItems.add(firstTriples.first.object);
+
+        // Find the rdf:rest triple for this node
+        final restTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                )
+                .toList();
+
+        expect(restTriples, hasLength(1));
+        currentNode = restTriples.first.object;
+      }
+
+      // Verify we have 3 items
+      expect(collectedItems, hasLength(3));
+
+      // Verify the items are in the correct order with correct URIs
+      expect(
+        collectedItems.map((e) => (e as IriTerm).iri).toList(),
+        equals([
+          'http://example.org/item/1',
+          'http://example.org/item/2',
+          'http://example.org/item/3',
+        ]),
+      );
+    });
+
+    test('serializes string literals in RDF collections', () {
+      // Create a list subject
+      final listSubject = IriTerm('http://example.org/subj1');
+
+      // Create blank nodes for the collection structure
+      final listNode1 = BlankNodeTerm();
+      final listNode2 = BlankNodeTerm();
+
+      // Create triples representing the RDF collection with string literals
+      // This matches the example in the request: ex:subj1 ex:prop1 ("item1" "item2")
+      final triples = [
+        // Connect list subject to the first node in the collection
+        Triple(listSubject, IriTerm('http://example.org/prop1'), listNode1),
+
+        // First item (string literal)
+        Triple(listNode1, RdfTerms.first, LiteralTerm.string('item1')),
+        Triple(listNode1, RdfTerms.rest, listNode2),
+
+        // Second item (string literal) with termination
+        Triple(listNode2, RdfTerms.first, LiteralTerm.string('item2')),
+        Triple(listNode2, RdfTerms.rest, RdfTerms.nil),
+      ];
+
+      final graph = RdfGraph(triples: triples);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(graph);
+
+      // Parse the XML to validate
+      final doc = XmlDocument.parse(xml);
+
+      // Find the example.org namespace prefix
+      String? exPrefix;
+      for (final attr in doc.rootElement.attributes) {
+        if (attr.name.prefix == 'xmlns' &&
+            attr.value == 'http://example.org/') {
+          exPrefix = attr.name.local;
+          break;
+        }
+      }
+      expect(
+        exPrefix,
+        isNotNull,
+        reason: 'No namespace found for http://example.org/',
+      );
+
+      // Find the list subject element
+      final listElements = doc.findAllElements('rdf:Description');
+      final listElement = listElements.firstWhere(
+        (e) => e.getAttribute('rdf:about') == 'http://example.org/subj1',
+      );
+
+      // Find the prop1 property element
+      final prop1Elements = listElement.findElements('$exPrefix:prop1');
+      expect(prop1Elements, hasLength(1));
+
+      // Check that the prop1 element has parseType="Collection"
+      expect(
+        prop1Elements.first.getAttribute('rdf:parseType'),
+        equals('Collection'),
+      );
+
+      // Verify that we have the correct number of child elements in the collection
+      final collectionItems = prop1Elements.first.childElements;
+      expect(collectionItems, hasLength(2));
+
+      // For string literals, we should have rdf:Description elements with text content
+      final descriptions = prop1Elements.first.findAllElements(
+        'rdf:Description',
+      );
+      expect(descriptions, hasLength(2));
+
+      // Check the string values of the collection items
+      final values = descriptions.map((e) => e.innerText).toList();
+
+      expect(values, equals(['item1', 'item2']));
+
+      // Verify round-trip integrity by parsing back to RDF
+      final parser = RdfXmlParser(xml);
+      final parsedTriples = parser.parse();
+
+      expect(triples, equals(parsedTriples));
+      // Find the triples connecting the list subject to the first collection node
+      final startTriples =
+          parsedTriples
+              .where(
+                (t) =>
+                    t.subject.toString() == listSubject.toString() &&
+                    (t.predicate as IriTerm).iri == 'http://example.org/prop1',
+              )
+              .toList();
+
+      expect(startTriples, hasLength(1));
+
+      // Get the first collection node
+      final firstNode = startTriples.first.object;
+      expect(firstNode, isA<BlankNodeTerm>());
+
+      // Follow the chain to verify the collection structure with string literals
+      var currentNode = firstNode;
+      final collectedItems = <RdfTerm>[];
+
+      // Traverse the list until we hit rdf:nil
+      while (currentNode != RdfTerms.nil) {
+        // Find the rdf:first triple for this node
+        final firstTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                )
+                .toList();
+
+        expect(firstTriples, hasLength(1));
+        collectedItems.add(firstTriples.first.object);
+
+        // Find the rdf:rest triple for this node
+        final restTriples =
+            parsedTriples
+                .where(
+                  (t) =>
+                      t.subject.toString() == currentNode.toString() &&
+                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                )
+                .toList();
+
+        expect(restTriples, hasLength(1));
+        currentNode = restTriples.first.object;
+      }
+
+      // Verify we have 2 items
+      expect(collectedItems, hasLength(2));
+
+      // Verify the items are string literals with correct values
+      expect(collectedItems[0], isA<LiteralTerm>());
+      expect(collectedItems[1], isA<LiteralTerm>());
+      expect((collectedItems[0] as LiteralTerm).value, equals('item1'));
+      expect((collectedItems[1] as LiteralTerm).value, equals('item2'));
     });
   });
 }

@@ -117,7 +117,6 @@ void main() {
     serializerOptions: RdfXmlSerializerOptions(
       prettyPrint: true,
       indentSpaces: 4,
-      useNamespaces: true,
       useTypedNodes: true,
     ),
   );
