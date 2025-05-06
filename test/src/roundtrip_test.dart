@@ -7,13 +7,6 @@ import 'package:xml/xml.dart';
 void main() {
   group('Roundtrip test', () {
     test('parses and serializes xml correctly', () {
-      // The Serializer still has problems:
-      // - rdf:about should be rdf:about="resource1" instead of the full iri (also in other places)
-      // - Namespace example is questionable, and apparently not used anyways
-      // - the language gets lost on the description
-      // - the author data got lost, we show a blank node id and render it toplevel, but embedded would be better
-      // - namespace ns1 is strange, to be honest - ex would have been ideal
-
       final xmlContent = '''
     <?xml version="1.0" encoding="UTF-8"?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -75,8 +68,8 @@ void main() {
         RdfGraph.fromTriples(triples),
         baseUri: 'http://example.org/data/',
         customPrefixes: {
-          'ex': 'http://example.org/terms#',
-          'dc': 'http://purl.org/dc/elements/1.1/',
+          //'ex': 'http://example.org/terms#',
+          //'dc': 'http://purl.org/dc/elements/1.1/',
         },
       );
 

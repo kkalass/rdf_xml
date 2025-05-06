@@ -34,7 +34,7 @@ void main() {
       final namespaces = namespaceManager.buildNamespaceDeclarations(graph, {});
 
       // Überprüfe, ob sinnvolle Präfixe generiert wurden
-      expect(namespaces.containsKey('example'), isTrue);
+      expect(namespaces.containsKey('ex'), isTrue);
       expect(namespaces.containsValue('http://example.org/'), isTrue);
 
       // Überprüfe Standardnamespaces

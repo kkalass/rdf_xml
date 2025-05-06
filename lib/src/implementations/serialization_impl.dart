@@ -4,25 +4,13 @@
 /// defined in the interfaces directory.
 library rdfxml.serialization.implementations;
 
+import 'dart:math';
+
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
 import '../interfaces/serialization.dart';
 import '../rdfxml_constants.dart';
-
-/// Helper class to store type information for subjects
-///
-/// Used to cache type-related data for more efficient serialization.
-class _TypeInfo {
-  /// The type IRI term
-  final IriTerm iri;
-
-  /// The QName for the type
-  final String qname;
-
-  /// Creates a new type info object
-  const _TypeInfo(this.iri, this.qname);
-}
 
 /// Helper class to store reification information
 ///
@@ -49,32 +37,14 @@ class _ReificationInfo {
   });
 }
 
-/// Helper class to track and manage namespaces during serialization
-///
-/// This class is used to avoid duplicate serialization of blank nodes
-class _NamespaceTracker {
-  /// Set of processed blank nodes
-  final Set<BlankNodeTerm> _processedBlankNodes = {};
-
-  /// Tracks a blank node as processed
-  void markProcessed(BlankNodeTerm node) {
-    _processedBlankNodes.add(node);
-  }
-
-  /// Checks if a blank node has already been processed
-  bool isProcessed(BlankNodeTerm node) {
-    return _processedBlankNodes.contains(node);
-  }
-}
-
 final class _SubjectGroup {
   final RdfSubject subject;
+  final String? _baseUrl;
   final RdfGraph _graph;
   List<IriTerm>? _types;
   late String? qname;
   _ReificationInfo? _reificationInfo;
   bool? _isReification;
-  final String? _baseUrl;
 
   _SubjectGroup.computedQName(
     this.subject,
@@ -93,15 +63,6 @@ final class _SubjectGroup {
     String? qname,
   ) : _graph = RdfGraph(triples: triples),
       qname = qname;
-
-  _TypeInfo? get typeInfo {
-    var t = typeIri;
-    var n = qname;
-    if (t == null || n == null) {
-      return null;
-    }
-    return _TypeInfo(t, n);
-  }
 
   List<IriTerm> get types {
     if (_types == null) {
@@ -156,22 +117,22 @@ final class _SubjectGroup {
       final statementIri = subject;
 
       // Extract subject component
-      final subjectTriples = properties(RdfTerms.subject);
+      final subjects = property(RdfTerms.subject);
 
       // Extract predicate component
-      final predicateTriples = properties(RdfTerms.predicate);
+      final predicates = property(RdfTerms.predicate);
 
       // Extract object component
-      final objectTriples = properties(RdfTerms.object);
+      final objects = property(RdfTerms.object);
 
       // Complete reification requires all three components
       if (statementIri is IriTerm &&
-          subjectTriples.length == 1 &&
-          predicateTriples.length == 1 &&
-          objectTriples.length == 1) {
-        final s = subjectTriples[0] as RdfSubject;
-        final p = predicateTriples[0] as RdfPredicate;
-        final o = objectTriples[0];
+          subjects.length == 1 &&
+          predicates.length == 1 &&
+          objects.length == 1) {
+        final s = subjects[0] as RdfSubject;
+        final p = predicates[0] as RdfPredicate;
+        final o = objects[0];
 
         var baseUri = _baseUrl;
 
@@ -216,7 +177,7 @@ final class _SubjectGroup {
     return _graph.findTriples(predicate: predicate, object: object).toList();
   }
 
-  List<RdfObject> properties(RdfPredicate predicate) {
+  List<RdfObject> property(RdfPredicate predicate) {
     return _graph
         .findTriples(predicate: predicate)
         .map((t) => t.object)
@@ -275,15 +236,6 @@ final class DefaultNamespaceManager implements INamespaceManager {
       );
     }
 
-    // Extract all unique namespace prefixes from predicates
-    // This is critical - we must ensure all predicate namespaces have prefixes
-    for (final triple in graph.triples) {
-      if (triple.predicate is IriTerm) {
-        final iri = (triple.predicate as IriTerm).iri;
-        _extractNamespaceForPredicate(iri, allNamespaces, usedNamespaces);
-      }
-    }
-
     return usedNamespaces;
   }
 
@@ -294,64 +246,20 @@ final class DefaultNamespaceManager implements INamespaceManager {
     Map<String, String> usedNamespaces,
     Set<String> processedIris,
   ) {
-    _collectUsedNamespace(
-      triple.subject,
-      allNamespaces,
-      usedNamespaces,
-      processedIris,
-    );
+    // Only predicate and type object are relevant for namespace extraction
     _collectUsedNamespace(
       triple.predicate,
       allNamespaces,
       usedNamespaces,
       processedIris,
     );
-    _collectUsedNamespace(
-      triple.object,
-      allNamespaces,
-      usedNamespaces,
-      processedIris,
-    );
-  }
-
-  /// Ensures a predicate's namespace has a prefix
-  /// This is critical since predicates must be serialized as QNames
-  void _extractNamespaceForPredicate(
-    String iri,
-    Map<String, String> allNamespaces,
-    Map<String, String> usedNamespaces,
-  ) {
-    // First check if the IRI can already be converted to a QName with existing namespaces
-    if (iriToQName(iri, usedNamespaces) != null) {
-      return; // Namespace already covered
-    }
-
-    // Find the namespace part of the IRI
-    final lastHash = iri.lastIndexOf('#');
-    final lastSlash = iri.lastIndexOf('/');
-
-    // Determine namespace end position: prefer hash first, then slash
-    final nsEnd =
-        lastHash > 0
-            ? lastHash + 1
-            : lastSlash > 0
-            ? lastSlash + 1
-            : -1;
-
-    if (nsEnd > 0) {
-      final namespace = iri.substring(0, nsEnd);
-
-      // Check if this namespace already has a known prefix
-      for (final entry in allNamespaces.entries) {
-        if (entry.value == namespace &&
-            !usedNamespaces.containsKey(entry.key)) {
-          usedNamespaces[entry.key] = entry.value;
-          return;
-        }
-      }
-
-      // If no existing prefix, generate a new one
-      _assignPrefixToNamespace(namespace, usedNamespaces);
+    if (triple.predicate == RdfTerms.type) {
+      _collectUsedNamespace(
+        triple.object,
+        allNamespaces,
+        usedNamespaces,
+        processedIris,
+      );
     }
   }
 
@@ -515,9 +423,10 @@ final class DefaultNamespaceManager implements INamespaceManager {
     }
 
     // Fall back to numbered prefixes
+    final computedPrefix = prefix ?? 'ns';
     int prefixNum = 1;
     do {
-      prefix = 'ns$prefixNum';
+      prefix = '$computedPrefix$prefixNum';
       prefixNum++;
     } while (namespaces.containsKey(prefix));
 
@@ -540,9 +449,10 @@ final class DefaultNamespaceManager implements INamespaceManager {
         // Extract organization/project name from domain
         final parts = domain.split('.');
 
-        // For domains like example.org, return "example"
+        // For domains like example.org, return "ex"
         if (parts.length >= 2) {
-          final candidate = parts[0];
+          final candidate =
+              parts[0].substring(0, min(2, parts[0].length)).toLowerCase();
 
           // Ensure it's a valid XML name component
           if (_isValidXmlName(candidate)) {
@@ -805,7 +715,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         switch (subject) {
           case IriTerm _:
             // Check if the IRI is relative to the base URI, and if so, use the relative form
-            final iri = (subject as IriTerm).iri;
+            final iri = subject.iri;
             final baseUri = _currentBaseUri;
 
             if (baseUri != null && iri.startsWith(baseUri)) {
@@ -884,7 +794,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
       case IriTerm _:
         // Resource reference
         // Check if the IRI is relative to the base URI, and use relative form if possible
-        final iri = (object as IriTerm).iri;
+        final iri = object.iri;
         final baseUri = _currentBaseUri;
         String resourceUri = iri;
 
@@ -933,9 +843,8 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             },
           );
         }
-      case LiteralTerm _:
+      case LiteralTerm literal:
         // Literal value
-        final literal = object as LiteralTerm;
         final attributes = <String, String>{
           if (localId != null) 'rdf:ID': localId,
         };

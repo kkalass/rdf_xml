@@ -1,8 +1,7 @@
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/interfaces/xml_parsing.dart';
+import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:test/test.dart';
-import 'package:xml/xml.dart';
 
 /// Custom URI resolver for testing purposes
 class CustomUriResolver implements IUriResolver {

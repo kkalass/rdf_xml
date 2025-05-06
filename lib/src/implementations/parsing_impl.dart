@@ -121,7 +121,6 @@ final class DefaultUriResolver implements IUriResolver {
 ///
 /// Provides a functional approach to blank node management using immutable context.
 final class FunctionalBlankNodeManager implements IBlankNodeManager {
-  // FIXME: is it clear and documented that this is mutable and not thread-safe? Additionally, it is only legal for one document.
   /// The current parsing context
   var _context = RdfXmlParsingContext.empty();
 
