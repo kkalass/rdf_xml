@@ -584,6 +584,8 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   var _collectionsMap = <BlankNodeTerm, _CollectionInfo>{};
   var _collectionChainNodes = <BlankNodeTerm>{};
 
+  var _blankNodeReferences = <BlankNodeTerm, List<RdfSubject>>{};
+
   /// Builds an XML document from an RDF graph
   ///
   /// Creates a complete XML representation of the given RDF data.
@@ -611,6 +613,8 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     _collectionsMap = _identifyCollectionPatterns();
     _collectionChainNodes =
         _collectionsMap.values.expand((col) => col.nodeChain).toSet();
+
+    _blankNodeReferences = identifyBlankNodeReferences(graph);
 
     // Track blank nodes that are serialized as nested resources
     final processedBlankNodes = <BlankNodeTerm>{};
@@ -679,6 +683,20 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     );
 
     return builder.buildDocument();
+  }
+
+  Map<BlankNodeTerm, List<RdfSubject>> identifyBlankNodeReferences(
+    RdfGraph graph,
+  ) {
+    var result = <BlankNodeTerm, List<RdfSubject>>{};
+    for (var triple in graph.triples) {
+      if (triple.object is BlankNodeTerm) {
+        result
+            .putIfAbsent(triple.object as BlankNodeTerm, () => [])
+            .add(triple.subject);
+      }
+    }
+    return result;
   }
 
   /// Identifies reification patterns in the graph
@@ -770,8 +788,9 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     XmlBuilder builder,
     _SubjectGroup subjectGroup,
     Map<String, String> namespaces,
-    Set<BlankNodeTerm> processedBlankNodes,
-  ) {
+    Set<BlankNodeTerm> processedBlankNodes, {
+    bool suppressNodeId = false,
+  }) {
     // Element name: if we have a type info, use it, otherwise use rdf:Description
     final elementName = subjectGroup.qname ?? 'rdf:Description';
     final typeIri = subjectGroup.typeIri;
@@ -787,7 +806,9 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           case IriTerm _:
             builder.attribute('rdf:about', getResourceReference(subject));
           case BlankNodeTerm _:
-            builder.attribute('rdf:nodeID', _blankNodeId(subject));
+            if (!suppressNodeId) {
+              builder.attribute('rdf:nodeID', _blankNodeId(subject));
+            }
         }
 
         // Add all predicates except the type that's already encoded in the element name
@@ -885,30 +906,43 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             localId: localId,
           );
         } else {
-          // Nested Regular blank node subject
-          builder.element(
-            predicateQName,
-            attributes: {
-              if (localId != null) 'rdf:ID': localId,
-              // rdf:nodeID is not needed here, as we will serialize the blank node inline
-            },
-            nest: () {
-              if (containerGroup != null && containerGroup.typeIri != null) {
-                /// Serializes a nested resource inline instead of as a separate top-level element
-                ///
-                /// This creates a more readable and intuitive RDF/XML structure for nested resources
-
+          // If there is only the subject of this triple referencing
+          // this blank node, then we can fully inline it and suppress its id
+          // else we rather just render a reference
+          var canNestBlankNode =
+              _blankNodeReferences[object]?.length == 1 &&
+              _blankNodeReferences[object]![0] == subjectGroup.subject &&
+              containerGroup != null &&
+              containerGroup.typeIri != null;
+          if (canNestBlankNode) {
+            // Nested Regular blank node subject
+            builder.element(
+              predicateQName,
+              attributes: {
+                if (localId != null) 'rdf:ID': localId,
+                // rdf:nodeID is not needed here, as we will serialize the blank node inline
+              },
+              nest: () {
+                // Make sure it will not be rendered again
                 processedBlankNodes.add(object);
-
                 _serializeSubject(
                   builder,
                   containerGroup,
                   namespaces,
                   processedBlankNodes,
+                  suppressNodeId: true,
                 );
-              }
-            },
-          );
+              },
+            );
+          } else {
+            // Fallback to simple reference if no container details available
+            _buildBlankNodeReference(
+              builder,
+              predicateQName,
+              object,
+              localId: localId,
+            );
+          }
         }
       case LiteralTerm literal:
         _buildLiteralTerm(builder, predicateQName, localId, literal);

@@ -282,8 +282,8 @@ void main() {
       );
       expect(addressElements, hasLength(1));
 
-      // The address should have a nodeID reference
-      expect(addressElements.first.getAttribute('rdf:nodeID'), isNotNull);
+      // The address should NOT have a nodeID reference
+      expect(addressElements.first.getAttribute('rdf:nodeID'), isNull);
 
       // There should be an Address element
       final addressTypeElements = doc.findAllElements('$exPrefix:Address');
