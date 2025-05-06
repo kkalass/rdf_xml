@@ -92,7 +92,7 @@ void main() {
   rdfCore.registerFormat(RdfXmlFormat());
 
   // Serialize
-  final rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml",);
+  final rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml");
   
   print(rdfXml);
 }

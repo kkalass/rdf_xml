@@ -342,6 +342,37 @@
 }</pre>
       </div>
       
+      <h3 class="h4 mt-4 mb-3">Serializing to RDF/XML</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">void</span> <span class="code-type">main</span>() {
+  <span class="code-comment">// Create a graph with some triples</span>
+  <span class="code-keyword">final</span> graph = <span class="code-type">RdfGraph</span>.fromTriples([
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/title'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Resource'</span>),
+    ),
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/creator'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Author'</span>),
+    ),
+  ]);
+
+  <span class="code-comment">// Register with rdf_core</span>
+  <span class="code-keyword">final</span> rdfCore = <span class="code-type">RdfCore</span>.withStandardFormats();
+  rdfCore = rdfCore.registerFormat(<span class="code-type">RdfXmlFormat</span>());
+
+  <span class="code-comment">// Serialize</span>
+  <span class="code-keyword">final</span> rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml");
+  
+  print(rdfXml);
+}</pre>
+      </div>
+      
       <h3 class="h4 mt-4 mb-3">Parsing from a File</h3>
       <div class="code-block">
 <pre><span class="code-keyword">import</span> <span class="code-string">'dart:io'</span>;
@@ -363,59 +394,8 @@
 }</pre>
       </div>
       
-      <h3 class="h4 mt-4 mb-3">Serializing to RDF/XML</h3>
-      <div class="code-block">
-<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
-<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
-
-<span class="code-keyword">void</span> <span class="code-type">main</span>() {
-  <span class="code-comment">// Create a graph with some triples</span>
-  <span class="code-keyword">final</span> graph = <span class="code-type">RdfGraph</span>.fromTriples([
-    <span class="code-type">Triple</span>(
-      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
-      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/title'</span>),
-      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Resource'</span>),
-    ),
-    <span class="code-type">Triple</span>(
-      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
-      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/creator'</span>),
-      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Author'</span>),
-    ),
-  ]);
-
-  <span class="code-comment">// Create a serializer with readable formatting</span>
-  <span class="code-keyword">final</span> serializer = <span class="code-type">RdfXmlFormat</span>.readable().createSerializer();
-  
-  <span class="code-comment">// Serialize with custom prefixes</span>
-  <span class="code-keyword">final</span> rdfXml = serializer.write(
-    graph,
-    customPrefixes: {
-      <span class="code-string">'dc'</span>: <span class="code-string">'http://purl.org/dc/elements/1.1/'</span>,
-      <span class="code-string">'ex'</span>: <span class="code-string">'http://example.org/'</span>,
-    },
-  );
-  
-  print(rdfXml);
-}</pre>
-      </div>
       
-      <h3 class="h4 mt-4 mb-3">Using with the Format Registry</h3>
-      <div class="code-block">
-<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
-<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
-
-<span class="code-keyword">void</span> <span class="code-type">main</span>() {
-  <span class="code-comment">// Register the format with the registry</span>
-  <span class="code-keyword">final</span> registry = <span class="code-type">RdfFormatRegistry</span>();
-  registry.registerFormat(<span class="code-type">RdfXmlFormat</span>());
-  
-  <span class="code-comment">// Get a parser by MIME type</span>
-  <span class="code-keyword">final</span> parser = registry.getParser(<span class="code-string">'application/rdf+xml'</span>);
-  <span class="code-keyword">final</span> serializer = registry.getSerializer(<span class="code-string">'application/rdf+xml'</span>);
-  
-  <span class="code-comment">// ...use parser and serializer</span>
-}</pre>
-      </div>
+      
     </div>
   </section>
 
