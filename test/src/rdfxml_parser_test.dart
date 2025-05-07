@@ -456,11 +456,11 @@ void main() {
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-foaf:Person a rdfs:Class;
-    rdfs:subClassOf geo:SpatialThing .
-
 geo:SpatialThing a owl:Class;
     rdfs:label "Spatial Thing" .
+
+foaf:Person a rdfs:Class;
+    rdfs:subClassOf geo:SpatialThing .
 """;
     final xml = '''
     <rdfs:Class rdf:about="http://xmlns.com/foaf/0.1/Person" >
@@ -485,6 +485,7 @@ geo:SpatialThing a owl:Class;
     final turtleSerializer = TurtleFormat().createSerializer();
 
     final turtle = turtleSerializer.write(RdfGraph(triples: triples));
+    print(turtle);
     expect(turtle, equalsIgnoringWhitespace(expectedTurtle));
   });
 }
