@@ -1,4 +1,4 @@
-Serialized FOAF to Turtle format: @prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
@@ -34,11 +34,20 @@ foaf:Person a rdfs:Class, owl:Class;
     rdfs:comment "A person.";
     <http://www.w3.org/2003/06/sw-vocab-status/ns#term_status> "stable";
     owl:equivalentClass <http://schema.org/Person>, <http://www.w3.org/2000/10/swap/pim/contact#Person>;
-    rdfs:subClassOf [ a owl:Class ], [ a owl:Class ; rdfs:label "Spatial Thing" ];
+    rdfs:subClassOf foaf:Agent, <http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing>;
     rdfs:isDefinedBy foaf:;
     owl:disjointWith foaf:Organization, foaf:Project .
 
-foaf:Document a rdfs:Class, owl:Class;
+foaf:Agent a owl:Class, rdfs:Class, owl:Class;
+    <http://www.w3.org/2003/06/sw-vocab-status/ns#term_status> "stable";
+    rdfs:label "Agent";
+    rdfs:comment "An agent (eg. person, group, software or physical artifact).";
+    owl:equivalentClass dcterms:Agent .
+
+<http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing> a owl:Class;
+    rdfs:label "Spatial Thing" .
+
+foaf:Document a rdfs:Class, owl:Class, owl:Class;
     rdfs:label "Document";
     rdfs:comment "A document.";
     <http://www.w3.org/2003/06/sw-vocab-status/ns#term_status> "stable";
@@ -60,12 +69,6 @@ foaf:Group a rdfs:Class, owl:Class;
     rdfs:comment "A class of Agents.";
     rdfs:subClassOf foaf:Agent .
 
-foaf:Agent a rdfs:Class, owl:Class;
-    <http://www.w3.org/2003/06/sw-vocab-status/ns#term_status> "stable";
-    rdfs:label "Agent";
-    rdfs:comment "An agent (eg. person, group, software or physical artifact).";
-    owl:equivalentClass dcterms:Agent .
-
 foaf:Project a rdfs:Class, owl:Class;
     <http://www.w3.org/2003/06/sw-vocab-status/ns#term_status> "testing";
     rdfs:label "Project";
@@ -78,7 +81,7 @@ foaf:Image a rdfs:Class, owl:Class;
     rdfs:label "Image";
     rdfs:comment "An image.";
     owl:equivalentClass <http://schema.org/ImageObject>;
-    rdfs:subClassOf [ a owl:Class ];
+    rdfs:subClassOf foaf:Document;
     rdfs:isDefinedBy foaf: .
 
 foaf:PersonalProfileDocument a rdfs:Class, owl:Class;
