@@ -310,5 +310,159 @@ void main() {
 
       expect(thirdRestTriple.object, equals(RdfTerms.nil));
     });
+
+    test('parses FOAF Person class with nested subClassOf correctly', () {
+      final xml = '''
+    <rdfs:Class rdf:about="http://xmlns.com/foaf/0.1/Person" rdfs:label="Person" rdfs:comment="A person." vs:term_status="stable">
+      <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class" />
+      <owl:equivalentClass rdf:resource="http://schema.org/Person" />
+      <owl:equivalentClass rdf:resource="http://www.w3.org/2000/10/swap/pim/contact#Person" />
+  <!--    <rdfs:subClassOf><owl:Class rdf:about="http://xmlns.com/wordnet/1.6/Person"/></rdfs:subClassOf> -->
+      <rdfs:subClassOf><owl:Class rdf:about="http://xmlns.com/foaf/0.1/Agent"/></rdfs:subClassOf>
+  <!--    <rdfs:subClassOf><owl:Class rdf:about="http://xmlns.com/wordnet/1.6/Agent"/></rdfs:subClassOf> -->
+      <rdfs:subClassOf><owl:Class rdf:about="http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing" rdfs:label="Spatial Thing"/></rdfs:subClassOf>
+      <!-- aside: 
+    are spatial things always spatially located? 
+    Person includes imaginary people... discuss... -->
+      <rdfs:isDefinedBy rdf:resource="http://xmlns.com/foaf/0.1/"/>
+
+  <!--    <owl:disjointWith rdf:resource="http://xmlns.com/foaf/0.1/Document"/> this was a mistake; tattoo'd people, for example. -->
+
+      <owl:disjointWith rdf:resource="http://xmlns.com/foaf/0.1/Organization"/>
+      <owl:disjointWith rdf:resource="http://xmlns.com/foaf/0.1/Project"/>
+    </rdfs:Class>
+  ''';
+
+      // Hinzufügen der notwendigen Namensräume
+      final completeXml = '''
+    <rdf:RDF 
+      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" 
+      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" 
+      xmlns:owl="http://www.w3.org/2002/07/owl#" 
+      xmlns:vs="http://www.w3.org/2003/06/sw-vocab-status/ns#">
+      $xml
+    </rdf:RDF>
+  ''';
+
+      final parser = RdfXmlParser(completeXml);
+      final triples = parser.parse();
+
+      // Überprüfe, dass Triples generiert wurden
+      expect(triples, isNotEmpty);
+      /*
+      final turtle = TurtleFormat().createSerializer().write(
+        RdfGraph(triples: triples),
+      );
+      print(turtle);
+      */
+
+      // Definiere wichtige URIs
+      final foafPerson = IriTerm('http://xmlns.com/foaf/0.1/Person');
+      final rdfType = IriTerm(
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+      );
+      final owlClass = IriTerm('http://www.w3.org/2002/07/owl#Class');
+      final rdfsClass = IriTerm('http://www.w3.org/2000/01/rdf-schema#Class');
+      final rdfsSubClassOf = IriTerm(
+        'http://www.w3.org/2000/01/rdf-schema#subClassOf',
+      );
+      final foafAgent = IriTerm('http://xmlns.com/foaf/0.1/Agent');
+      final spatialThing = IriTerm(
+        'http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing',
+      );
+      final rdfsLabel = IriTerm('http://www.w3.org/2000/01/rdf-schema#label');
+
+      // Überprüfe, dass Person eine Klasse ist
+      final typeTriples =
+          triples
+              .where((t) => t.subject == foafPerson && t.predicate == rdfType)
+              .map((t) => t.object)
+              .toSet();
+      expect(typeTriples, equals({owlClass, rdfsClass}));
+
+      // Finde alle subClassOf Tripel mit foaf:Person als Subjekt
+      final subClassOfTriples =
+          triples
+              .where(
+                (t) => t.subject == foafPerson && t.predicate == rdfsSubClassOf,
+              )
+              .toList();
+
+      // Es sollten 2 subClassOf-Beziehungen vorhanden sein
+      expect(subClassOfTriples, hasLength(2));
+
+      // Eine davon sollte foaf:Agent sein
+      final agentSubClass = subClassOfTriples.firstWhere(
+        (t) => t.object == foafAgent,
+        orElse:
+            () => throw StateError('No subClassOf triple for foaf:Agent found'),
+      );
+      expect(agentSubClass, isNotNull);
+
+      // Die andere sollte einen Blank Node als Objekt haben (für SpatialThing)
+      final spatialThingSubClass = subClassOfTriples.firstWhere(
+        (t) => t.object != foafAgent,
+        orElse:
+            () =>
+                throw StateError(
+                  'No subClassOf triple for geo:SpatialThing found',
+                ),
+      );
+      expect(spatialThingSubClass.object, isA<BlankNodeTerm>());
+
+      // Speichere den Blank Node für weitere Überprüfungen
+      final spatialThingNode = spatialThingSubClass.object as BlankNodeTerm;
+
+      // Überprüfe, dass der Blank Node den richtigen Typ hat
+      final spatialNodeTypeTriple = triples.firstWhere(
+        (t) => t.subject == spatialThingNode && t.predicate == rdfType,
+        orElse:
+            () =>
+                throw StateError(
+                  'No type triple found for SpatialThing blank node',
+                ),
+      );
+      expect(spatialNodeTypeTriple.object, equals(owlClass));
+
+      // Überprüfe, dass der Blank Node die richtige URI hat
+      final spatialNodeAboutTriple = triples.firstWhere(
+        (t) => t.subject == spatialThingNode && (t.object == spatialThing),
+        orElse:
+            () =>
+                throw StateError(
+                  'No about triple found for SpatialThing blank node',
+                ),
+      );
+      expect(spatialNodeAboutTriple, isNotNull);
+
+      // Überprüfe, dass der Blank Node das richtige Label hat
+      final spatialNodeLabelTriple = triples.firstWhere(
+        (t) => t.subject == spatialThingNode && t.predicate == rdfsLabel,
+        orElse:
+            () =>
+                throw StateError(
+                  'No label triple found for SpatialThing blank node',
+                ),
+      );
+      expect(spatialNodeLabelTriple.object, isA<LiteralTerm>());
+      expect(
+        (spatialNodeLabelTriple.object as LiteralTerm).value,
+        equals('Spatial Thing'),
+      );
+
+      // Zusammengefasst: Die subClassOf-Beziehungen für foaf:Person sind:
+      // 1. foaf:Person rdfs:subClassOf foaf:Agent
+      // 2. foaf:Person rdfs:subClassOf _:blankNode
+      //    wobei _:blankNode rdf:type owl:Class
+      //    und _:blankNode owl:sameAs geo:SpatialThing
+      //    und _:blankNode rdfs:label "Spatial Thing"
+
+      // Dies entspricht dem angegebenen Turtle-Äquivalent:
+      // rdfs:subClassOf foaf:Agent ,
+      //                [ a owl:Class ;
+      //                  rdfs:label "Spatial Thing" ;
+      //                  owl:sameAs geo:SpatialThing
+      //                ] ;
+    });
   });
 }

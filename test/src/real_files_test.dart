@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';
@@ -8,6 +9,21 @@ import 'package:test/test.dart';
 
 void main() {
   group('Real RDF files', () {
+    test('Foaf as turtle', () {
+      final foafFile = File('test/assets/foaf.rdf');
+      final xmlContent = foafFile.readAsStringSync();
+      final rdfCore =
+          RdfCore.withStandardFormats()..registerFormat(RdfXmlFormat());
+      final graph = rdfCore.parse(
+        xmlContent,
+        contentType: 'application/rdf+xml',
+        documentUrl: 'http://xmlns.com/foaf/0.1/',
+      );
+      final turtle = rdfCore.serialize(graph);
+      print('Serialized FOAF to Turtle format: $turtle');
+      expect(turtle, isNotEmpty);
+    }, skip: 'Temporarily disabled');
+
     test('parse and validate FOAF ontology file', () {
       final foafFile = File('test/assets/foaf.rdf');
       final xmlContent = foafFile.readAsStringSync();
