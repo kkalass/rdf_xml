@@ -31,8 +31,9 @@ void main() {
           'schema': 'http://schema.org/',
         },
       );
+
       _log.finest('Serialized FOAF to Turtle format: $turtle');
-      //expect(turtle, equals(expectedTurtle));
+      expect(turtle.trim(), equals(expectedTurtle.trim()));
     });
 
     test('parse and validate FOAF ontology file', () {
