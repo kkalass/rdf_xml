@@ -378,6 +378,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   ) {
     final predicate = _getPredicateFromElement(propertyElement);
     baseUri = getBaseUri(propertyElement) ?? baseUri;
+
     // Check for rdf:resource attribute (simple resource reference)
     final resourceAttr = propertyElement.getAttribute(
       'resource',
@@ -453,6 +454,33 @@ final class RdfXmlParser implements IRdfXmlParser {
           triples,
         );
         return;
+      }
+
+      // Check if the single child has rdf:about - this is a special case for direct object reference
+      if (propertyElement.childElements.length == 1) {
+        final childElement = propertyElement.childElements.first;
+        final aboutAttr = childElement.getAttribute(
+          'about',
+          namespace: RdfTerms.rdfNamespace,
+        );
+
+        if (aboutAttr != null) {
+          // This is a direct reference to an existing resource
+          final objectIri = _uriResolver.resolveUri(aboutAttr, baseUri);
+          if (objectIri.isEmpty) {
+            throw RdfStructureException(
+              'Invalid rdf:about URI: $aboutAttr',
+              elementName: childElement.name.qualified,
+            );
+          }
+
+          // Add triple using the direct resource reference
+          triples.add(Triple(subject, predicate, IriTerm(objectIri)));
+
+          // Also process the child element with its own subject
+          _processNode(childElement, baseUri, triples);
+          return;
+        }
       }
     }
 
