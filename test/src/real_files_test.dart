@@ -31,7 +31,7 @@ void main() {
           'schema': 'http://schema.org/',
         },
       );
-      print('Serialized FOAF to Turtle format: $turtle');
+      _log.finest('Serialized FOAF to Turtle format: $turtle');
       //expect(turtle, equals(expectedTurtle));
     });
 

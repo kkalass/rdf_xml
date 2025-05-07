@@ -1,7 +1,10 @@
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:test/test.dart';
+
+final _log = Logger('RdfXmlParserTest');
 
 void main() {
   group('RdfXmlParser', () {
@@ -485,7 +488,7 @@ foaf:Person a rdfs:Class;
     final turtleSerializer = TurtleFormat().createSerializer();
 
     final turtle = turtleSerializer.write(RdfGraph(triples: triples));
-    print(turtle);
+    _log.finest(turtle);
     expect(turtle, equalsIgnoringWhitespace(expectedTurtle));
   });
 }
