@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
@@ -5,6 +6,8 @@ import 'package:rdf_xml/src/rdfxml_serializer.dart';
 import 'package:test/test.dart';
 
 import 'test_utils.dart';
+
+final _log = Logger('namespace_manager_test');
 
 /// Debugging helper method to understand why the tests generate 8 triples
 /// instead of the expected 5.
@@ -17,17 +20,17 @@ void debugContainerTriples(List<Triple> triples) {
   final xml = serializer.write(graph);
 
   // Print XML for debugging
-  print('\n--- Serialized XML ---');
-  print(xml);
+  _log.finest('\n--- Serialized XML ---');
+  _log.finest(xml);
 
   // Re-parse
   final parser = RdfXmlParser(xml);
   final reparsedTriples = parser.parse();
 
   // Print reparsed triples for debugging
-  print('\n--- Reparsed Triples (${reparsedTriples.length}) ---');
+  _log.finest('\n--- Reparsed Triples (${reparsedTriples.length}) ---');
   for (var i = 0; i < reparsedTriples.length; i++) {
-    print('$i: ${reparsedTriples[i]}');
+    _log.finest('$i: ${reparsedTriples[i]}');
   }
 
   // Find duplicate subject-predicate pairs
@@ -38,12 +41,12 @@ void debugContainerTriples(List<Triple> triples) {
   }
 
   // Print duplicate subject-predicate pairs
-  print('\n--- Duplicate subject-predicate pairs ---');
+  _log.finest('\n--- Duplicate subject-predicate pairs ---');
   for (final entry in subjectPredicatePairs.entries) {
     if (entry.value.length > 1) {
-      print('${entry.key}: ${entry.value.length} occurrences');
+      _log.finest('${entry.key}: ${entry.value.length} occurrences');
       for (final triple in entry.value) {
-        print('  $triple');
+        _log.finest('  $triple');
       }
     }
   }

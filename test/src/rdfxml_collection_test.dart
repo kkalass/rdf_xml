@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
@@ -7,6 +8,8 @@ import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 
 import 'test_utils.dart';
+
+final _log = Logger('RDF/XML Collection Tests');
 
 /// Debugging helper method for RDF List structures
 void debugCollectionTriples(List<Triple> triples) {
@@ -18,21 +21,21 @@ void debugCollectionTriples(List<Triple> triples) {
   final xml = serializer.write(graph);
 
   // Print XML for debugging
-  print('\n--- Serialized XML ---');
-  print(xml);
+  _log.finest('\n--- Serialized XML ---');
+  _log.finest(xml);
 
   // Re-parse
   final parser = RdfXmlParser(xml);
   final reparsedTriples = parser.parse();
 
   // Print reparsed triples for debugging
-  print('\n--- Reparsed Triples (${reparsedTriples.length}) ---');
+  _log.finest('\n--- Reparsed Triples (${reparsedTriples.length}) ---');
   for (var i = 0; i < reparsedTriples.length; i++) {
-    print('$i: ${reparsedTriples[i]}');
+    _log.finest('$i: ${reparsedTriples[i]}');
   }
 
   // Check for collection patterns
-  print('\n--- Collection Structure ---');
+  _log.finest('\n--- Collection Structure ---');
   final collectionTriples =
       reparsedTriples
           .where(
@@ -42,9 +45,9 @@ void debugCollectionTriples(List<Triple> triples) {
           )
           .toList();
 
-  print('Collection chain triples: ${collectionTriples.length}');
+  _log.finest('Collection chain triples: ${collectionTriples.length}');
   for (final triple in collectionTriples) {
-    print('  $triple');
+    _log.finest('  $triple');
   }
 }
 
@@ -190,9 +193,9 @@ void main() {
       final triples = parser.parse();
 
       // Print all triples for debugging
-      print('\n--- All Triples (${triples.length}) ---');
+      _log.finest('\n--- All Triples (${triples.length}) ---');
       for (var i = 0; i < triples.length; i++) {
-        print('$i: ${triples[i]}');
+        _log.finest('$i: ${triples[i]}');
       }
 
       // Find the values triple that links the list to the first node
@@ -210,9 +213,9 @@ void main() {
 
       // Get collection items
       final items = getCollectionItems(graph, firstListNode);
-      print('\n--- Collection Items (${items.length}) ---');
+      _log.finest('\n--- Collection Items (${items.length}) ---');
       for (var i = 0; i < items.length; i++) {
-        print('Item $i: ${items[i]}');
+        _log.finest('Item $i: ${items[i]}');
       }
 
       expect(items, hasLength(2));
@@ -228,9 +231,9 @@ void main() {
               )
               .toList();
 
-      print('\n--- Value Triples (${valueTriples.length}) ---');
+      _log.finest('\n--- Value Triples (${valueTriples.length}) ---');
       for (final triple in valueTriples) {
-        print('  $triple');
+        _log.finest('  $triple');
       }
 
       // There should be two ex:value triples
@@ -269,9 +272,9 @@ void main() {
       final triples = parser.parse();
 
       // Print all triples for debugging
-      print('\n--- All Triples (${triples.length}) ---');
+      _log.finest('\n--- All Triples (${triples.length}) ---');
       for (var i = 0; i < triples.length; i++) {
-        print('$i: ${triples[i]}');
+        _log.finest('$i: ${triples[i]}');
       }
 
       // Find the values triple
@@ -288,9 +291,9 @@ void main() {
 
       // Get collection items
       final items = getCollectionItems(graph, firstListNode);
-      print('\n--- Collection Items (${items.length}) ---');
+      _log.finest('\n--- Collection Items (${items.length}) ---');
       for (var i = 0; i < items.length; i++) {
-        print('Item $i: ${items[i]}');
+        _log.finest('Item $i: ${items[i]}');
       }
 
       expect(items, hasLength(3));
@@ -311,18 +314,18 @@ void main() {
               )
               .toList();
 
-      print('\n--- Value Triples (${valueTriples.length}) ---');
+      _log.finest('\n--- Value Triples (${valueTriples.length}) ---');
       for (final triple in valueTriples) {
-        print('  $triple with subject ${triple.subject}');
+        _log.finest('  $triple with subject ${triple.subject}');
       }
 
       // We should have exactly two typed values
       expect(valueTriples, hasLength(2));
 
       // Print item blank nodes for comparison
-      print('\n--- Collection Blank Nodes ---');
+      _log.finest('\n--- Collection Blank Nodes ---');
       for (final item in items.whereType<BlankNodeTerm>()) {
-        print('  $item');
+        _log.finest('  $item');
       }
 
       // Check for the integer value
@@ -710,9 +713,9 @@ void main() {
       final triples = parser.parse();
 
       // Print all triples for debugging
-      print('\n--- All Triples (${triples.length}) ---');
+      _log.finest('\n--- All Triples (${triples.length}) ---');
       for (var i = 0; i < triples.length; i++) {
-        print('$i: ${triples[i]}');
+        _log.finest('$i: ${triples[i]}');
       }
 
       // Find the triple that links to the main collection
@@ -730,9 +733,9 @@ void main() {
 
       // Get the main collection items
       final mainItems = getCollectionItems(graph, mainListNode);
-      print('\n--- Main Collection Items (${mainItems.length}) ---');
+      _log.finest('\n--- Main Collection Items (${mainItems.length}) ---');
       for (var i = 0; i < mainItems.length; i++) {
-        print('Item $i: ${mainItems[i]}');
+        _log.finest('Item $i: ${mainItems[i]}');
       }
 
       expect(mainItems, hasLength(3));
@@ -756,18 +759,20 @@ void main() {
               )
               .toList();
 
-      print('\n--- All SubList Triples (${allSubListTriples.length}) ---');
+      _log.finest(
+        '\n--- All SubList Triples (${allSubListTriples.length}) ---',
+      );
       for (final triple in allSubListTriples) {
-        print('  $triple');
-        print('  Subject: ${triple.subject}');
-        print('  Object: ${triple.object}');
+        _log.finest('  $triple');
+        _log.finest('  Subject: ${triple.subject}');
+        _log.finest('  Object: ${triple.object}');
       }
 
       expect(allSubListTriples, isNotEmpty);
 
       // Print the main collection's second item for comparison
-      print('\n--- Main Collection Second Item ---');
-      print('  ${mainItems[1]}');
+      _log.finest('\n--- Main Collection Second Item ---');
+      _log.finest('  ${mainItems[1]}');
 
       // The subList triple should connect to a collection node
       final subListNode = allSubListTriples.first.object;
@@ -775,9 +780,9 @@ void main() {
 
       // Get the sub-collection items
       final subItems = getCollectionItems(graph, subListNode);
-      print('\n--- SubList Items (${subItems.length}) ---');
+      _log.finest('\n--- SubList Items (${subItems.length}) ---');
       for (var i = 0; i < subItems.length; i++) {
-        print('SubItem $i: ${subItems[i]}');
+        _log.finest('SubItem $i: ${subItems[i]}');
       }
 
       expect(subItems, hasLength(2));
@@ -923,7 +928,7 @@ void main() {
       graph,
       contentType: "application/rdf+xml",
     );
-    print(reserialized);
+    _log.finest(reserialized);
 
     expect(
       XmlDocument.parse(reserialized).toXmlString(pretty: true),
@@ -970,7 +975,7 @@ void main() {
         graph,
         contentType: "application/rdf+xml",
       );
-      print(reserialized);
+      _log.finest(reserialized);
 
       expect(
         XmlDocument.parse(reserialized).toXmlString(pretty: true),

@@ -121,15 +121,13 @@ void main() {
 
       // Generiere Namespace-Deklarationen
       final namespaces = namespaceManager.buildNamespaceDeclarations(graph, {});
-
-      // Ausgabe aller generierten Namespaces
-      print('Generated namespaces:');
-      namespaces.forEach((prefix, uri) {
-        print('$prefix: $uri');
-      });
-
-      // Keine Assertion, nur zur Diagnose
-      expect(true, isTrue);
+      expect(
+        namespaces,
+        equals({
+          'ex': 'http://example.org/',
+          'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+        }),
+      );
     });
   });
 }

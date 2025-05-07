@@ -452,13 +452,14 @@ void main() {
   test('parses FOAF Person class with nested subClassOf correctly', () {
     final expectedTurtle = """
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 foaf:Person a rdfs:Class;
-    rdfs:subClassOf <http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing> .
+    rdfs:subClassOf geo:SpatialThing .
 
-<http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing> a owl:Class;
+geo:SpatialThing a owl:Class;
     rdfs:label "Spatial Thing" .
 """;
     final xml = '''
@@ -481,9 +482,9 @@ foaf:Person a rdfs:Class;
     final parser = RdfXmlParser(completeXml);
     final triples = parser.parse();
 
-    final turtle = TurtleFormat().createSerializer().write(
-      RdfGraph(triples: triples),
-    );
+    final turtleSerializer = TurtleFormat().createSerializer();
+
+    final turtle = turtleSerializer.write(RdfGraph(triples: triples));
     expect(turtle, equalsIgnoringWhitespace(expectedTurtle));
   });
 }

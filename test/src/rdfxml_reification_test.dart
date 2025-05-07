@@ -1,9 +1,11 @@
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';
 import 'package:test/test.dart';
 
+final _log = Logger('RDF Reification Tests');
 void main() {
   group('RDF Reification Tests', () {
     test('parses RDF reification statements correctly', () {
@@ -195,17 +197,17 @@ void main() {
       final serializer = RdfXmlSerializer();
       final xml = serializer.write(graph, baseUri: baseUri);
 
-      print('Serialized XML:');
-      print(xml);
+      _log.finest('Serialized XML:');
+      _log.finest(xml);
 
       // Re-parse from XML
       final parser = RdfXmlParser(xml, baseUri: baseUri);
       final reparsedTriples = parser.parse();
 
       // Print the reparsed triples for debugging
-      print('Reparsed triples:');
+      _log.finest('Reparsed triples:');
       for (final triple in reparsedTriples) {
-        print('${triple.subject} ${triple.predicate} ${triple.object}');
+        _log.finest('${triple.subject} ${triple.predicate} ${triple.object}');
       }
 
       // Check that all original triples are present
@@ -328,8 +330,8 @@ void main() {
         customPrefixes: customPrefixes,
       );
 
-      print('XML output for rdf:ID test:');
-      print(xml);
+      _log.finest('XML output for rdf:ID test:');
+      _log.finest(xml);
 
       // The output should use rdf:ID for reification
       // But we need to check for the attribute and not the exact formatting

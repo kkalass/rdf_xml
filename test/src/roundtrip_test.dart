@@ -1,8 +1,11 @@
+import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:rdf_xml/src/rdfxml_serializer.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
+
+final _log = Logger('RDF/XML Roundtrip Test');
 
 void main() {
   group('Roundtrip test', () {
@@ -63,7 +66,9 @@ void main() {
       // Output of all language-tagged literals
       for (final triple in langTriples) {
         final lit = triple.object as LiteralTerm;
-        print('Literal with language tag: ${lit.value} (${lit.language})');
+        _log.finest(
+          'Literal with language tag: ${lit.value} (${lit.language})',
+        );
       }
 
       final serializer = RdfXmlSerializer();
@@ -80,16 +85,16 @@ void main() {
       final differences = compareXmlDocuments(originalDoc, serializedDoc);
 
       if (differences.isNotEmpty) {
-        print('XML Differences found:');
+        _log.finest('XML Differences found:');
         for (final diff in differences) {
-          print('- $diff');
+          _log.finest('- $diff');
         }
 
-        print('\nOriginal XML:');
-        print(xmlContent);
+        _log.finest('\nOriginal XML:');
+        _log.finest(xmlContent);
 
-        print('\nSerialized XML:');
-        print(serializedXml);
+        _log.finest('\nSerialized XML:');
+        _log.finest(serializedXml);
 
         fail(
           'XML documents are not semantically equivalent. See differences above.',
