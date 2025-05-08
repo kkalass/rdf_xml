@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2025-05-07
 
+### Changed
+
+- Use prefix generation from rdf_core instead of our own algorithm
+
 ### Fixed
 
 - Improved handling of objects that are also subjects in RDF/XML parsing
 - Fixed parsing issue identified through new test case
+
 
 ## [0.2.2] - 2025-05-06
 

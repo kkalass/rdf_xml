@@ -455,66 +455,12 @@ final class DefaultNamespaceManager implements INamespaceManager {
     Map<String, String> namespaces,
   ) {
     // Check known namespace mappings first for consistent prefixes
-    final mappingsMap = _namespaceMappings.asMap();
-    for (final entry in mappingsMap.entries) {
-      if (entry.value == namespace) {
-        namespaces[entry.key] = namespace;
-        return;
-      }
-    }
-
-    // Generate a meaningful prefix from domain when possible
-    String? prefix = _tryGeneratePrefixFromDomain(namespace);
-
-    // Ensure prefix is not already used
-    if (prefix != null && !namespaces.containsKey(prefix)) {
-      namespaces[prefix] = namespace;
-      return;
-    }
-
-    // Fall back to numbered prefixes
-    final computedPrefix = prefix ?? 'ns';
-    int prefixNum = 1;
-    do {
-      prefix = '$computedPrefix$prefixNum';
-      prefixNum++;
-    } while (namespaces.containsKey(prefix));
-
+    final (prefix, generated) = _namespaceMappings.getOrGeneratePrefix(
+      namespace,
+      customMappings: namespaces,
+    );
+    // make sure we know the prefix from now on
     namespaces[prefix] = namespace;
-  }
-
-  /// Attempts to generate a meaningful prefix from a namespace URI
-  ///
-  /// For example, http://example.org/ might become "example"
-  String? _tryGeneratePrefixFromDomain(String namespace) {
-    try {
-      // Extract domain from http/https namespaces
-      final uriRegex = RegExp(r'^https?://(?:www\.)?([^/]+)/?');
-      final match = uriRegex.firstMatch(namespace);
-
-      if (match != null && match.groupCount >= 1) {
-        final domain = match.group(1);
-        if (domain == null || domain.isEmpty) return null;
-
-        // Extract organization/project name from domain
-        final parts = domain.split('.');
-
-        // For domains like example.org, return "ex"
-        if (parts.length >= 2) {
-          final candidate =
-              parts[0].substring(0, min(2, parts[0].length)).toLowerCase();
-
-          // Ensure it's a valid XML name component
-          if (_isValidXmlName(candidate)) {
-            return candidate;
-          }
-        }
-      }
-
-      return null;
-    } catch (_) {
-      return null;
-    }
   }
 
   /// Checks if a string is a valid XML local name
