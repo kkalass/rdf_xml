@@ -11,6 +11,17 @@ A RDF/XML parser and serializer for the [rdf_core](https://pub.dev/packages/rdf_
 
 ---
 
+## Part of a whole family of projects
+
+If you are looking for more rdf-related functionality, have a look at our companion projects:
+
+* basic graph classes as well as turtle/jsonld/n-triple serialization and parsing: [rdf_core](https://github.com/kkalass/rdf_core) 
+* easy-to-use constants for many well-known vocabularies: [rdf_vocabularies](https://github.com/kkalass/rdf_vocabularies)
+* generate your own easy-to-use constants for other vocabularies with a build_runner: [rdf_vocabulary_to_dart](https://github.com/kkalass/rdf_vocabulary_to_dart)
+* map Dart Objects ↔️ RDF: [rdf_mapper](https://github.com/kkalass/rdf_mapper)
+
+---
+
 ## 📋 Features
 
 - **Complete RDF/XML support** - Full implementation of the W3C RDF/XML standard
