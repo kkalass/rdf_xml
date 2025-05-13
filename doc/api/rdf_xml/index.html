@@ -63,8 +63,8 @@
 
     
 <section class="desc markdown">
-  <p>RDF/XML Format Implementation for rdf_core</p>
-<p>This library provides parsing and serialization support for the RDF/XML format
+  <p>RDF/XML Codec Implementation for rdf_core</p>
+<p>This library provides decoding and encoding support for the RDF/XML format
 as defined by the W3C Recommendation. RDF/XML is the original standard format
 for representing RDF data as XML, allowing semantic web data to be exchanged
 in an XML-compatible syntax.</p>
@@ -75,29 +75,18 @@ in an XML-compatible syntax.</p>
 <li>Container elements (rdf:Bag, rdf:Seq, rdf:Alt)</li>
 <li>Collection elements (rdf:List)</li>
 <li>Blank nodes and reification</li>
-<li>Stream-based processing for large RDF/XML documents</li>
 </ul>
 <p>To use this package, import it and either:</p>
 <ol>
-<li>Create parser/serializer instances directly:</li>
+<li>Use the pre-defined global codec (similar to dart:convert's json):</li>
 </ol>
 <pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 
-// Create a parser directly
-final parser = RdfXmlFormat().createParser();
-final rdfGraph = parser.parse(rdfXmlContent);
+// Use the global rdfxml codec
+final rdfGraph = rdfxml.decode(rdfXmlContent);
 
-// For large documents, use streaming parser
-final streamingParser = RdfXmlFormat().createStreamingParser();
-await for (final triple in streamingParser.parseAsStream(rdfXmlContent)) {
-  // Process each triple as it's parsed
-  processTriple(triple);
-}
-
-// Create a serializer directly
-final serializer = RdfXmlFormat().createSerializer();
-final rdfXml = serializer.write(rdfGraph);
+final rdfXml = rdfxml.encode(rdfGraph);
 </code></pre>
 <ol start="2">
 <li>Or register with the format registry for automatic format handling:</li>
@@ -105,13 +94,14 @@ final rdfXml = serializer.write(rdfGraph);
 <pre class="language-dart"><code class="language-dart">import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 
-// Register the format
-final registry = RdfFormatRegistry();
-registry.registerFormat(const RdfXmlFormat());
+// Use RdfCore with standard codecs plus RdfXmlCodec
+final rdfCore = RdfCore.withStandardCodecs(additionalCodecs: [RdfXmlCodec()]);
 
-// Use the registry to get the appropriate parser by MIME type
-final parser = registry.getParser('application/rdf+xml');
-final serializer = registry.getSerializer('application/rdf+xml');
+// Decode RDF/XML content
+final rdfGraph = rdfCore.decode(rdfXmlContent);
+
+// Encode a graph as RDF/XML
+final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
 </code></pre>
 </section>
 
@@ -175,28 +165,28 @@ final serializer = registry.getSerializer('application/rdf+xml');
   Provides XML document parsing functionality
 </dd>
 
-          <dt id="RdfXmlFormat">
-  <span class="name "><a href="../rdf_xml/RdfXmlFormat-class.html">RdfXmlFormat</a></span> 
+          <dt id="RdfXmlCodec">
+  <span class="name "><a href="../rdf_xml/RdfXmlCodec-class.html">RdfXmlCodec</a></span> 
 
 </dt>
 <dd>
-  Format plugin for RDF/XML
+  Codec plugin for RDF/XML
 </dd>
 
-          <dt id="RdfXmlParserOptions">
-  <span class="name "><a href="../rdf_xml/RdfXmlParserOptions-class.html">RdfXmlParserOptions</a></span> 
+          <dt id="RdfXmlDecoderOptions">
+  <span class="name "><a href="../rdf_xml/RdfXmlDecoderOptions-class.html">RdfXmlDecoderOptions</a></span> 
 
 </dt>
 <dd>
-  Parser options for RDF/XML processing
+  Decoder options for RDF/XML processing
 </dd>
 
-          <dt id="RdfXmlSerializerOptions">
-  <span class="name "><a href="../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a></span> 
+          <dt id="RdfXmlEncoderOptions">
+  <span class="name "><a href="../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a></span> 
 
 </dt>
 <dd>
-  Serializer options for RDF/XML output
+  Encoder options for RDF/XML output
 </dd>
 
       </dl>
@@ -207,6 +197,23 @@ final serializer = registry.getSerializer('application/rdf+xml');
 
 
 
+    <section class="summary offset-anchor" id="properties">
+      <h2>Properties</h2>
+      <dl class="properties">
+          <dt id="rdfxml" class="property">
+  <span class="name"><a href="../rdf_xml/rdfxml.html">rdfxml</a></span>
+  <span class="signature">&#8594; <a href="../rdf_xml/RdfXmlCodec-class.html">RdfXmlCodec</a></span>
+  
+
+</dt>
+<dd>
+  Global convenience variable for working with RDF/XML format
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+      </dl>
+    </section>
 
 
 
@@ -221,20 +228,20 @@ final serializer = registry.getSerializer('application/rdf+xml');
   Exception for RDF structure errors
 </dd>
 
-          <dt id="RdfXmlException">
-  <span class="name "><a href="../rdf_xml/RdfXmlException-class.html">RdfXmlException</a></span> 
+          <dt id="RdfXmlDecoderException">
+  <span class="name "><a href="../rdf_xml/RdfXmlDecoderException-class.html">RdfXmlDecoderException</a></span> 
 
 </dt>
 <dd>
   Base class for RDF/XML-specific exceptions
 </dd>
 
-          <dt id="RdfXmlSerializationException">
-  <span class="name "><a href="../rdf_xml/RdfXmlSerializationException-class.html">RdfXmlSerializationException</a></span> 
+          <dt id="RdfXmlEncoderException">
+  <span class="name "><a href="../rdf_xml/RdfXmlEncoderException-class.html">RdfXmlEncoderException</a></span> 
 
 </dt>
 <dd>
-  Exception for serialization errors
+  Exception for encoding errors
 </dd>
 
           <dt id="UriResolutionException">
@@ -282,7 +289,7 @@ final serializer = registry.getSerializer('application/rdf+xml');
 <footer>
   <span class="no-break">
     rdf_xml
-      0.2.4
+      0.3.0
   </span>
   
 </footer>
