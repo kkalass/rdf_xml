@@ -1,6 +1,6 @@
 // Basic usage of the rdf_xml package
 // Shows how to integrate with RdfCore and
-// then parse and serialize RDF/XML data
+// then decode and encode RDF/XML data
 
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
@@ -24,13 +24,18 @@ void main() {
     </rdf:RDF>
   ''';
 
-  print('--- PARSING EXAMPLE ---\n');
+  // OPTIONAL: just use the global rdfxml instance directly, without RdfCore integration. For example:
+  // rdfxml.decode(xmlContent);
+  // rdfxml.encode(rdfGraph);
+  //
+  // Below is the RdfCore integration example, which allows for more advanced usage.
+  //
+  print('--- DECODING EXAMPLE ---\n');
 
-  // Register the format with the registry
-  final rdfCore = RdfCore.withStandardFormats();
-  rdfCore.registerFormat(RdfXmlFormat());
+  // Register the codec with the registry
+  final rdfCore = RdfCore.withStandardCodecs(additionalCodecs: [RdfXmlCodec()]);
 
-  final rdfGraph = rdfCore.parse(xmlContent);
+  final rdfGraph = rdfCore.decode(xmlContent);
 
   // Print the parsed triples
   print('Parsed ${rdfGraph.size} triples:');
@@ -38,13 +43,10 @@ void main() {
     print('- $triple');
   }
 
-  print('\n--- SERIALIZATION EXAMPLE ---\n');
+  print('\n--- ENCODING EXAMPLE ---\n');
 
   // Serialize with custom prefixes
-  final rdfXml = rdfCore.serialize(
-    rdfGraph,
-    contentType: "application/rdf+xml",
-  );
+  final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
 
   print('Serialized RDF/XML:');
   print(rdfXml);

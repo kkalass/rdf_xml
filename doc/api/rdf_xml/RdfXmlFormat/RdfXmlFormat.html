@@ -62,7 +62,7 @@
 <li><span class="parameter" id="-param-namespaceManager"><span class="type-annotation"><a href="../../rdf_xml/INamespaceManager-class.html">INamespaceManager</a>?</span> <span class="parameter-name">namespaceManager</span>, </span></li>
 <li><span class="parameter" id="-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="-param-parserOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlParserOptions-class.html">RdfXmlParserOptions</a>?</span> <span class="parameter-name">parserOptions</span>, </span></li>
-<li><span class="parameter" id="-param-serializerOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a>?</span> <span class="parameter-name">serializerOptions</span>, </span></li>
+<li><span class="parameter" id="-param-encoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a>?</span> <span class="parameter-name">encoderOptions</span>, </span></li>
 <li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.7.6/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
 </ol>})
     </section>
@@ -76,7 +76,7 @@
 <li><code>namespaceManager</code> Optional namespace manager</li>
 <li><code>xmlBuilder</code> Optional XML builder</li>
 <li><code>parserOptions</code> Optional parser options</li>
-<li><code>serializerOptions</code> Optional serializer options</li>
+<li><code>encoderOptions</code> Optional serializer options</li>
 </ul>
 </section>
 
@@ -90,7 +90,7 @@
   INamespaceManager? namespaceManager,
   IRdfXmlBuilder? xmlBuilder,
   RdfXmlParserOptions? parserOptions,
-  RdfXmlSerializerOptions? serializerOptions,
+  RdfXmlSerializerOptions? encoderOptions,
   RdfNamespaceMappings? namespaceMappings,
 }) : _xmlDocumentProvider =
          xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
@@ -105,7 +105,7 @@
      _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
      _parserOptions = parserOptions ?? const RdfXmlParserOptions(),
      _serializerOptions =
-         serializerOptions ?? const RdfXmlSerializerOptions();</code></pre>
+         encoderOptions ?? const RdfXmlSerializerOptions();</code></pre>
 </section>
 
 

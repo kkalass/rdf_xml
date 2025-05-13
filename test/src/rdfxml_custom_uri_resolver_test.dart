@@ -21,7 +21,7 @@ class CustomUriResolver implements IUriResolver {
     // For other URIs, perform standard resolution
     if (uri.startsWith('#')) {
       if (baseUri == null) {
-        throw RdfParserException(
+        throw RdfDecoderException(
           "There was no xml:base attribute in the document. You need to provide the docuentUri to the parser. Cannot resolve relative uri $uri.",
           format: "rdf/xml",
         );
@@ -29,7 +29,7 @@ class CustomUriResolver implements IUriResolver {
       return '$baseUri$uri';
     } else if (!uri.contains(':')) {
       if (baseUri == null) {
-        throw RdfParserException(
+        throw RdfDecoderException(
           "There was no xml:base attribute in the document. You need to provide the docuentUri to the parser. Cannot resolve relative uri $uri.",
           format: "rdf/xml",
         );

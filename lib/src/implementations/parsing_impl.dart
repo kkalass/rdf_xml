@@ -38,7 +38,7 @@ final class DefaultUriResolver implements IUriResolver {
 
     // Handle empty base URI cases
     if (baseUri == null || baseUri.isEmpty) {
-      throw RdfParserException(
+      throw RdfDecoderException(
         "There was no xml:base attribute in the document. You need to provide the documentUri to the parser. I cannot resolve the relative uri $uri.",
         format: "rdf/xml",
       );

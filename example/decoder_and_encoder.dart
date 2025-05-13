@@ -1,5 +1,5 @@
 // Basic usage of the rdf_xml package
-// Shows how to parse and serialize RDF/XML data
+// Shows how to decode and encode RDF/XML data
 
 import 'package:rdf_xml/rdf_xml.dart';
 
@@ -22,25 +22,21 @@ void main() {
     </rdf:RDF>
   ''';
 
-  print('--- PARSING EXAMPLE ---\n');
+  print('--- DECODER EXAMPLE ---\n');
 
-  // Create a parser directly
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(xmlContent);
+  // Use the global rdfxml codec
+  final rdfGraph = rdfxml.decode(xmlContent);
 
-  // Print the parsed triples
-  print('Parsed ${rdfGraph.size} triples:');
+  // Print the decoded triples
+  print('Decoded ${rdfGraph.size} triples:');
   for (final triple in rdfGraph.triples) {
     print('- $triple');
   }
 
-  print('\n--- SERIALIZATION EXAMPLE ---\n');
+  print('\n--- ENCODER EXAMPLE ---\n');
 
-  // Create a serializer with readable formatting
-  final serializer = RdfXmlFormat.readable().createSerializer();
-
-  // Serialize with custom prefixes
-  final rdfXml = serializer.write(
+  // Use the readable preset with the global codec
+  final rdfXml = RdfXmlCodec.readable().encode(
     rdfGraph,
     customPrefixes: {
       'dc': 'http://purl.org/dc/elements/1.1/',
@@ -49,6 +45,6 @@ void main() {
     },
   );
 
-  print('Serialized RDF/XML:');
+  print('Encoded RDF/XML:');
   print(rdfXml);
 }

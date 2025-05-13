@@ -17,13 +17,13 @@ void main() {
 
       // Create serializer with pretty printing
       final prettySerializer = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(prettyPrint: true),
+        options: const RdfXmlEncoderOptions(prettyPrint: true),
       );
       final prettyXml = prettySerializer.write(graph);
 
       // Create serializer without pretty printing
       final compactSerializer = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(prettyPrint: false),
+        options: const RdfXmlEncoderOptions(prettyPrint: false),
       );
       final compactXml = compactSerializer.write(graph);
 
@@ -55,19 +55,13 @@ void main() {
 
       // Create serializer with 2-space indentation
       final twoSpaceSerializer = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(
-          prettyPrint: true,
-          indentSpaces: 2,
-        ),
+        options: const RdfXmlEncoderOptions(prettyPrint: true, indentSpaces: 2),
       );
       final twoSpaceXml = twoSpaceSerializer.write(graph);
 
       // Create serializer with 4-space indentation
       final fourSpaceSerializer = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(
-          prettyPrint: true,
-          indentSpaces: 4,
-        ),
+        options: const RdfXmlEncoderOptions(prettyPrint: true, indentSpaces: 4),
       );
       final fourSpaceXml = fourSpaceSerializer.write(graph);
 
@@ -99,7 +93,7 @@ void main() {
 
       // With namespaces enabled - the default
       final withNamespaces = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(),
+        options: const RdfXmlEncoderOptions(),
       );
       final xmlWithNamespaces = withNamespaces.write(graph);
 
@@ -131,7 +125,7 @@ void main() {
 
       // With useTypedNodes setting (any value)
       final serializer = RdfXmlSerializer(
-        options: const RdfXmlSerializerOptions(useTypedNodes: true),
+        options: const RdfXmlEncoderOptions(useTypedNodes: true),
       );
       final xml = serializer.write(graph);
 
@@ -147,12 +141,12 @@ void main() {
 
     test('factory methods create correct configurations', () {
       // Test the readable factory
-      final readableOptions = RdfXmlSerializerOptions.readable();
+      final readableOptions = RdfXmlEncoderOptions.readable();
       expect(readableOptions.prettyPrint, isTrue);
       expect(readableOptions.indentSpaces, equals(2));
 
       // Test the compact factory
-      final compactOptions = RdfXmlSerializerOptions.compact();
+      final compactOptions = RdfXmlEncoderOptions.compact();
       expect(compactOptions.prettyPrint, isFalse);
       // Still use namespaces for compactness
     });

@@ -1,22 +1,22 @@
 /// Exception classes for RDF/XML processing
 ///
 /// Provides specialized exception classes for different error scenarios
-/// in RDF/XML parsing and serialization.
+/// in RDF/XML decoding and encoding.
 library rdfxml.exceptions;
 
 import 'package:rdf_core/rdf_core.dart';
 
 /// Base class for RDF/XML-specific exceptions
 ///
-/// Extends RdfParserException with additional context specific
+/// Extends RdfDecoderException with additional context specific
 /// to RDF/XML processing errors.
-sealed class RdfXmlException extends RdfParserException {
+sealed class RdfXmlDecoderException extends RdfDecoderException {
   /// Creates a new RDF/XML exception
   ///
   /// Parameters:
   /// - [message] Detailed error message
   /// - [sourceContext] Optional source context where the error occurred
-  const RdfXmlException(super.message, {this.sourceContext})
+  const RdfXmlDecoderException(super.message, {this.sourceContext})
     : super(format: 'application/rdf+xml');
 
   /// Source context where the error occurred
@@ -36,7 +36,7 @@ sealed class RdfXmlException extends RdfParserException {
 /// Exception for XML parsing errors
 ///
 /// Thrown when the input document is not valid XML.
-final class XmlParseException extends RdfXmlException {
+final class XmlParseException extends RdfXmlDecoderException {
   /// Creates a new XML parse exception
   ///
   /// Parameters:
@@ -73,7 +73,7 @@ final class XmlParseException extends RdfXmlException {
 /// Exception for RDF structure errors
 ///
 /// Thrown when the document is valid XML but has invalid RDF structure.
-final class RdfStructureException extends RdfXmlException {
+final class RdfStructureException extends RdfXmlDecoderException {
   /// Creates a new RDF structure exception
   ///
   /// Parameters:
@@ -109,7 +109,7 @@ final class RdfStructureException extends RdfXmlException {
 /// Exception for URI resolution errors
 ///
 /// Thrown when a URI cannot be resolved properly.
-final class UriResolutionException extends RdfXmlException {
+final class UriResolutionException extends RdfXmlDecoderException {
   /// Creates a new URI resolution exception
   ///
   /// Parameters:
@@ -136,16 +136,16 @@ final class UriResolutionException extends RdfXmlException {
   }
 }
 
-/// Exception for serialization errors
+/// Exception for encoding errors
 ///
-/// Thrown when an RDF graph cannot be serialized to RDF/XML.
-final class RdfXmlSerializationException extends RdfSerializerException {
-  /// Creates a new serialization exception
+/// Thrown when an RDF graph cannot be encoded to RDF/XML.
+final class RdfXmlEncoderException extends RdfEncoderException {
+  /// Creates a new encoding exception
   ///
   /// Parameters:
   /// - [message] Detailed error message
   /// - [subjectContext] Optional subject context where the error occurred
-  const RdfXmlSerializationException(super.message, {this.subjectContext})
+  const RdfXmlEncoderException(super.message, {this.subjectContext})
     : super(format: 'application/rdf+xml');
 
   /// Subject context where the error occurred
@@ -154,8 +154,8 @@ final class RdfXmlSerializationException extends RdfSerializerException {
   @override
   String toString() {
     if (subjectContext != null) {
-      return 'RDF/XML Serialization Error for subject $subjectContext: $message';
+      return 'RDF/XML Encoding Error for subject $subjectContext: $message';
     }
-    return 'RDF/XML Serialization Error: $message';
+    return 'RDF/XML Encoding Error: $message';
   }
 }

@@ -921,10 +921,10 @@ void main() {
   </rdf:Description>
 </rdf:RDF>
 """;
-    var rdfCore = RdfCore.withFormats(formats: [RdfXmlFormat()]);
+    var rdfCore = RdfCore.withCodecs(codecs: [RdfXmlCodec()]);
 
-    final graph = rdfCore.parse(xml);
-    final reserialized = rdfCore.serialize(
+    final graph = rdfCore.decode(xml);
+    final reserialized = rdfCore.encode(
       graph,
       contentType: "application/rdf+xml",
     );
@@ -968,10 +968,10 @@ void main() {
   </rdf:Description>
 </rdf:RDF>
 """;
-      var rdfCore = RdfCore.withFormats(formats: [RdfXmlFormat()]);
+      var rdfCore = RdfCore.withCodecs(codecs: [RdfXmlCodec()]);
 
-      final graph = rdfCore.parse(xml);
-      final reserialized = rdfCore.serialize(
+      final graph = rdfCore.decode(xml);
+      final reserialized = rdfCore.encode(
         graph,
         contentType: "application/rdf+xml",
       );

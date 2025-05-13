@@ -6,7 +6,7 @@ library rdfxml_constants;
 
 import 'package:rdf_core/rdf_core.dart';
 
-/// Core RDF vocabulary predicates
+/// Core RDF vocabulary predicates, private to the RDF/XML implementation.
 class RdfTerms {
   /// The RDF namespace
   static const String rdfNamespace =

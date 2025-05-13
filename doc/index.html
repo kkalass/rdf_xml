@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RDF/XML - Dart Library for RDF/XML Parsing and Serialization</title>
+  <title>RDF/XML - Dart Library for RDF/XML Decoding and Encoding</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <style>
@@ -214,7 +214,7 @@
       <div class="row align-items-center">
         <div class="col-lg-8">
           <h1>RDF/XML for Dart</h1>
-          <p>A high-performance RDF/XML parser and serializer for <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> implementing the W3C standard </p>
+          <p>A high-performance RDF/XML decoder and encoder for <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> implementing the W3C standard </p>
           <a href="https://pub.dev/packages/rdf_xml" class="btn btn-light btn-lg me-3">
             <i class="bi bi-box"></i> pub.dev
           </a>
@@ -257,7 +257,7 @@
             <div class="card-body text-center">
               <i class="bi bi-gear-fill feature-icon"></i>
               <h3 class="h5">Highly Configurable</h3>
-              <p>Flexible configuration for strict or lenient parsing, formatting options, and more.</p>
+              <p>Flexible configuration for strict or lenient decoding, formatting options, and more.</p>
             </div>
           </div>
         </div>
@@ -314,10 +314,9 @@
     <div class="container">
       <h2 class="section-title">Usage</h2>
       
-      <h3 class="h4 mt-4 mb-3">Parsing RDF/XML</h3>
+      <h3 class="h4 mt-4 mb-3">Decoding RDF/XML</h3>
       <div class="code-block">
-<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
-<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
 
 <span class="code-keyword">void</span> <span class="code-type">main</span>() {
   <span class="code-keyword">final</span> xmlContent = <span class="code-string">'''
@@ -330,19 +329,19 @@
     &lt;/rdf:RDF&gt;
   '''</span>;
 
-  <span class="code-comment">// Register the format with the registry</span>
-  <span class="code-keyword">final</span> rdfCore = <span class="code-type">RdfCore</span>.withStandardFormats();
-  rdfCore = rdfCore.registerFormat(<span class="code-type">RdfXmlFormat</span>());
-  <span class="code-keyword">final</span> rdfGraph = rdfCore.parse(xmlContent);
+  <span class="code-comment">// Use the global rdfxml codec</span>
+  <span class="code-keyword">final</span> rdfGraph = rdfxml.decode(xmlContent);
   
-  <span class="code-comment">// Print the parsed triples</span>
+  <span class="code-comment">// Print the decoded triples</span>
   <span class="code-keyword">for</span> (<span class="code-keyword">final</span> triple <span class="code-keyword">in</span> rdfGraph.triples) {
     print(triple);
   }
 }</pre>
       </div>
       
-      <h3 class="h4 mt-4 mb-3">Serializing to RDF/XML</h3>
+      
+      
+      <h3 class="h4 mt-4 mb-3">Encoding to RDF/XML</h3>
       <div class="code-block">
 <pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
 <span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
@@ -362,18 +361,67 @@
     ),
   ]);
 
-  <span class="code-comment">// Register with rdf_core</span>
-  <span class="code-keyword">final</span> rdfCore = <span class="code-type">RdfCore</span>.withStandardFormats();
-  rdfCore = rdfCore.registerFormat(<span class="code-type">RdfXmlFormat</span>());
+  <span class="code-comment">// Use the global rdfxml codec</span>
+  <span class="code-keyword">final</span> rdfXml = rdfxml.encode(graph);
+  
+  print(rdfXml);
+}</pre>
+      </div>
 
-  <span class="code-comment">// Serialize</span>
-  <span class="code-keyword">final</span> rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml");
+      <h3 class="h4 mt-4 mb-3">Integration with RdfCore</h3>
+      <div class="code-block">
+<pre><span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
+<span class="code-keyword">import</span> <span class="code-string">'package:rdf_xml/rdf_xml.dart'</span>;
+
+<span class="code-keyword">void</span> <span class="code-type">main</span>() {
+  <span class="code-comment">// Define some RDF/XML content</span>
+  <span class="code-keyword">final</span> xmlContent = <span class="code-string">'''
+    &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="http://purl.org/dc/elements/1.1/"&gt;
+      &lt;rdf:Description rdf:about="http://example.org/resource"&gt;
+        &lt;dc:title&gt;Example Resource&lt;/dc:title&gt;
+        &lt;dc:creator&gt;Example Author&lt;/dc:creator&gt;
+      &lt;/rdf:Description&gt;
+    &lt;/rdf:RDF&gt;
+  '''</span>;
+
+  <span class="code-comment">// Register the codec with RdfCore</span>
+  <span class="code-keyword">final</span> rdfCore = <span class="code-type">RdfCore</span>.withStandardCodecs(additionalCodecs: [<span class="code-type">RdfXmlCodec</span>()]);
+  
+  <span class="code-comment">// Decode RDF/XML content</span>
+  <span class="code-keyword">final</span> rdfGraph = rdfCore.decode(xmlContent);
+  
+  <span class="code-comment">// Print the decoded triples</span>
+  <span class="code-keyword">for</span> (<span class="code-keyword">final</span> triple <span class="code-keyword">in</span> rdfGraph.triples) {
+    print(triple);
+  }
+  
+  <span class="code-comment">// Create a new graph with some triples</span>
+  <span class="code-keyword">final</span> newGraph = <span class="code-type">RdfGraph</span>.fromTriples([
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/title'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Resource'</span>),
+    ),
+    <span class="code-type">Triple</span>(
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://example.org/resource'</span>),
+      <span class="code-type">IriTerm</span>(<span class="code-string">'http://purl.org/dc/elements/1.1/creator'</span>),
+      <span class="code-type">LiteralTerm</span>.string(<span class="code-string">'Example Author'</span>),
+    ),
+  ]);
+
+  <span class="code-comment">// Encode using RdfCore with specified content type</span>
+  <span class="code-keyword">final</span> rdfXml = rdfCore.encode(newGraph, contentType: "application/rdf+xml");
+  
+  print(rdfXml);
+}</pre>
+      </div>
   
   print(rdfXml);
 }</pre>
       </div>
       
-      <h3 class="h4 mt-4 mb-3">Parsing from a File</h3>
+      <h3 class="h4 mt-4 mb-3">Decoding from a File</h3>
       <div class="code-block">
 <pre><span class="code-keyword">import</span> <span class="code-string">'dart:io'</span>;
 <span class="code-keyword">import</span> <span class="code-string">'package:rdf_core/rdf_core.dart'</span>;
@@ -383,9 +431,8 @@
   <span class="code-keyword">final</span> file = <span class="code-type">File</span>(filePath);
   <span class="code-keyword">final</span> xmlContent = <span class="code-keyword">await</span> file.readAsString();
   
-  <span class="code-comment">// Parse with base URI set to the file location</span>
-  <span class="code-keyword">final</span> parser = <span class="code-type">RdfXmlFormat</span>().createParser();
-  <span class="code-keyword">final</span> rdfGraph = parser.parse(
+  <span class="code-comment">// Decode with base URI set to the file location</span>
+  <span class="code-keyword">final</span> rdfGraph = rdfxml.decode(
     xmlContent,
     documentUrl: <span class="code-string">'file://${file.absolute.path}'</span>,
   );
@@ -404,44 +451,44 @@
     <div class="container">
       <h2 class="section-title">Configuration</h2>
       
-      <h3 class="h4 mt-4 mb-3">Parser Options</h3>
-      <p>The parser can be configured for different use cases:</p>
+      <h3 class="h4 mt-4 mb-3">Decoder Options</h3>
+      <p>The decoder can be configured for different use cases:</p>
       <div class="code-block">
-<pre><span class="code-comment">// Create a parser with strict validation</span>
-<span class="code-keyword">final</span> strictParser = <span class="code-type">RdfXmlFormat</span>.strict().createParser();
+<pre><span class="code-comment">// Create a codec with strict validation</span>
+<span class="code-keyword">final</span> strictCodec = <span class="code-type">RdfXmlCodec</span>.strict();
 
-<span class="code-comment">// Create a parser that handles non-standard RDF/XML</span>
-<span class="code-keyword">final</span> lenientParser = <span class="code-type">RdfXmlFormat</span>.lenient().createParser();
+<span class="code-comment">// Create a codec that handles non-standard RDF/XML</span>
+<span class="code-keyword">final</span> lenientCodec = <span class="code-type">RdfXmlCodec</span>.lenient();
 
 <span class="code-comment">// Custom configuration</span>
-<span class="code-keyword">final</span> customParser = <span class="code-type">RdfXmlFormat</span>(
-  parserOptions: <span class="code-type">RdfXmlParserOptions</span>(
+<span class="code-keyword">final</span> customCodec = <span class="code-type">RdfXmlCodec</span>(
+  decoderOptions: <span class="code-type">RdfXmlDecoderOptions</span>(
     strictMode: <span class="code-keyword">false</span>,
     normalizeWhitespace: <span class="code-keyword">true</span>,
     validateOutput: <span class="code-keyword">true</span>,
     maxNestingDepth: 50,
   ),
-).createParser();</pre>
+);</pre>
       </div>
       
-      <h3 class="h4 mt-4 mb-3">Serializer Options</h3>
-      <p>The serializer can also be configured for different output requirements:</p>
+      <h3 class="h4 mt-4 mb-3">Encoder Options</h3>
+      <p>The encoder can also be configured for different output requirements:</p>
       <div class="code-block">
 <pre><span class="code-comment">// Human-readable output</span>
-<span class="code-keyword">final</span> readableSerializer = <span class="code-type">RdfXmlFormat</span>.readable().createSerializer();
+<span class="code-keyword">final</span> readableCodec = <span class="code-type">RdfXmlCodec</span>.readable();
 
 <span class="code-comment">// Compact output for storage</span>
-<span class="code-keyword">final</span> compactSerializer = <span class="code-type">RdfXmlFormat</span>.compact().createSerializer();
+<span class="code-keyword">final</span> compactCodec = <span class="code-type">RdfXmlCodec</span>.compact();
 
 <span class="code-comment">// Custom configuration</span>
-<span class="code-keyword">final</span> customSerializer = <span class="code-type">RdfXmlFormat</span>(
-  serializerOptions: <span class="code-type">RdfXmlSerializerOptions</span>(
+<span class="code-keyword">final</span> customCodec = <span class="code-type">RdfXmlCodec</span>(
+  encoderOptions: <span class="code-type">RdfXmlEncoderOptions</span>(
     prettyPrint: <span class="code-keyword">true</span>,
     indentSpaces: 4,
     useNamespaces: <span class="code-keyword">true</span>,
     useTypedNodes: <span class="code-keyword">true</span>,
   ),
-).createSerializer();</pre>
+);</pre>
       </div>
     </div>
   </section>
@@ -522,7 +569,7 @@
       <div class="row">
         <div class="col-md-6">
           <h3 class="h5">RDF/XML for Dart</h3>
-          <p>A high-performance RDF/XML parser and serializer for the <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> library.</p>
+          <p>A high-performance RDF/XML decoder and encoder for the <a href="https://kkalass.github.io/rdf_core" class="text-white">rdf_core</a> library.</p>
           <p>
             <a href="https://pub.dev/packages/rdf_xml" class="text-white me-3">
               <i class="bi bi-box"></i> pub.dev

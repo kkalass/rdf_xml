@@ -794,7 +794,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     // Get QName for predicate if possible
     final predicateQName = _namespaceManager.iriToQName(iri, namespaces);
     if (predicateQName == null) {
-      throw RdfSerializerException(
+      throw RdfEncoderException(
         "Could not create a qname for ${iri} and known prefixes ${namespaces.keys}}",
         format: "rdf/xml",
       );
@@ -1098,7 +1098,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
               final nodeGroup = _currentSubjectGroups[blankNode];
 
               if (nodeGroup == null) {
-                throw RdfSerializerException(
+                throw RdfEncoderException(
                   'Blank node $blankNode not found in subject groups.',
                   format: "rdf/xml",
                 );

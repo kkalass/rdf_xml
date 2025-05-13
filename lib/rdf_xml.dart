@@ -1,6 +1,6 @@
-/// RDF/XML Format Implementation for rdf_core
+/// RDF/XML Codec Implementation for rdf_core
 ///
-/// This library provides parsing and serialization support for the RDF/XML format
+/// This library provides decoding and encoding support for the RDF/XML format
 /// as defined by the W3C Recommendation. RDF/XML is the original standard format
 /// for representing RDF data as XML, allowing semantic web data to be exchanged
 /// in an XML-compatible syntax.
@@ -11,30 +11,19 @@
 /// - Container elements (rdf:Bag, rdf:Seq, rdf:Alt)
 /// - Collection elements (rdf:List)
 /// - Blank nodes and reification
-/// - Stream-based processing for large RDF/XML documents
 ///
 /// To use this package, import it and either:
 ///
-/// 1. Create parser/serializer instances directly:
+/// 1. Use the pre-defined global codec (similar to dart:convert's json):
 ///
 /// ```dart
 /// import 'package:rdf_core/rdf_core.dart';
 /// import 'package:rdf_xml/rdf_xml.dart';
 ///
-/// // Create a parser directly
-/// final parser = RdfXmlFormat().createParser();
-/// final rdfGraph = parser.parse(rdfXmlContent);
+/// // Use the global rdfxml codec
+/// final rdfGraph = rdfxml.decode(rdfXmlContent);
 ///
-/// // For large documents, use streaming parser
-/// final streamingParser = RdfXmlFormat().createStreamingParser();
-/// await for (final triple in streamingParser.parseAsStream(rdfXmlContent)) {
-///   // Process each triple as it's parsed
-///   processTriple(triple);
-/// }
-///
-/// // Create a serializer directly
-/// final serializer = RdfXmlFormat().createSerializer();
-/// final rdfXml = serializer.write(rdfGraph);
+/// final rdfXml = rdfxml.encode(rdfGraph);
 /// ```
 ///
 /// 2. Or register with the format registry for automatic format handling:
@@ -43,18 +32,19 @@
 /// import 'package:rdf_core/rdf_core.dart';
 /// import 'package:rdf_xml/rdf_xml.dart';
 ///
-/// // Register the format
-/// final registry = RdfFormatRegistry();
-/// registry.registerFormat(const RdfXmlFormat());
+/// // Use RdfCore with standard codecs plus RdfXmlCodec
+/// final rdfCore = RdfCore.withStandardCodecs(additionalCodecs: [RdfXmlCodec()]);
 ///
-/// // Use the registry to get the appropriate parser by MIME type
-/// final parser = registry.getParser('application/rdf+xml');
-/// final serializer = registry.getSerializer('application/rdf+xml');
+/// // Decode RDF/XML content
+/// final rdfGraph = rdfCore.decode(rdfXmlContent);
+///
+/// // Encode a graph as RDF/XML
+/// final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
 /// ```
 library rdf_xml;
 
 export 'src/interfaces/xml_parsing.dart';
 export 'src/interfaces/serialization.dart';
-export 'src/rdfxml_format.dart' show RdfXmlFormat;
+export 'src/rdfxml_codec.dart' show RdfXmlCodec, rdfxml;
 export 'src/configuration.dart';
 export 'src/exceptions.dart';

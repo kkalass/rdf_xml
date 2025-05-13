@@ -8,52 +8,25 @@ import 'package:test/test.dart';
 void main() {
   group('RDF Format Registry Integration', () {
     test('RdfXmlFormat can be registered and retrieved', () {
-      final registry = RdfFormatRegistry();
-      final format = RdfXmlFormat();
+      final registry = RdfCodecRegistry();
+      final format = RdfXmlCodec();
 
-      registry.registerFormat(format);
+      registry.registerGraphCodec(format);
 
       // Retrieve by primary MIME type
-      final retrievedFormat = registry.getFormat('application/rdf+xml');
+      final retrievedFormat = registry.getGraphCodec('application/rdf+xml');
       expect(retrievedFormat, isNotNull);
 
       // Retrieve by alternative MIME types
-      final xmlFormat = registry.getFormat('application/xml');
+      final xmlFormat = registry.getGraphCodec('application/xml');
       expect(xmlFormat, isNotNull);
 
-      final textXmlFormat = registry.getFormat('text/xml');
+      final textXmlFormat = registry.getGraphCodec('text/xml');
       expect(textXmlFormat, isNotNull);
     });
 
-    test('Parser factory creates RdfXmlParser', () {
-      final registry = RdfFormatRegistry();
-      registry.registerFormat(RdfXmlFormat());
-
-      final factory = RdfParserFactory(registry);
-      final parser = factory.createParser(contentType: 'application/rdf+xml');
-
-      expect(parser, isNotNull);
-
-      // Very simple RDF document
-      final rdfContent = '''
-        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-          <rdf:Description rdf:about="http://example.org/resource">
-            <rdf:type rdf:resource="http://example.org/Type"/>
-          </rdf:Description>
-        </rdf:RDF>
-      ''';
-
-      final graph = parser.parse(rdfContent);
-      expect(graph.triples, hasLength(1));
-
-      final triple = graph.triples.first;
-      expect(triple.subject, equals(IriTerm('http://example.org/resource')));
-      expect(triple.predicate, equals(RdfTerms.type));
-      expect(triple.object, equals(IriTerm('http://example.org/Type')));
-    });
-
     test('Direct format parsing works', () {
-      final format = RdfXmlFormat();
+      final format = RdfXmlCodec();
 
       // Very simple RDF document
       final rdfContent = '''
@@ -64,12 +37,12 @@ void main() {
         </rdf:RDF>
       ''';
 
-      final graph = format.createParser().parse(rdfContent);
+      final graph = format.decode(rdfContent);
       expect(graph.triples, hasLength(1));
     });
 
     test('Format detection works', () {
-      final format = RdfXmlFormat();
+      final format = RdfXmlCodec();
 
       // Valid RDF/XML
       final validRdf = '''
@@ -90,26 +63,26 @@ void main() {
 
     test('Factory methods create properly configured formats', () {
       // Test strict format
-      final strictFormat = RdfXmlFormat.strict();
-      expect(strictFormat.createParser(), isNotNull);
+      final strictFormat = RdfXmlCodec.strict();
+      expect(strictFormat.decoder, isNotNull);
 
       // Test lenient format
-      final lenientFormat = RdfXmlFormat.lenient();
-      expect(lenientFormat.createParser(), isNotNull);
+      final lenientFormat = RdfXmlCodec.lenient();
+      expect(lenientFormat.decoder, isNotNull);
 
       // Test readable format
-      final readableFormat = RdfXmlFormat.readable();
-      expect(readableFormat.createSerializer(), isNotNull);
+      final readableFormat = RdfXmlCodec.readable();
+      expect(readableFormat.encoder, isNotNull);
 
       // Test compact format
-      final compactFormat = RdfXmlFormat.compact();
-      expect(compactFormat.createSerializer(), isNotNull);
+      final compactFormat = RdfXmlCodec.compact();
+      expect(compactFormat.encoder, isNotNull);
     });
   });
 
   group('Advanced RDF/XML Features', () {
     test('RDF/XML format supports round-trip serialization', () {
-      final format = RdfXmlFormat();
+      final format = RdfXmlCodec();
 
       // Create an initial graph with some triples
       final subject = IriTerm('http://example.org/resource');
@@ -127,12 +100,12 @@ void main() {
       final originalGraph = RdfGraph(triples: [triple1, triple2]);
 
       // Serialize to RDF/XML
-      final serializer = format.createSerializer();
-      final rdfXml = serializer.write(originalGraph);
+      final serializer = format.encoder;
+      final rdfXml = serializer.convert(originalGraph);
 
       // Parse back to a graph
-      final parser = format.createParser();
-      final reparsedGraph = parser.parse(rdfXml);
+      final parser = format.decoder;
+      final reparsedGraph = parser.convert(rdfXml);
 
       // Verify that all original triples are present
       for (final originalTriple in originalGraph.triples) {

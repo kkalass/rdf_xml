@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-dev] - 2025-05-13
+
+### Changed
+
+- Updated to support breaking changes in rdf_core 0.8.1:
+  - Updated API from `parse`/`serialize` to `decode`/`encode`
+  - Updated from `RdfFormat` to `RdfGraphCodec`
+  - Changed from `withStandardFormats` to `withStandardCodecs`
+  - Updated from `withFormats` to `withCodecs`
+- Added global `rdfxml` codec instance for easier access (following dart:convert pattern)
+- Simplified API in examples and documentation to use direct `rdfxml.encode()` and `rdfxml.decode()` calls
+- Restructured example files to demonstrate both direct usage and RdfCore integration
+
 ## [0.2.4] - 2025-05-07
 
 ### Changed

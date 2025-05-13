@@ -33,7 +33,7 @@ void main() {
       // When the RDF root element is missing, RdfXmlException should be thrown
       expect(
         () => RdfXmlParser(invalidRdf).parse(),
-        throwsA(isA<RdfXmlException>()),
+        throwsA(isA<RdfXmlDecoderException>()),
       );
     });
 
@@ -49,9 +49,12 @@ void main() {
       // In strict mode, undefined namespaces should cause an error
       final strictParser = RdfXmlParser(
         missingNamespace,
-        options: RdfXmlParserOptions.strict(),
+        options: RdfXmlDecoderOptions.strict(),
       );
-      expect(() => strictParser.parse(), throwsA(isA<RdfXmlException>()));
+      expect(
+        () => strictParser.parse(),
+        throwsA(isA<RdfXmlDecoderException>()),
+      );
 
       // Skip the lenient test since it's implementation-dependent
       // and we don't want to make assumptions about the underlying implementation
@@ -91,16 +94,19 @@ void main() {
       // Set max nesting depth to 3
       final limitedParser = RdfXmlParser(
         deeplyNested,
-        options: const RdfXmlParserOptions(maxNestingDepth: 3),
+        options: const RdfXmlDecoderOptions(maxNestingDepth: 3),
       );
 
       // Should throw RdfXmlException when exceeding nesting depth
-      expect(() => limitedParser.parse(), throwsA(isA<RdfXmlException>()));
+      expect(
+        () => limitedParser.parse(),
+        throwsA(isA<RdfXmlDecoderException>()),
+      );
 
       // No limit should parse fine
       final unlimitedParser = RdfXmlParser(
         deeplyNested,
-        options: const RdfXmlParserOptions(maxNestingDepth: 0),
+        options: const RdfXmlDecoderOptions(maxNestingDepth: 0),
       );
 
       final triples = unlimitedParser.parse();

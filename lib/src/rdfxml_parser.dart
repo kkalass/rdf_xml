@@ -24,7 +24,7 @@
 /// final graph = RdfGraph.fromTriples(triples);
 /// ```
 ///
-/// For configuration options, see [RdfXmlParserOptions].
+/// For configuration options, see [RdfXmlDecoderOptions].
 library rdfxml_parser;
 
 import 'package:logging/logging.dart';
@@ -78,7 +78,7 @@ final class RdfXmlParser implements IRdfXmlParser {
   final IBlankNodeManager _blankNodeManager;
 
   /// Parser options for configuring behavior
-  final RdfXmlParserOptions _options;
+  final RdfXmlDecoderOptions _options;
 
   /// XML document parsed from input
   late final XmlDocument _document;
@@ -102,13 +102,13 @@ final class RdfXmlParser implements IRdfXmlParser {
     IUriResolver? uriResolver,
     IBlankNodeManager? blankNodeManager,
     RdfNamespaceMappings? namespaceMappings,
-    RdfXmlParserOptions? options,
+    RdfXmlDecoderOptions? options,
   }) : _documentUri = baseUri,
        _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
        _blankNodeManager = blankNodeManager ?? FunctionalBlankNodeManager(),
-       _options = options ?? const RdfXmlParserOptions() {
+       _options = options ?? const RdfXmlDecoderOptions() {
     try {
       _document = _xmlDocumentProvider.parseXml(_input);
     } catch (e) {
@@ -167,7 +167,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       );
 
       // Rethrow specialized exceptions, but wrap generic ones with more context
-      if (e is RdfXmlException) {
+      if (e is RdfXmlDecoderException) {
         rethrow;
       }
       throw RdfStructureException(

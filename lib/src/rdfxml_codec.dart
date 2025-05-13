@@ -1,17 +1,14 @@
-/// RDF/XML Format Implementation
+/// RDF/XML Codec Implementation
 ///
-/// Defines the format plugin for RDF/XML serialization and parsing.
+/// Defines the codec plugin for RDF/XML encoding and decoding.
 ///
 /// Example usage:
 /// ```dart
 /// import 'package:rdf_xml/rdf_xml.dart';
 ///
-/// final registry = RdfFormatRegistry();
-/// registry.registerFormat(const RdfXmlFormat());
-/// final parser = registry.getParser('application/rdf+xml');
-/// final graph = parser.parse(rdfXmlString);
+/// final graph = rdfxml.decode(rdfXmlString);
 /// ```
-library rdfxml_format;
+library;
 
 import 'package:rdf_core/rdf_core.dart';
 
@@ -23,11 +20,10 @@ import 'interfaces/xml_parsing.dart';
 import 'rdfxml_parser.dart';
 import 'rdfxml_serializer.dart';
 
-/// Format plugin for RDF/XML
+/// Codec plugin for RDF/XML
 ///
-/// Implements the [RdfFormat] interface for the RDF/XML format,
-/// providing factory methods for creating parsers and serializers.
-final class RdfXmlFormat implements RdfFormat {
+/// Extends the [RdfGraphCodec] base class for the RDF/XML mimetype.
+final class RdfXmlCodec extends RdfGraphCodec {
   /// MIME type for RDF/XML
   static const String mimeType = 'application/rdf+xml';
 
@@ -46,10 +42,10 @@ final class RdfXmlFormat implements RdfFormat {
   final IRdfXmlBuilder _xmlBuilder;
 
   /// Parser options for configuring parser behavior
-  final RdfXmlParserOptions _parserOptions;
+  final RdfXmlDecoderOptions _decoderOptions;
 
   /// Serializer options for configuring serializer behavior
-  final RdfXmlSerializerOptions _serializerOptions;
+  final RdfXmlEncoderOptions _encoderOptions;
 
   /// Creates a new RDF/XML format plugin with optional dependencies
   ///
@@ -58,15 +54,15 @@ final class RdfXmlFormat implements RdfFormat {
   /// - [uriResolver] Optional URI resolver
   /// - [namespaceManager] Optional namespace manager
   /// - [xmlBuilder] Optional XML builder
-  /// - [parserOptions] Optional parser options
-  /// - [serializerOptions] Optional serializer options
-  RdfXmlFormat({
+  /// - [decoderOptions] Optional decoder options
+  /// - [encoderOptions] Optional encoder options
+  RdfXmlCodec({
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
     INamespaceManager? namespaceManager,
     IRdfXmlBuilder? xmlBuilder,
-    RdfXmlParserOptions? parserOptions,
-    RdfXmlSerializerOptions? serializerOptions,
+    RdfXmlDecoderOptions? decoderOptions,
+    RdfXmlEncoderOptions? encoderOptions,
     RdfNamespaceMappings? namespaceMappings,
   }) : _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
@@ -79,9 +75,8 @@ final class RdfXmlFormat implements RdfFormat {
                  namespaceMappings ?? const RdfNamespaceMappings(),
            ),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
-       _parserOptions = parserOptions ?? const RdfXmlParserOptions(),
-       _serializerOptions =
-           serializerOptions ?? const RdfXmlSerializerOptions();
+       _decoderOptions = decoderOptions ?? const RdfXmlDecoderOptions(),
+       _encoderOptions = encoderOptions ?? const RdfXmlEncoderOptions();
 
   @override
   String get primaryMimeType => mimeType;
@@ -94,21 +89,21 @@ final class RdfXmlFormat implements RdfFormat {
   };
 
   @override
-  RdfParser createParser() {
-    return _RdfXmlFormatParserAdapter(
+  RdfGraphDecoder get decoder {
+    return RdfXmlDecoder(
       xmlDocumentProvider: _xmlDocumentProvider,
       rdfNamespaceMappings: _namespaceMappings,
       uriResolver: _uriResolver,
-      options: _parserOptions,
+      options: _decoderOptions,
     );
   }
 
   @override
-  RdfSerializer createSerializer() {
-    return _RdfXmlFormatSerializerAdapter(
+  RdfGraphEncoder get encoder {
+    return RdfXmlEncoder(
       namespaceManager: _namespaceManager,
       xmlBuilder: _xmlBuilder,
-      options: _serializerOptions,
+      options: _encoderOptions,
     );
   }
 
@@ -122,74 +117,74 @@ final class RdfXmlFormat implements RdfFormat {
             content.contains('<rdf:Description'));
   }
 
-  /// Creates a new RDF/XML format with strict parser options
+  /// Creates a new RDF/XML codec with strict decoder options
   ///
-  /// Convenience factory for creating a format that enforces strict compliance
+  /// Convenience factory for creating a codec that enforces strict compliance
   /// with the RDF/XML specification.
-  factory RdfXmlFormat.strict() =>
-      RdfXmlFormat(parserOptions: RdfXmlParserOptions.strict());
+  factory RdfXmlCodec.strict() =>
+      RdfXmlCodec(decoderOptions: RdfXmlDecoderOptions.strict());
 
-  /// Creates a new RDF/XML format with lenient parser options
+  /// Creates a new RDF/XML codec with lenient decoder options
   ///
-  /// Convenience factory for creating a format that tries to parse
+  /// Convenience factory for creating a codec that tries to parse
   /// even non-conformant RDF/XML.
-  factory RdfXmlFormat.lenient() =>
-      RdfXmlFormat(parserOptions: RdfXmlParserOptions.lenient());
+  factory RdfXmlCodec.lenient() =>
+      RdfXmlCodec(decoderOptions: RdfXmlDecoderOptions.lenient());
 
-  /// Creates a new RDF/XML format optimized for readability
+  /// Creates a new RDF/XML codec optimized for readability
   ///
-  /// Convenience factory for creating a format that produces
+  /// Convenience factory for creating a codec that produces
   /// human-readable RDF/XML output.
-  factory RdfXmlFormat.readable() =>
-      RdfXmlFormat(serializerOptions: RdfXmlSerializerOptions.readable());
+  factory RdfXmlCodec.readable() =>
+      RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions.readable());
 
-  /// Creates a new RDF/XML format optimized for compact output
+  /// Creates a new RDF/XML codec optimized for compact output
   ///
-  /// Convenience factory for creating a format that produces
+  /// Convenience factory for creating a codec that produces
   /// the most compact RDF/XML output.
-  factory RdfXmlFormat.compact() =>
-      RdfXmlFormat(serializerOptions: RdfXmlSerializerOptions.compact());
+  factory RdfXmlCodec.compact() =>
+      RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions.compact());
 
-  /// Creates a copy of this format with the given values
+  /// Creates a copy of this codec with the given values
   ///
   /// Returns a new instance with updated values.
-  RdfXmlFormat copyWith({
+  RdfXmlCodec copyWith({
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
     INamespaceManager? namespaceManager,
     IRdfXmlBuilder? xmlBuilder,
-    RdfXmlParserOptions? parserOptions,
-    RdfXmlSerializerOptions? serializerOptions,
+    RdfXmlDecoderOptions? decoderOptions,
+    RdfXmlEncoderOptions? encoderOptions,
   }) {
-    return RdfXmlFormat(
+    return RdfXmlCodec(
       xmlDocumentProvider: xmlDocumentProvider ?? _xmlDocumentProvider,
       uriResolver: uriResolver ?? _uriResolver,
       namespaceManager: namespaceManager ?? _namespaceManager,
       xmlBuilder: xmlBuilder ?? _xmlBuilder,
-      parserOptions: parserOptions ?? _parserOptions,
-      serializerOptions: serializerOptions ?? _serializerOptions,
+      decoderOptions: decoderOptions ?? _decoderOptions,
+      encoderOptions: encoderOptions ?? _encoderOptions,
     );
   }
 }
 
-/// Adapter class to make RdfXmlParser compatible with the RdfParser interface
-final class _RdfXmlFormatParserAdapter implements RdfParser {
+/// Adapter class to make RdfXmlParser compatible with the RdfGraphDecoder interface
+final class RdfXmlDecoder extends RdfGraphDecoder {
   /// XML document provider for parsing XML
   final IXmlDocumentProvider _xmlDocumentProvider;
 
   /// URI resolver for handling URI resolution
   final IUriResolver _uriResolver;
 
-  /// Parser options for configuring behavior
-  final RdfXmlParserOptions _options;
+  /// Decoder options for configuring behavior
+  final RdfXmlDecoderOptions _options;
 
   final RdfNamespaceMappings _rdfNamespaceMappings;
 
   /// Creates a new adapter for RdfXmlParser
-  const _RdfXmlFormatParserAdapter({
+  const RdfXmlDecoder({
     required IXmlDocumentProvider xmlDocumentProvider,
     required IUriResolver uriResolver,
-    required RdfXmlParserOptions options,
+    required RdfXmlDecoderOptions options,
     required RdfNamespaceMappings rdfNamespaceMappings,
   }) : _xmlDocumentProvider = xmlDocumentProvider,
        _rdfNamespaceMappings = rdfNamespaceMappings,
@@ -197,7 +192,7 @@ final class _RdfXmlFormatParserAdapter implements RdfParser {
        _options = options;
 
   @override
-  RdfGraph parse(String input, {String? documentUrl}) {
+  RdfGraph convert(String input, {String? documentUrl}) {
     final parser = RdfXmlParser(
       input,
       namespaceMappings: _rdfNamespaceMappings,
@@ -211,8 +206,8 @@ final class _RdfXmlFormatParserAdapter implements RdfParser {
   }
 }
 
-/// Adapter class to make RdfXmlSerializer compatible with the RdfSerializer interface
-final class _RdfXmlFormatSerializerAdapter implements RdfSerializer {
+/// Adapter class to make RdfXmlSerializer compatible with the RdfGraphEncoder interface
+final class RdfXmlEncoder extends RdfGraphEncoder {
   /// Namespace manager for handling namespace declarations
   final INamespaceManager _namespaceManager;
 
@@ -220,19 +215,19 @@ final class _RdfXmlFormatSerializerAdapter implements RdfSerializer {
   final IRdfXmlBuilder _xmlBuilder;
 
   /// Serializer options for configuring behavior
-  final RdfXmlSerializerOptions _options;
+  final RdfXmlEncoderOptions _options;
 
   /// Creates a new adapter for RdfXmlSerializer
-  const _RdfXmlFormatSerializerAdapter({
+  const RdfXmlEncoder({
     required INamespaceManager namespaceManager,
     required IRdfXmlBuilder xmlBuilder,
-    required RdfXmlSerializerOptions options,
+    required RdfXmlEncoderOptions options,
   }) : _namespaceManager = namespaceManager,
        _xmlBuilder = xmlBuilder,
        _options = options;
 
   @override
-  String write(
+  String convert(
     RdfGraph graph, {
     String? baseUri,
     Map<String, String> customPrefixes = const {},
@@ -249,3 +244,15 @@ final class _RdfXmlFormatSerializerAdapter implements RdfSerializer {
     );
   }
 }
+
+/// Global convenience variable for working with RDF/XML format
+///
+/// This variable provides direct access to RDF/XML codec for easy
+/// encoding and decoding of RDF/XML data.
+///
+/// Example:
+/// ```dart
+/// final graph = rdfxml.decode(rdfxmlString);
+/// final rdfxmlString2 = rdfxml.encode(graph);
+/// ```
+final rdfxml = RdfXmlCodec();

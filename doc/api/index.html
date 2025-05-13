@@ -173,7 +173,7 @@ final compactSerializer = RdfXmlFormat.compact().createSerializer();
 
 // Custom configuration
 final customSerializer = RdfXmlFormat(
-  serializerOptions: RdfXmlSerializerOptions(
+  encoderOptions: RdfXmlSerializerOptions(
     prettyPrint: true,
     indentSpaces: 4,
     useTypedNodes: true,

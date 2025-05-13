@@ -23,7 +23,7 @@
 /// final rdfXml = serializer.write(graph, customPrefixes: {'ex': 'http://example.org/'});
 /// ```
 ///
-/// For configuration options, see [RdfXmlSerializerOptions].
+/// For configuration options, see [RdfXmlEncoderOptions].
 library rdfxml_serializer;
 
 import 'package:logging/logging.dart';
@@ -55,7 +55,7 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
   final IRdfXmlBuilder _xmlBuilder;
 
   /// Serializer options for configuring behavior
-  final RdfXmlSerializerOptions _options;
+  final RdfXmlEncoderOptions _options;
 
   /// Creates a new RDF/XML serializer
   ///
@@ -66,10 +66,10 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
   RdfXmlSerializer({
     INamespaceManager? namespaceManager,
     IRdfXmlBuilder? xmlBuilder,
-    RdfXmlSerializerOptions? options,
+    RdfXmlEncoderOptions? options,
   }) : _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
-       _options = options ?? const RdfXmlSerializerOptions();
+       _options = options ?? const RdfXmlEncoderOptions();
 
   /// Writes an RDF graph to RDF/XML format
   ///
@@ -107,10 +107,10 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
       );
     } catch (e) {
       _logger.severe('Error serializing to RDF/XML: $e');
-      if (e is RdfXmlSerializationException) {
+      if (e is RdfXmlEncoderException) {
         rethrow;
       }
-      throw RdfXmlSerializationException('Error serializing to RDF/XML: $e');
+      throw RdfXmlEncoderException('Error serializing to RDF/XML: $e');
     }
   }
 }

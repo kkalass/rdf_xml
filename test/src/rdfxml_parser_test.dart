@@ -485,10 +485,8 @@ foaf:Person a rdfs:Class;
     final parser = RdfXmlParser(completeXml);
     final triples = parser.parse();
 
-    final turtleSerializer = TurtleFormat().createSerializer();
-
-    final turtle = turtleSerializer.write(RdfGraph(triples: triples));
-    _log.finest(turtle);
-    expect(turtle, equalsIgnoringWhitespace(expectedTurtle));
+    final turtleData = turtle.encode(RdfGraph(triples: triples));
+    _log.finest(turtleData);
+    expect(turtleData, equalsIgnoringWhitespace(expectedTurtle));
   });
 }

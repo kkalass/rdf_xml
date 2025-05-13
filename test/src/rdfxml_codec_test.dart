@@ -1,24 +1,24 @@
 import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/src/rdfxml_constants.dart';
-import 'package:rdf_xml/src/rdfxml_format.dart';
+import 'package:rdf_xml/src/rdfxml_codec.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('RdfXmlFormat', () {
+  group('RdfXmlCodec', () {
     test('supports correct MIME types', () {
-      final format = RdfXmlFormat();
+      final codec = RdfXmlCodec();
 
       // Primary MIME type
-      expect(format.primaryMimeType, equals('application/rdf+xml'));
+      expect(codec.primaryMimeType, equals('application/rdf+xml'));
 
       // All supported MIME types
-      expect(format.supportedMimeTypes, contains('application/rdf+xml'));
-      expect(format.supportedMimeTypes, contains('text/xml'));
-      expect(format.supportedMimeTypes, contains('application/xml'));
+      expect(codec.supportedMimeTypes, contains('application/rdf+xml'));
+      expect(codec.supportedMimeTypes, contains('text/xml'));
+      expect(codec.supportedMimeTypes, contains('application/xml'));
     });
 
     test('canParse detects RDF/XML content', () {
-      final format = RdfXmlFormat();
+      final codec = RdfXmlCodec();
 
       // Valid RDF/XML content
       final validContent = '''
@@ -30,7 +30,7 @@ void main() {
         </rdf:RDF>
       ''';
 
-      expect(format.canParse(validContent), isTrue);
+      expect(codec.canParse(validContent), isTrue);
 
       // XML but not RDF/XML
       final nonRdfContent = '''
@@ -39,22 +39,22 @@ void main() {
         </root>
       ''';
 
-      expect(format.canParse(nonRdfContent), isFalse);
+      expect(codec.canParse(nonRdfContent), isFalse);
     });
 
     test('creates parser and serializer instances', () {
-      final format = RdfXmlFormat();
+      final codec = RdfXmlCodec();
 
-      final parser = format.createParser();
-      final serializer = format.createSerializer();
+      final parser = codec.decoder;
+      final serializer = codec.encoder;
 
       expect(parser, isNotNull);
       expect(serializer, isNotNull);
     });
 
     test('parser can parse RDF/XML content', () {
-      final format = RdfXmlFormat();
-      final parser = format.createParser();
+      final codec = RdfXmlCodec();
+      final decoder = codec.decoder;
 
       final content = '''
         <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -65,7 +65,7 @@ void main() {
         </rdf:RDF>
       ''';
 
-      final graph = parser.parse(content);
+      final graph = decoder.convert(content);
       expect(graph.triples, hasLength(1));
 
       final triple = graph.triples.first;
@@ -75,8 +75,8 @@ void main() {
     });
 
     test('serializer can write RDF/XML content', () {
-      final format = RdfXmlFormat();
-      final serializer = format.createSerializer();
+      final codec = RdfXmlCodec();
+      final encoder = codec.encoder;
 
       final subject = IriTerm('http://example.org/subject');
       final predicate = RdfTerms.type;
@@ -84,7 +84,7 @@ void main() {
 
       final graph = RdfGraph(triples: [Triple(subject, predicate, object)]);
 
-      final xml = serializer.write(graph);
+      final xml = encoder.convert(graph);
       expect(xml, contains('<rdf:RDF'));
       expect(
         xml,

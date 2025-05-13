@@ -1,6 +1,6 @@
 /// Configuration and options for RDF/XML processing
 ///
-/// Provides immutable configuration objects for parser and serializer options.
+/// Provides immutable configuration objects for decoder and encoder options.
 /// This module follows the immutable configuration pattern to ensure thread safety
 /// and prevent unexpected changes to configuration during processing.
 ///
@@ -8,42 +8,27 @@
 /// without modifying the core implementation, following the Open/Closed Principle.
 /// Predefined factory methods provide commonly used configuration profiles.
 ///
-/// Example usage:
-/// ```dart
-/// // Create a parser with strict validation
-/// final parser = RdfXmlParser(
-///   xmlDocument,
-///   options: RdfXmlParserOptions.strict(),
-/// );
-///
-/// // Create a serializer with human-readable output
-/// final serializer = RdfXmlSerializer(
-///   options: RdfXmlSerializerOptions.readable(),
-/// );
-/// ```
 library rdfxml.configuration;
 
-/// Parser options for RDF/XML processing
+/// Decoder options for RDF/XML processing
 ///
-/// Immutable configuration for controlling parser behavior.
-/// Diese Klasse nutzt immutable Design-Patterns und bietet Factory-Methoden
-/// für typische Anwendungsfälle.
-final class RdfXmlParserOptions {
+/// Immutable configuration for controlling decoder behavior.
+final class RdfXmlDecoderOptions {
   /// Whether to validate the RDF/XML structure strictly
   ///
-  /// When true, the parser enforces strict compliance with the RDF/XML specification.
-  /// When false, the parser attempts to handle common deviations from the spec.
+  /// When true, the decoder enforces strict compliance with the RDF/XML specification.
+  /// When false, the decoder attempts to handle common deviations from the spec.
   final bool strictMode;
 
   /// Whether to normalize whitespace in literal values
   ///
-  /// When true, the parser normalizes whitespace in literal values
+  /// When true, the decoder normalizes whitespace in literal values
   /// according to XML whitespace handling rules.
   final bool normalizeWhitespace;
 
   /// Whether to validate RDF/XML output triples
   ///
-  /// When true, the parser validates the generated triples for
+  /// When true, the decoder validates the generated triples for
   /// RDF compliance before returning them.
   final bool validateOutput;
 
@@ -53,10 +38,10 @@ final class RdfXmlParserOptions {
   /// A value of 0 means no limit.
   final int maxNestingDepth;
 
-  /// Creates a new immutable parser options object
+  /// Creates a new immutable decoder options object
   ///
   /// All parameters are optional with sensible defaults.
-  const RdfXmlParserOptions({
+  const RdfXmlDecoderOptions({
     this.strictMode = false,
     this.normalizeWhitespace = true,
     this.validateOutput = true,
@@ -66,8 +51,7 @@ final class RdfXmlParserOptions {
   /// Creates a new options object with strict mode enabled
   ///
   /// Convenience factory for creating options with strict validation.
-  /// Validiert streng gegen die RDF/XML-Spezifikation.
-  factory RdfXmlParserOptions.strict() => const RdfXmlParserOptions(
+  factory RdfXmlDecoderOptions.strict() => const RdfXmlDecoderOptions(
     strictMode: true,
     normalizeWhitespace: true,
     validateOutput: true,
@@ -77,8 +61,7 @@ final class RdfXmlParserOptions {
   ///
   /// Convenience factory for creating options that try to parse
   /// even non-conformant RDF/XML.
-  /// Ideal für fehlerhafte oder nicht ganz konforme RDF/XML-Dokumente.
-  factory RdfXmlParserOptions.lenient() => const RdfXmlParserOptions(
+  factory RdfXmlDecoderOptions.lenient() => const RdfXmlDecoderOptions(
     strictMode: false,
     normalizeWhitespace: true,
     validateOutput: false,
@@ -88,7 +71,7 @@ final class RdfXmlParserOptions {
   ///
   /// For use when parsing large datasets where performance is critical
   /// and input validity is guaranteed.
-  factory RdfXmlParserOptions.performance() => const RdfXmlParserOptions(
+  factory RdfXmlDecoderOptions.performance() => const RdfXmlDecoderOptions(
     strictMode: false,
     normalizeWhitespace: false,
     validateOutput: false,
@@ -98,13 +81,13 @@ final class RdfXmlParserOptions {
   /// Creates a copy of this options object with the given values
   ///
   /// Returns a new instance with updated values.
-  RdfXmlParserOptions copyWith({
+  RdfXmlDecoderOptions copyWith({
     bool? strictMode,
     bool? normalizeWhitespace,
     bool? validateOutput,
     int? maxNestingDepth,
   }) {
-    return RdfXmlParserOptions(
+    return RdfXmlDecoderOptions(
       strictMode: strictMode ?? this.strictMode,
       normalizeWhitespace: normalizeWhitespace ?? this.normalizeWhitespace,
       validateOutput: validateOutput ?? this.validateOutput,
@@ -115,7 +98,7 @@ final class RdfXmlParserOptions {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RdfXmlParserOptions &&
+    return other is RdfXmlDecoderOptions &&
         other.strictMode == strictMode &&
         other.normalizeWhitespace == normalizeWhitespace &&
         other.validateOutput == validateOutput &&
@@ -132,18 +115,17 @@ final class RdfXmlParserOptions {
 
   @override
   String toString() =>
-      'RdfXmlParserOptions('
+      'RdfXmlDecoderOptions('
       'strictMode: $strictMode, '
       'normalizeWhitespace: $normalizeWhitespace, '
       'validateOutput: $validateOutput, '
       'maxNestingDepth: $maxNestingDepth)';
 }
 
-/// Serializer options for RDF/XML output
+/// Encoder options for RDF/XML output
 ///
-/// Immutable configuration for controlling serializer behavior.
-/// Bietet verschiedene Konfigurationsprofile für unterschiedliche Ausgabeanforderungen.
-final class RdfXmlSerializerOptions {
+/// Immutable configuration for controlling encoder behavior.
+final class RdfXmlEncoderOptions {
   /// Whether to use pretty-printing for the output XML
   ///
   /// Controls indentation and formatting of the output XML.
@@ -163,7 +145,7 @@ final class RdfXmlSerializerOptions {
   /// Creates a new immutable serializer options object
   ///
   /// All parameters are optional with sensible defaults.
-  const RdfXmlSerializerOptions({
+  const RdfXmlEncoderOptions({
     this.prettyPrint = true,
     this.indentSpaces = 2,
 
@@ -174,8 +156,7 @@ final class RdfXmlSerializerOptions {
   ///
   /// Convenience factory for creating options that produce
   /// human-readable RDF/XML output.
-  /// Ideal für Debugging und manuelle Inspektion.
-  factory RdfXmlSerializerOptions.readable() => const RdfXmlSerializerOptions(
+  factory RdfXmlEncoderOptions.readable() => const RdfXmlEncoderOptions(
     prettyPrint: true,
     indentSpaces: 2,
 
@@ -186,8 +167,7 @@ final class RdfXmlSerializerOptions {
   ///
   /// Convenience factory for creating options that produce
   /// the most compact RDF/XML output.
-  /// Optimiert für minimale Dateigröße.
-  factory RdfXmlSerializerOptions.compact() => const RdfXmlSerializerOptions(
+  factory RdfXmlEncoderOptions.compact() => const RdfXmlEncoderOptions(
     prettyPrint: false,
     indentSpaces: 0,
 
@@ -195,10 +175,7 @@ final class RdfXmlSerializerOptions {
   );
 
   /// Creates a new options object for maximum compatibility
-  ///
-  /// Verwendet weniger fortschrittliche RDF/XML-Features
-  /// für bessere Kompatibilität mit älteren Parsern.
-  factory RdfXmlSerializerOptions.compatible() => const RdfXmlSerializerOptions(
+  factory RdfXmlEncoderOptions.compatible() => const RdfXmlEncoderOptions(
     prettyPrint: true,
     indentSpaces: 2,
 
@@ -208,13 +185,13 @@ final class RdfXmlSerializerOptions {
   /// Creates a copy of this options object with the given values
   ///
   /// Returns a new instance with updated values.
-  RdfXmlSerializerOptions copyWith({
+  RdfXmlEncoderOptions copyWith({
     bool? prettyPrint,
     int? indentSpaces,
     bool? useNamespaces,
     bool? useTypedNodes,
   }) {
-    return RdfXmlSerializerOptions(
+    return RdfXmlEncoderOptions(
       prettyPrint: prettyPrint ?? this.prettyPrint,
       indentSpaces: indentSpaces ?? this.indentSpaces,
 
@@ -225,7 +202,7 @@ final class RdfXmlSerializerOptions {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RdfXmlSerializerOptions &&
+    return other is RdfXmlEncoderOptions &&
         other.prettyPrint == prettyPrint &&
         other.indentSpaces == indentSpaces &&
         other.useTypedNodes == useTypedNodes;
@@ -236,7 +213,7 @@ final class RdfXmlSerializerOptions {
 
   @override
   String toString() =>
-      'RdfXmlSerializerOptions('
+      'RdfXmlEncoderOptions('
       'prettyPrint: $prettyPrint, '
       'indentSpaces: $indentSpaces, '
       'useTypedNodes: $useTypedNodes)';

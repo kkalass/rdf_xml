@@ -63,7 +63,7 @@
 <li><span class="parameter" id="copyWith-param-namespaceManager"><span class="type-annotation"><a href="../../rdf_xml/INamespaceManager-class.html">INamespaceManager</a>?</span> <span class="parameter-name">namespaceManager</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-parserOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlParserOptions-class.html">RdfXmlParserOptions</a>?</span> <span class="parameter-name">parserOptions</span>, </span></li>
-<li><span class="parameter" id="copyWith-param-serializerOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a>?</span> <span class="parameter-name">serializerOptions</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-encoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlSerializerOptions-class.html">RdfXmlSerializerOptions</a>?</span> <span class="parameter-name">encoderOptions</span>, </span></li>
 </ol>})
 
       
@@ -85,7 +85,7 @@
   INamespaceManager? namespaceManager,
   IRdfXmlBuilder? xmlBuilder,
   RdfXmlParserOptions? parserOptions,
-  RdfXmlSerializerOptions? serializerOptions,
+  RdfXmlSerializerOptions? encoderOptions,
 }) {
   return RdfXmlFormat(
     xmlDocumentProvider: xmlDocumentProvider ?? _xmlDocumentProvider,
@@ -93,7 +93,7 @@
     namespaceManager: namespaceManager ?? _namespaceManager,
     xmlBuilder: xmlBuilder ?? _xmlBuilder,
     parserOptions: parserOptions ?? _parserOptions,
-    serializerOptions: serializerOptions ?? _serializerOptions,
+    encoderOptions: encoderOptions ?? _serializerOptions,
   );
 }</code></pre>
 </section>

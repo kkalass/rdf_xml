@@ -1,7 +1,7 @@
-// Advanced configuration options for RDF/XML parsing and serialization
+// Advanced configuration options for RDF/XML decoding and encoding
 //
 // This example demonstrates how to use various configuration options
-// to customize the behavior of the RDF/XML parser and serializer.
+// to customize the behavior of the RDF/XML decoder and encoder.
 
 import 'package:rdf_xml/rdf_xml.dart';
 
@@ -42,86 +42,80 @@ void main() {
     </rdf:RDF>
   ''';
 
-  print('--- PARSER CONFIGURATION EXAMPLES ---\n');
+  print('--- DECODER CONFIGURATION EXAMPLES ---\n');
 
-  // 1. Standard parser
-  print('STANDARD PARSER:');
-  final standardParser = RdfXmlFormat().createParser();
-  // Provide a base URI for resolving relative URIs in the document
-  final standardGraph = standardParser.parse(
+  // 1. Standard decoder
+  print('STANDARD DECODER:');
+  // Use the global rdfxml codec
+  final standardGraph = rdfxml.decode(
     xmlContent,
     documentUrl: 'http://example.org/data/',
   );
-  print('Parsed ${standardGraph.size} triples with standard configuration\n');
+  print('Decoded ${standardGraph.size} triples with standard configuration\n');
 
-  // 2. Strict parser
-  print('STRICT PARSER:');
-  final strictParser = RdfXmlFormat.strict().createParser();
-  final strictGraph = strictParser.parse(
+  // 2. Strict decoder
+  print('STRICT DECODER:');
+  final strictRdfXml = RdfXmlCodec.strict();
+  final strictGraph = strictRdfXml.decode(
     xmlContent,
     documentUrl: 'http://example.org/data/',
   );
-  print('Parsed ${strictGraph.size} triples with strict configuration\n');
+  print('Decoded ${strictGraph.size} triples with strict configuration\n');
 
-  // 3. Lenient parser
-  print('LENIENT PARSER:');
-  final lenientParser = RdfXmlFormat.lenient().createParser();
-  final lenientGraph = lenientParser.parse(
+  // 3. Lenient decoder
+  print('LENIENT DECODER:');
+  final lenientRdfXml = RdfXmlCodec.lenient();
+  final lenientGraph = lenientRdfXml.decode(
     xmlContent,
     documentUrl: 'http://example.org/data/',
   );
-  print('Parsed ${lenientGraph.size} triples with lenient configuration\n');
+  print('Decoded ${lenientGraph.size} triples with lenient configuration\n');
 
-  // 4. Custom parser configuration
-  print('CUSTOM PARSER CONFIGURATION:');
-  final customParserFormat = RdfXmlFormat(
-    parserOptions: RdfXmlParserOptions(
+  // 4. Custom decoder configuration
+  print('CUSTOM DECODER CONFIGURATION:');
+  final customDecoderCodec = RdfXmlCodec(
+    decoderOptions: RdfXmlDecoderOptions(
       strictMode: false,
       normalizeWhitespace: true,
       validateOutput: true,
     ),
   );
-  final customParser = customParserFormat.createParser();
-  final customGraph = customParser.parse(
+  final customGraph = customDecoderCodec.decode(
     xmlContent,
     documentUrl: 'http://example.org/data/',
   );
-  print('Parsed ${customGraph.size} triples with custom configuration\n');
+  print('Decoded ${customGraph.size} triples with custom configuration\n');
 
-  print('\n--- SERIALIZER CONFIGURATION EXAMPLES ---\n');
+  print('\n--- ENCODER CONFIGURATION EXAMPLES ---\n');
 
-  // Use the graph we parsed above
+  // Use the graph we decoded above
   final graph = standardGraph;
 
-  // 1. Standard serializer
-  print('STANDARD SERIALIZER:');
-  final standardSerializer = RdfXmlFormat().createSerializer();
-  final standardOutput = standardSerializer.write(graph);
+  // 1. Standard encoder
+  print('STANDARD ENCODER:');
+  final standardOutput = rdfxml.encode(graph);
   print('${standardOutput.split('\n').length} lines of output\n');
 
-  // 2. Readable serializer
-  print('READABLE SERIALIZER:');
-  final readableSerializer = RdfXmlFormat.readable().createSerializer();
-  final readableOutput = readableSerializer.write(graph);
+  // 2. Readable encoder
+  print('READABLE ENCODER:');
+  final readableOutput = RdfXmlCodec.readable().encode(graph);
   print('${readableOutput.split('\n').length} lines of output\n');
 
-  // 3. Compact serializer
-  print('COMPACT SERIALIZER:');
-  final compactSerializer = RdfXmlFormat.compact().createSerializer();
-  final compactOutput = compactSerializer.write(graph);
+  // 3. Compact encoder
+  print('COMPACT ENCODER:');
+  final compactOutput = RdfXmlCodec.compact().encode(graph);
   print('${compactOutput.split('\n').length} lines of output\n');
 
-  // 4. Custom serializer configuration
-  print('CUSTOM SERIALIZER CONFIGURATION:');
-  final customSerializerFormat = RdfXmlFormat(
-    serializerOptions: RdfXmlSerializerOptions(
+  // 4. Custom encoder configuration
+  print('CUSTOM ENCODER CONFIGURATION:');
+  final customEncoderCodec = RdfXmlCodec(
+    encoderOptions: RdfXmlEncoderOptions(
       prettyPrint: true,
       indentSpaces: 4,
       useTypedNodes: true,
     ),
   );
-  final customSerializer = customSerializerFormat.createSerializer();
-  final customOutput = customSerializer.write(
+  final customOutput = customEncoderCodec.encode(
     graph,
     baseUri: 'http://example.org/data/',
     customPrefixes: {

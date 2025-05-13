@@ -1,11 +1,11 @@
-# rdf_xml
+# RDF XML
 
 [![pub package](https://img.shields.io/pub/v/rdf_xml.svg)](https://pub.dev/packages/rdf_xml)
 [![build](https://github.com/kkalass/rdf_xml/actions/workflows/ci.yml/badge.svg)](https://github.com/kkalass/rdf_xml/actions)
 [![codecov](https://codecov.io/gh/kkalass/rdf_xml/branch/main/graph/badge.svg)](https://codecov.io/gh/kkalass/rdf_xml)
 [![license](https://img.shields.io/github/license/kkalass/rdf_xml.svg)](https://github.com/kkalass/rdf_xml/blob/main/LICENSE)
 
-A RDF/XML parser and serializer for the [rdf_core](https://pub.dev/packages/rdf_core) library, offering a complete implementation of the W3C RDF/XML specification.
+A RDF/XML decoder and encoder for the [rdf_core](https://pub.dev/packages/rdf_core) library, offering a complete implementation of the W3C RDF/XML specification.
 
 [🌐 **Official Documentation**](https://kkalass.github.io/rdf_xml/)
 
@@ -15,7 +15,7 @@ A RDF/XML parser and serializer for the [rdf_core](https://pub.dev/packages/rdf_
 
 If you are looking for more rdf-related functionality, have a look at our companion projects:
 
-* basic graph classes as well as turtle/jsonld/n-triple serialization and parsing: [rdf_core](https://github.com/kkalass/rdf_core) 
+* basic graph classes as well as turtle/jsonld/n-triple decoding and encoding: [rdf_core](https://github.com/kkalass/rdf_core) 
 * easy-to-use constants for many well-known vocabularies: [rdf_vocabularies](https://github.com/kkalass/rdf_vocabularies)
 * generate your own easy-to-use constants for other vocabularies with a build_runner: [rdf_vocabulary_to_dart](https://github.com/kkalass/rdf_vocabulary_to_dart)
 * map Dart Objects ↔️ RDF: [rdf_mapper](https://github.com/kkalass/rdf_mapper)
@@ -46,10 +46,9 @@ dependencies:
 
 ## 📖 Usage
 
-### Parsing RDF/XML
+### Decoding RDF/XML
 
 ```dart
-import 'package:rdf_core/rdf_core.dart';
 import 'package:rdf_xml/rdf_xml.dart';
 
 void main() {
@@ -63,13 +62,10 @@ void main() {
     </rdf:RDF>
   ''';
 
-  // Register the format with the registry
-  final rdfCore = RdfCore.withStandardFormats();
-  rdfCore.registerFormat(RdfXmlFormat());
-
-  final rdfGraph = rdfCore.parse(xmlContent);
+  // Use the global rdfxml codec
+  final rdfGraph = rdfxml.decode(xmlContent);
   
-  // Print the parsed triples
+  // Print the decoded triples
   for (final triple in rdfGraph.triples) {
     print(triple);
   }
@@ -77,7 +73,8 @@ void main() {
 ```
 
 
-### Serializing to RDF/XML
+
+### Encoding to RDF/XML
 
 ```dart
 import 'package:rdf_core/rdf_core.dart';
@@ -98,18 +95,49 @@ void main() {
     ),
   ]);
 
-  // Register the format with the registry
-  final rdfCore = RdfCore.withStandardFormats();
-  rdfCore.registerFormat(RdfXmlFormat());
-
-  // Serialize
-  final rdfXml = rdfCore.write(graph, contentType: "application/rdf+xml");
+  // Use the global rdfxml codec
+  final rdfXml = rdfxml.encode(graph);
   
   print(rdfXml);
 }
 ```
 
-### Parsing from a File
+### Integration with RdfCore
+
+```dart
+import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/rdf_xml.dart';
+
+void main() {
+  final xmlContent = '''
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <rdf:Description rdf:about="http://example.org/resource">
+        <dc:title>Example Resource</dc:title>
+        <dc:creator>Example Author</dc:creator>
+      </rdf:Description>
+    </rdf:RDF>
+  ''';
+
+  // Register the codec with RdfCore
+  final rdfCore = RdfCore.withStandardCodecs(additionalCodecs: [RdfXmlCodec()]);
+
+  // Decode using RdfCore
+  final rdfGraph = rdfCore.decode(xmlContent, contentType: "application/rdf+xml");
+  
+  // Print the decoded triples
+  for (final triple in rdfGraph.triples) {
+    print(triple);
+  }
+
+  // Encode using RdfCore with specified content type
+  final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
+  
+  print(rdfXml);
+}
+```
+
+### Decoding from a File
 
 ```dart
 import 'dart:io';
@@ -120,9 +148,8 @@ Future<void> parseFromFile(String filePath) async {
   final file = File(filePath);
   final xmlContent = await file.readAsString();
   
-  // Parse with base URI set to the file location
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(
+  // Decode with base URI set to the file location
+  final rdfGraph = rdfxml.decode(
     xmlContent, 
     documentUrl: 'file://${file.absolute.path}',
   );
@@ -133,43 +160,43 @@ Future<void> parseFromFile(String filePath) async {
 
 ## ⚙️ Configuration
 
-### Parser Options
+### Decoder Options
 
 ```dart
-// Create a parser with strict validation
-final strictParser = RdfXmlFormat.strict().createParser();
+// Create a codec with strict validation
+final strictCodec = RdfXmlCodec.strict();
 
-// Create a parser that handles non-standard RDF/XML
-final lenientParser = RdfXmlFormat.lenient().createParser();
+// Create a codec that handles non-standard RDF/XML
+final lenientCodec = RdfXmlCodec.lenient();
 
 // Custom configuration
-final customParser = RdfXmlFormat(
-  parserOptions: RdfXmlParserOptions(
+final customCodec = RdfXmlCodec(
+  decoderOptions: RdfXmlDecoderOptions(
     strictMode: false,
     normalizeWhitespace: true,
     validateOutput: true,
     maxNestingDepth: 50,
   ),
-).createParser();
+);
 ```
 
-### Serializer Options
+### Encoder Options
 
 ```dart
 // Human-readable output
-final readableSerializer = RdfXmlFormat.readable().createSerializer();
+final readableCodec = RdfXmlCodec.readable();
 
 // Compact output for storage
-final compactSerializer = RdfXmlFormat.compact().createSerializer();
+final compactCodec = RdfXmlCodec.compact();
 
 // Custom configuration
-final customSerializer = RdfXmlFormat(
-  serializerOptions: RdfXmlSerializerOptions(
+final customCodec = RdfXmlCodec(
+  encoderOptions: RdfXmlEncoderOptions(
     prettyPrint: true,
     indentSpaces: 4,
     useTypedNodes: true,
   ),
-).createSerializer();
+);
 ```
 
 ## 📚 RDF/XML Features

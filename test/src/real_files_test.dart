@@ -16,14 +16,15 @@ void main() {
       final xmlContent = foafFile.readAsStringSync();
       final foafTurtleFile = File('test/assets/foaf.ttl');
       final expectedTurtle = foafTurtleFile.readAsStringSync();
-      final rdfCore =
-          RdfCore.withStandardFormats()..registerFormat(RdfXmlFormat());
-      final graph = rdfCore.parse(
+      final rdfCore = RdfCore.withStandardCodecs(
+        additionalCodecs: [RdfXmlCodec()],
+      );
+      final graph = rdfCore.decode(
         xmlContent,
         contentType: 'application/rdf+xml',
         documentUrl: 'http://xmlns.com/foaf/0.1/',
       );
-      final turtle = rdfCore.serialize(
+      final turtle = rdfCore.encode(
         graph,
         customPrefixes: {
           'wot': 'http://xmlns.com/wot/0.1/',

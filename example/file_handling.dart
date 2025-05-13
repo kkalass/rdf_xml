@@ -50,9 +50,8 @@ Future<void> parseFromFile() async {
   final file = File('example_data.rdf');
   final xmlContent = await file.readAsString();
 
-  // Parse with base URI set to the file location
-  final parser = RdfXmlFormat().createParser();
-  final rdfGraph = parser.parse(
+  // Decode with base URI set to the file location
+  final rdfGraph = rdfxml.decode(
     xmlContent,
     documentUrl: 'file://${file.absolute.path}',
   );
@@ -89,10 +88,10 @@ Future<void> writeToFile() async {
   ]);
 
   // Create a serializer with readable formatting
-  final serializer = RdfXmlFormat.readable().createSerializer();
+  final codec = RdfXmlCodec.readable();
 
-  // Serialize with custom prefixes
-  final rdfXml = serializer.write(
+  // Encode with custom prefixes
+  final rdfXml = codec.encode(
     graph,
     customPrefixes: {
       'dc': 'http://purl.org/dc/elements/1.1/',
