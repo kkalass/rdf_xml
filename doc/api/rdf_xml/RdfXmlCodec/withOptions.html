@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the parse method from the IRdfXmlParser class, for the Dart programming language.">
-  <title>parse method - IRdfXmlParser class - rdf_xml library - Dart API</title>
+  <meta name="description" content="API docs for the withOptions method from the RdfXmlCodec class, for the Dart programming language.">
+  <title>withOptions method - RdfXmlCodec class - rdf_xml library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rdf_xml</a></li>
     <li><a href="../../rdf_xml">rdf_xml.dart</a></li>
-    <li><a href="../../rdf_xml/IRdfXmlParser-class.html">IRdfXmlParser</a></li>
-    <li class="self-crumb">parse abstract method</li>
+    <li><a href="../../rdf_xml/RdfXmlCodec-class.html">RdfXmlCodec</a></li>
+    <li class="self-crumb">withOptions method</li>
   </ol>
-  <div class="self-name">parse</div>
+  <div class="self-name">withOptions</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,31 +49,56 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rdf_xml&#47;IRdfXmlParser-class-sidebar.html"
+    data-above-sidebar="rdf_xml&#47;RdfXmlCodec-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">parse</span> abstract method 
+<h1><span class="kind-method">withOptions</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/Triple-class.html">Triple</a></span>&gt;</span></span>
-<span class="name ">parse</span>(<wbr>)
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
+<span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a></span>
+<span class="name ">withOptions</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="withOptions-param-encoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphEncoderOptions-class.html">RdfGraphEncoderOptions</a>?</span> <span class="parameter-name">encoder</span>, </span></li>
+<li><span class="parameter" id="withOptions-param-decoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a>?</span> <span class="parameter-name">decoder</span>, </span></li>
+</ol>})
 
-      
+      <div class="features"><span class="feature">override</span></div>
 
     </section>
     
 <section class="desc markdown">
-  <p>Parses the RDF/XML document and returns a list of triples</p>
-<p>This is the main entry point for parsing RDF/XML data.</p>
+  <p>Creates a new codec instance with the specified options</p>
+<p>This method returns a new instance of the codec configured with the
+provided encoder and decoder options. The original codec instance remains unchanged.</p>
+<p>The <code>encoder</code> parameter contains optional encoder options to customize encoding behavior.
+The <code>decoder</code> parameter contains optional decoder options to customize decoding behavior.</p>
+<p>Returns a new <a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a> instance with the specified options applied.</p>
+<p>This follows the immutable configuration pattern, allowing for clean
+method chaining and configuration without side effects.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">List&lt;Triple&gt; parse();</code></pre>
+  <pre class="language-dart"><code class="language-dart">@override
+RdfGraphCodec withOptions({
+  RdfGraphEncoderOptions? encoder,
+  RdfGraphDecoderOptions? decoder,
+}) =&gt; RdfXmlCodec(
+  xmlDocumentProvider: _xmlDocumentProvider,
+  uriResolver: _uriResolver,
+  namespaceManager: _namespaceManager,
+  namespaceMappings: _namespaceMappings,
+  xmlBuilder: _xmlBuilder,
+  decoderOptions: RdfXmlDecoderOptions.from(decoder ?? _decoderOptions),
+  encoderOptions: RdfXmlEncoderOptions.from(encoder ?? _encoderOptions),
+);</code></pre>
 </section>
 
 
@@ -88,11 +113,11 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rdf_xml</a></li>
     <li><a href="../../rdf_xml">rdf_xml</a></li>
-    <li><a href="../../rdf_xml/IRdfXmlParser-class.html">IRdfXmlParser</a></li>
-    <li class="self-crumb">parse abstract method</li>
+    <li><a href="../../rdf_xml/RdfXmlCodec-class.html">RdfXmlCodec</a></li>
+    <li class="self-crumb">withOptions method</li>
 </ol>
 
-    <h5>IRdfXmlParser class</h5>
+    <h5>RdfXmlCodec class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

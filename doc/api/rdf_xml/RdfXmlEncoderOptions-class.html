@@ -63,13 +63,35 @@
 </section>
 
 
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphEncoderOptions-class.html">RdfGraphEncoderOptions</a></li>
+      <li>RdfXmlEncoderOptions</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
 
     
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="RdfXmlEncoderOptions" class="callable">
-          <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/RdfXmlEncoderOptions.html">RdfXmlEncoderOptions</a></span><span class="signature">({<span class="parameter" id="-param-prettyPrint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">prettyPrint</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-indentSpaces"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">indentSpaces</span> = <span class="default-value">2</span>, </span><span class="parameter" id="-param-useTypedNodes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useTypedNodes</span> = <span class="default-value">true</span></span>})</span>
+          <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/RdfXmlEncoderOptions.html">RdfXmlEncoderOptions</a></span><span class="signature">({<span class="parameter" id="-param-prettyPrint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">prettyPrint</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-indentSpaces"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">indentSpaces</span> = <span class="default-value">2</span>, </span><span class="parameter" id="-param-customPrefixes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">customPrefixes</span> = <span class="default-value">const {}</span>, </span><span class="parameter" id="-param-useTypedNodes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useTypedNodes</span> = <span class="default-value">true</span></span>})</span>
         </dt>
         <dd>
           Creates a new immutable serializer options object
@@ -104,6 +126,18 @@
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="customPrefixes" class="property">
+  <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/customPrefixes.html">customPrefixes</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  Custom namespace prefixes to use during encoding.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property">
   <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -174,7 +208,7 @@
     <h2>Methods</h2>
     <dl class="callables">
         <dt id="copyWith" class="callable">
-  <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-prettyPrint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">prettyPrint</span>, </span><span class="parameter" id="copyWith-param-indentSpaces"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">indentSpaces</span>, </span><span class="parameter" id="copyWith-param-useNamespaces"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">useNamespaces</span>, </span><span class="parameter" id="copyWith-param-useTypedNodes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">useTypedNodes</span></span>})
+  <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/copyWith.html">copyWith</a></span><span class="signature">(<wbr>{<span class="parameter" id="copyWith-param-prettyPrint"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">prettyPrint</span>, </span><span class="parameter" id="copyWith-param-indentSpaces"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">indentSpaces</span>, </span><span class="parameter" id="copyWith-param-useTypedNodes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a>?</span> <span class="parameter-name">useTypedNodes</span>, </span><span class="parameter" id="copyWith-param-customPrefixes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">customPrefixes</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a></span>
   </span>
   
@@ -237,6 +271,24 @@
   </section>
     
     
+  <section class="summary offset-anchor" id="static-methods">
+    <h2>Static Methods</h2>
+    <dl class="callables">
+        <dt id="from" class="callable">
+  <span class="name"><a href="../rdf_xml/RdfXmlEncoderOptions/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-options"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphEncoderOptions-class.html">RdfGraphEncoderOptions</a></span> <span class="parameter-name">options</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  
+  
+
+</dd>
+
+    </dl>
+  </section>
     
 
   </div> <!-- /.main-content -->
@@ -262,7 +314,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.3.0
+      0.4.0
   </span>
   
 </footer>
