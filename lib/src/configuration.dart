@@ -10,10 +10,12 @@
 ///
 library rdfxml.configuration;
 
+import 'package:rdf_core/rdf_core.dart';
+
 /// Decoder options for RDF/XML processing
 ///
 /// Immutable configuration for controlling decoder behavior.
-final class RdfXmlDecoderOptions {
+final class RdfXmlDecoderOptions extends RdfGraphDecoderOptions {
   /// Whether to validate the RDF/XML structure strictly
   ///
   /// When true, the decoder enforces strict compliance with the RDF/XML specification.
@@ -47,6 +49,12 @@ final class RdfXmlDecoderOptions {
     this.validateOutput = true,
     this.maxNestingDepth = 100,
   });
+
+  static RdfXmlDecoderOptions from(RdfGraphDecoderOptions options) =>
+      switch (options) {
+        RdfXmlDecoderOptions _ => options,
+        _ => RdfXmlDecoderOptions(),
+      };
 
   /// Creates a new options object with strict mode enabled
   ///
@@ -125,7 +133,7 @@ final class RdfXmlDecoderOptions {
 /// Encoder options for RDF/XML output
 ///
 /// Immutable configuration for controlling encoder behavior.
-final class RdfXmlEncoderOptions {
+final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   /// Whether to use pretty-printing for the output XML
   ///
   /// Controls indentation and formatting of the output XML.
@@ -142,15 +150,24 @@ final class RdfXmlEncoderOptions {
   /// instead of using rdf:Description with an rdf:type property.
   final bool useTypedNodes;
 
+  @override
+  final Map<String, String> customPrefixes;
+
   /// Creates a new immutable serializer options object
   ///
   /// All parameters are optional with sensible defaults.
   const RdfXmlEncoderOptions({
     this.prettyPrint = true,
     this.indentSpaces = 2,
-
+    this.customPrefixes = const {},
     this.useTypedNodes = true,
   });
+
+  static RdfXmlEncoderOptions from(RdfGraphEncoderOptions options) =>
+      switch (options) {
+        RdfXmlEncoderOptions _ => options,
+        _ => RdfXmlEncoderOptions(customPrefixes: options.customPrefixes),
+      };
 
   /// Creates a new options object optimized for readability
   ///
@@ -188,14 +205,15 @@ final class RdfXmlEncoderOptions {
   RdfXmlEncoderOptions copyWith({
     bool? prettyPrint,
     int? indentSpaces,
-    bool? useNamespaces,
     bool? useTypedNodes,
+    Map<String, String>? customPrefixes,
   }) {
     return RdfXmlEncoderOptions(
       prettyPrint: prettyPrint ?? this.prettyPrint,
       indentSpaces: indentSpaces ?? this.indentSpaces,
 
       useTypedNodes: useTypedNodes ?? this.useTypedNodes,
+      customPrefixes: customPrefixes ?? this.customPrefixes,
     );
   }
 

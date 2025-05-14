@@ -113,15 +113,15 @@ void main() {
       prettyPrint: true,
       indentSpaces: 4,
       useTypedNodes: true,
+      customPrefixes: {
+        'ex': 'http://example.org/terms#',
+        'dc': 'http://purl.org/dc/elements/1.1/',
+      },
     ),
   );
   final customOutput = customEncoderCodec.encode(
     graph,
     baseUri: 'http://example.org/data/',
-    customPrefixes: {
-      'ex': 'http://example.org/terms#',
-      'dc': 'http://purl.org/dc/elements/1.1/',
-    },
   );
   print('${customOutput.split('\n').length} lines of output');
   print('Sample of custom output:');

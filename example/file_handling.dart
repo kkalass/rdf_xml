@@ -90,14 +90,8 @@ Future<void> writeToFile() async {
   // Create a serializer with readable formatting
   final codec = RdfXmlCodec.readable();
 
-  // Encode with custom prefixes
-  final rdfXml = codec.encode(
-    graph,
-    customPrefixes: {
-      'dc': 'http://purl.org/dc/elements/1.1/',
-      'ex': 'http://example.org/vocab#',
-    },
-  );
+  // Encode with generated prefixes
+  final rdfXml = codec.encode(graph);
 
   // Write to file
   final outputFile = File('output_data.rdf');

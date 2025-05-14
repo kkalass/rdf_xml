@@ -17,21 +17,24 @@ void main() {
       final foafTurtleFile = File('test/assets/foaf.ttl');
       final expectedTurtle = foafTurtleFile.readAsStringSync();
       final rdfCore = RdfCore.withStandardCodecs(
-        additionalCodecs: [RdfXmlCodec()],
+        additionalCodecs: [
+          RdfXmlCodec(
+            encoderOptions: RdfXmlEncoderOptions.readable().copyWith(
+              customPrefixes: {
+                'wot': 'http://xmlns.com/wot/0.1/',
+                // override the default prefix for schema.org which goes to https://schema.org/
+                'schema': 'http://schema.org/',
+              },
+            ),
+          ),
+        ],
       );
       final graph = rdfCore.decode(
         xmlContent,
         contentType: 'application/rdf+xml',
         documentUrl: 'http://xmlns.com/foaf/0.1/',
       );
-      final turtle = rdfCore.encode(
-        graph,
-        customPrefixes: {
-          'wot': 'http://xmlns.com/wot/0.1/',
-          // override the default prefix for schema.org which goes to https://schema.org/
-          'schema': 'http://schema.org/',
-        },
-      );
+      final turtle = rdfCore.encode(graph);
 
       _log.finest('Serialized FOAF to Turtle format: $turtle');
       expect(turtle.trim(), equals(expectedTurtle.trim()));

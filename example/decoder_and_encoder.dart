@@ -25,7 +25,7 @@ void main() {
   print('--- DECODER EXAMPLE ---\n');
 
   // Use the global rdfxml codec
-  final rdfGraph = rdfxml.decode(xmlContent);
+  final rdfGraph = rdfxml.decoder.convert(xmlContent);
 
   // Print the decoded triples
   print('Decoded ${rdfGraph.size} triples:');
@@ -35,15 +35,17 @@ void main() {
 
   print('\n--- ENCODER EXAMPLE ---\n');
 
-  // Use the readable preset with the global codec
-  final rdfXml = RdfXmlCodec.readable().encode(
-    rdfGraph,
-    customPrefixes: {
-      'dc': 'http://purl.org/dc/elements/1.1/',
-      'foaf': 'http://xmlns.com/foaf/0.1/',
-      'ex': 'http://example.org/',
-    },
+  // Use the encoder, but change its options with readable preset as base, and with custom prefixes
+  final encoder = rdfxml.encoder.withOptions(
+    RdfXmlEncoderOptions.readable().copyWith(
+      customPrefixes: {
+        'dc': 'http://purl.org/dc/elements/1.1/',
+        'foaf': 'http://xmlns.com/foaf/0.1/',
+        'ex': 'http://example.org/',
+      },
+    ),
   );
+  final rdfXml = encoder.convert(rdfGraph);
 
   print('Encoded RDF/XML:');
   print(rdfXml);

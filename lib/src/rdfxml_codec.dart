@@ -108,6 +108,20 @@ final class RdfXmlCodec extends RdfGraphCodec {
   }
 
   @override
+  RdfGraphCodec withOptions({
+    RdfGraphEncoderOptions? encoder,
+    RdfGraphDecoderOptions? decoder,
+  }) => RdfXmlCodec(
+    xmlDocumentProvider: _xmlDocumentProvider,
+    uriResolver: _uriResolver,
+    namespaceManager: _namespaceManager,
+    namespaceMappings: _namespaceMappings,
+    xmlBuilder: _xmlBuilder,
+    decoderOptions: RdfXmlDecoderOptions.from(decoder ?? _decoderOptions),
+    encoderOptions: RdfXmlEncoderOptions.from(encoder ?? _encoderOptions),
+  );
+
+  @override
   bool canParse(String content) {
     // Check if content appears to be RDF/XML
     return content.contains('<rdf:RDF') ||
@@ -192,6 +206,14 @@ final class RdfXmlDecoder extends RdfGraphDecoder {
        _options = options;
 
   @override
+  RdfXmlDecoder withOptions(RdfGraphDecoderOptions options) => RdfXmlDecoder(
+    xmlDocumentProvider: _xmlDocumentProvider,
+    uriResolver: _uriResolver,
+    options: RdfXmlDecoderOptions.from(options),
+    rdfNamespaceMappings: _rdfNamespaceMappings,
+  );
+
+  @override
   RdfGraph convert(String input, {String? documentUrl}) {
     final parser = RdfXmlParser(
       input,
@@ -227,11 +249,14 @@ final class RdfXmlEncoder extends RdfGraphEncoder {
        _options = options;
 
   @override
-  String convert(
-    RdfGraph graph, {
-    String? baseUri,
-    Map<String, String> customPrefixes = const {},
-  }) {
+  RdfGraphEncoder withOptions(RdfGraphEncoderOptions options) => RdfXmlEncoder(
+    namespaceManager: _namespaceManager,
+    xmlBuilder: _xmlBuilder,
+    options: RdfXmlEncoderOptions.from(options),
+  );
+
+  @override
+  String convert(RdfGraph graph, {String? baseUri}) {
     final serializer = RdfXmlSerializer(
       namespaceManager: _namespaceManager,
       xmlBuilder: _xmlBuilder,
@@ -240,7 +265,7 @@ final class RdfXmlEncoder extends RdfGraphEncoder {
     return serializer.write(
       graph,
       baseUri: baseUri,
-      customPrefixes: customPrefixes,
+      customPrefixes: _options.customPrefixes,
     );
   }
 }
