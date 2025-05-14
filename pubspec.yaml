@@ -1,6 +1,6 @@
 name: rdf_xml
 description: A rdf/xml decoder and encoder for https://pub.dev/packages/rdf_core .
-version: 0.4.0
+version: 0.4.1-dev
 homepage: https://kkalass.github.io/rdf_xml/
 repository: https://github.com/kkalass/rdf_xml
 issue_tracker: https://github.com/kkalass/rdf_xml/issues
