@@ -1185,10 +1185,7 @@ void main() {
       ]);
 
       final serializer = RdfXmlSerializer();
-      final xml = serializer.write(
-        graph,
-        baseUri: 'http://example.org/base/',
-      );
+      final xml = serializer.write(graph, baseUri: 'http://example.org/base/');
 
       // Should generate rdf:about="sub/resource"
       expect(xml, contains('<rdf:Description rdf:about="sub/resource">'));
@@ -1204,10 +1201,7 @@ void main() {
       ]);
 
       final serializer = RdfXmlSerializer();
-      final xml = serializer.write(
-        graph,
-        baseUri: 'http://example.org/base/',
-      );
+      final xml = serializer.write(graph, baseUri: 'http://example.org/base/');
 
       // Should keep the full IRI since it doesn't start with base URI
       expect(xml, contains('rdf:about="http://other.example.org/resource"'));
