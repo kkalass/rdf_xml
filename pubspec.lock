@@ -242,10 +242,10 @@ packages:
     dependency: "direct main"
     description:
       name: rdf_core
-      sha256: "770e76c78fe9bee886f91988f5adcb462e9e68a2fda4bf62ad1e17cbc8d35f55"
+      sha256: a4a3bf238267a130cf29d73a454f848396f3315d9abca70cc2e7d3f2031ff58c
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.0"
+    version: "0.9.7"
   shelf:
     dependency: transitive
     description:
