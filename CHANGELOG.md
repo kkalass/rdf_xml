@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `BaseUriRequiredException` class for better error handling when base URI is missing
 - Comprehensive test coverage for relative URL decoding scenarios
 - Better error messages with clear instructions for fixing base URI issues
+- Comprehensive test coverage for URI relativization in serialization
 
 ### Changed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better handling of relative URI resolution errors with clearer error messages
 - Improved error context reporting in URI resolution failures
+- Fixed URI relativization bug where IRIs equal to base URI generated "/" instead of empty string
 
 ## [0.4.0] - 2025-05-14
 

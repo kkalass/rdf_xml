@@ -1152,4 +1152,65 @@ void main() {
       expect(dateItem.value, equals('2025-05-06'));
     });
   });
+
+  group('URI Relativization', () {
+    test('creates empty relative URI when IRI equals base URI', () {
+      // Test the specific issue where IRI exactly matches base URI
+      final graph = RdfGraph.fromTriples([
+        Triple(
+          IriTerm('http://example.org/resource'),
+          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          LiteralTerm.string('Test Resource'),
+        ),
+      ]);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(
+        graph,
+        baseUri: 'http://example.org/resource',
+      );
+
+      // Should generate rdf:about="" (empty string) not rdf:about="/"
+      expect(xml, contains('<rdf:Description rdf:about="">'));
+      expect(xml, isNot(contains('<rdf:Description rdf:about="/">')));
+    });
+
+    test('creates proper relative URIs for sub-resources', () {
+      final graph = RdfGraph.fromTriples([
+        Triple(
+          IriTerm('http://example.org/base/sub/resource'),
+          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          LiteralTerm.string('Sub Resource'),
+        ),
+      ]);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(
+        graph,
+        baseUri: 'http://example.org/base/',
+      );
+
+      // Should generate rdf:about="sub/resource"
+      expect(xml, contains('<rdf:Description rdf:about="sub/resource">'));
+    });
+
+    test('keeps absolute URIs when they do not start with base URI', () {
+      final graph = RdfGraph.fromTriples([
+        Triple(
+          IriTerm('http://other.example.org/resource'),
+          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          LiteralTerm.string('Other Resource'),
+        ),
+      ]);
+
+      final serializer = RdfXmlSerializer();
+      final xml = serializer.write(
+        graph,
+        baseUri: 'http://example.org/base/',
+      );
+
+      // Should keep the full IRI since it doesn't start with base URI
+      expect(xml, contains('rdf:about="http://other.example.org/resource"'));
+    });
+  });
 }

@@ -1128,7 +1128,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
 
     if (baseUri != null && iri.startsWith(baseUri)) {
       final relativeUri = iri.substring(baseUri.length);
-      resourceUri = relativeUri.isEmpty ? '/' : relativeUri;
+      resourceUri = relativeUri;
     }
     return resourceUri;
   }

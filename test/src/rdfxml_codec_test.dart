@@ -175,6 +175,34 @@ rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
       expect(triples.first.object, equals(LiteralTerm("4711")));
     });
 
+    test("Encodes empty (relative) IRITerm attributes with baseUri", () {
+      final newXml = rdfxml.encode(
+        RdfGraph.fromTriples([
+          Triple(
+            IriTerm("http://example.org/resource"),
+            IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+            LiteralTerm("4711"),
+          ),
+        ]),
+        baseUri: 'http://example.org/resource',
+      );
+      print(newXml);
+      expect(newXml, contains('<rdf:Description rdf:about="">'));
+    });
+    test("Encodes relative IRITerm attributes with baseUri", () {
+      final newXml = rdfxml.encode(
+        RdfGraph.fromTriples([
+          Triple(
+            IriTerm("http://example.org/resource/1"),
+            IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+            LiteralTerm("4711"),
+          ),
+        ]),
+        baseUri: 'http://example.org/resource/',
+      );
+      expect(newXml, contains('<rdf:Description rdf:about="1">'));
+    });
+
     test("Parses empty (relative) IRITerm attributes with baseUri", () {
       final xml = '''
     <?xml version="1.0"?>
