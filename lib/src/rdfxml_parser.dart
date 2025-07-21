@@ -755,6 +755,15 @@ final class RdfXmlParser implements IRdfXmlParser {
         return IriTerm(iri);
       } catch (e) {
         _uriLogger.severe('Failed to resolve rdf:about URI', e);
+
+        // Re-throw BaseUriRequiredException with context
+        if (e is BaseUriRequiredException) {
+          throw BaseUriRequiredException(
+            relativeUri: e.relativeUri,
+            sourceContext: element.name.qualified,
+          );
+        }
+
         throw UriResolutionException(
           'Failed to resolve rdf:about URI',
           uri: aboutAttr,
@@ -770,15 +779,26 @@ final class RdfXmlParser implements IRdfXmlParser {
       try {
         // rdf:ID creates a URI relative to the document base URI
         if (baseUri == null || baseUri.isEmpty) {
-          throw RdfStructureException(
-            'Base URI is not set for rdf:ID resolution',
-            elementName: element.name.qualified,
+          throw BaseUriRequiredException(
+            relativeUri: '#$idAttr',
+            sourceContext: element.name.qualified,
           );
         }
         final iri = '${baseUri}#$idAttr';
         return IriTerm(iri);
       } catch (e) {
         _uriLogger.severe('Failed to create IRI from rdf:ID', e);
+
+        // Re-throw BaseUriRequiredException with context if not already set
+        if (e is BaseUriRequiredException && e.sourceContext == null) {
+          throw BaseUriRequiredException(
+            relativeUri: e.relativeUri,
+            sourceContext: element.name.qualified,
+          );
+        } else if (e is BaseUriRequiredException) {
+          rethrow;
+        }
+
         throw UriResolutionException(
           'Failed to create IRI from rdf:ID',
           uri: '#$idAttr',

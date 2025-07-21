@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-07-21
+
+### Added
+
+- New `BaseUriRequiredException` class for better error handling when base URI is missing
+- Comprehensive test coverage for relative URL decoding scenarios
+- Better error messages with clear instructions for fixing base URI issues
+
+### Changed
+
+- Improved error handling for URI resolution with more specific exception types
+- Enhanced error messages to include source context information
+- Updated test imports to use public API instead of internal imports
+
+### Fixed
+
+- Better handling of relative URI resolution errors with clearer error messages
+- Improved error context reporting in URI resolution failures
+
 ## [0.4.0] - 2025-05-14
 
 ### Changed

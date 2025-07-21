@@ -7,6 +7,7 @@ library rdfxml.parsing.implementations;
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
+import '../exceptions.dart';
 import '../interfaces/xml_parsing.dart';
 import 'parsing_context.dart';
 
@@ -38,10 +39,7 @@ final class DefaultUriResolver implements IUriResolver {
 
     // Handle empty base URI cases
     if (baseUri == null || baseUri.isEmpty) {
-      throw RdfDecoderException(
-        "There was no xml:base attribute in the document. You need to provide the documentUri to the parser. I cannot resolve the relative uri $uri.",
-        format: "rdf/xml",
-      );
+      throw BaseUriRequiredException(relativeUri: uri);
     }
 
     // Handle standard cases using Uri class when possible for robustness

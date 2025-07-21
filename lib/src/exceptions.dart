@@ -136,6 +136,38 @@ final class UriResolutionException extends RdfXmlDecoderException {
   }
 }
 
+/// Exception for cases where a base URI is required but not available
+///
+/// Thrown when attempting to resolve relative URIs without a base URI.
+/// This happens when the RDF/XML document has no xml:base attribute
+/// and no documentUrl was provided to the parser.
+final class BaseUriRequiredException extends RdfXmlDecoderException {
+  /// Creates a new base URI required exception
+  ///
+  /// Parameters:
+  /// - [relativeUri] The relative URI that could not be resolved
+  /// - [sourceContext] Optional source context where the error occurred
+  const BaseUriRequiredException({
+    required this.relativeUri,
+    super.sourceContext,
+  }) : super("""\n
+Cannot resolve relative URI '$relativeUri' because no base URI is available. 
+This can happen when: 
+
+(1) The RDF/XML document has no xml:base attribute, and 
+(2) No documentUrl was provided to the parser. 
+
+To fix this, either add an xml:base attribute to your RDF/XML document or 
+provide a documentUrl parameter when calling the decoder: 
+
+rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
+
+""");
+
+  /// The relative URI that could not be resolved
+  final String relativeUri;
+}
+
 /// Exception for encoding errors
 ///
 /// Thrown when an RDF graph cannot be encoded to RDF/XML.

@@ -1,4 +1,5 @@
 import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/src/exceptions.dart';
 import 'package:rdf_xml/src/interfaces/xml_parsing.dart';
 import 'package:rdf_xml/src/rdfxml_parser.dart';
 import 'package:test/test.dart';
@@ -21,18 +22,12 @@ class CustomUriResolver implements IUriResolver {
     // For other URIs, perform standard resolution
     if (uri.startsWith('#')) {
       if (baseUri == null) {
-        throw RdfDecoderException(
-          "There was no xml:base attribute in the document. You need to provide the docuentUri to the parser. Cannot resolve relative uri $uri.",
-          format: "rdf/xml",
-        );
+        throw BaseUriRequiredException(relativeUri: uri);
       }
       return '$baseUri$uri';
     } else if (!uri.contains(':')) {
       if (baseUri == null) {
-        throw RdfDecoderException(
-          "There was no xml:base attribute in the document. You need to provide the docuentUri to the parser. Cannot resolve relative uri $uri.",
-          format: "rdf/xml",
-        );
+        throw BaseUriRequiredException(relativeUri: uri);
       }
 
       return '$baseUri$uri';
