@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2025-07-22
+
+### Fixed
+
+- **URI Relativization**: Complete rewrite of URI relativization logic in RDF/XML serialization to ensure RFC 3986 compliance
+- **Roundtrip Consistency**: Fixed issue where relativized URIs could not be correctly resolved back to their original form
+- **Fragment-only URI Handling**: Improved handling of URIs that differ only by fragment from the base URI
+- **Empty Relative URI Generation**: Fixed generation of empty relative URIs when the target URI exactly matches the base URI
+
+### Added
+
+- Comprehensive RFC 3986 compliant URI relativization algorithm with proper roundtrip verification
+- New test suite `uri_relativization_consistency_test.dart` for verifying URI relativization and resolution consistency
+- Enhanced error handling in URI relativization with fallback to absolute URIs when safe relativization is not possible
+
+### Improved
+
+- **Serialization Performance**: More efficient URI relativization with optimized checks for common cases
+- **URI Resolution Accuracy**: Better handling of edge cases in URI relativization including fragment-only differences and path-based relativization
+- **Code Maintainability**: Extracted URI relativization logic into dedicated method with comprehensive documentation
+
 ## [0.4.2] - 2025-07-22
 
 ### Fixed
