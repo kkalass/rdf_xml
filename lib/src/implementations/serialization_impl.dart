@@ -12,6 +12,7 @@ import 'package:xml/xml.dart';
 
 import '../interfaces/serialization.dart';
 import '../rdfxml_constants.dart';
+import '../configuration.dart';
 
 final _logger = Logger('rdf.serializer.rdfxml');
 
@@ -540,6 +541,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     RdfGraph graph,
     String? baseUri,
     Map<String, String> namespaces,
+    RdfXmlEncoderOptions options,
   ) {
     // Store the base URI for use in reification
     _currentBaseUri = baseUri;
@@ -574,8 +576,10 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           builder.attribute('xmlns:${entry.key}', entry.value);
         }
 
-        // Add base URI if provided
-        if (baseUri != null && baseUri.isNotEmpty) {
+        // Add base URI if provided and option is enabled
+        if (baseUri != null &&
+            baseUri.isNotEmpty &&
+            options.includeBaseDeclaration) {
           builder.attribute('xml:base', baseUri);
         }
 

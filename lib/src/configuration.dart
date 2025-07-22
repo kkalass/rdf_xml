@@ -150,6 +150,15 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   /// instead of using rdf:Description with an rdf:type property.
   final bool useTypedNodes;
 
+  /// Whether to include base URI declarations in the output
+  ///
+  /// This option only applies when a baseUri is provided during encoding.
+  /// When true and a baseUri is provided, the serializer includes the base URI
+  /// as an xml:base attribute.
+  /// When false, the baseUri is still used for URI relativization but not declared in the output.
+  /// Has no effect if no baseUri is provided during encoding.
+  final bool includeBaseDeclaration;
+
   @override
   final Map<String, String> customPrefixes;
 
@@ -161,12 +170,16 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
     this.indentSpaces = 2,
     this.customPrefixes = const {},
     this.useTypedNodes = true,
+    this.includeBaseDeclaration = true,
   });
 
   static RdfXmlEncoderOptions from(RdfGraphEncoderOptions options) =>
       switch (options) {
         RdfXmlEncoderOptions _ => options,
-        _ => RdfXmlEncoderOptions(customPrefixes: options.customPrefixes),
+        _ => RdfXmlEncoderOptions(
+          customPrefixes: options.customPrefixes,
+          includeBaseDeclaration: true, // Default to true for compatibility
+        ),
       };
 
   /// Creates a new options object optimized for readability
@@ -176,8 +189,8 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   factory RdfXmlEncoderOptions.readable() => const RdfXmlEncoderOptions(
     prettyPrint: true,
     indentSpaces: 2,
-
     useTypedNodes: true,
+    includeBaseDeclaration: true,
   );
 
   /// Creates a new options object optimized for compact output
@@ -187,16 +200,16 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   factory RdfXmlEncoderOptions.compact() => const RdfXmlEncoderOptions(
     prettyPrint: false,
     indentSpaces: 0,
-
     useTypedNodes: true,
+    includeBaseDeclaration: false, // Don't include base for minimal output
   );
 
   /// Creates a new options object for maximum compatibility
   factory RdfXmlEncoderOptions.compatible() => const RdfXmlEncoderOptions(
     prettyPrint: true,
     indentSpaces: 2,
-
     useTypedNodes: false, // Verwendet nur rdf:Description mit rdf:type
+    includeBaseDeclaration: true,
   );
 
   /// Creates a copy of this options object with the given values
@@ -206,13 +219,15 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
     bool? prettyPrint,
     int? indentSpaces,
     bool? useTypedNodes,
+    bool? includeBaseDeclaration,
     Map<String, String>? customPrefixes,
   }) {
     return RdfXmlEncoderOptions(
       prettyPrint: prettyPrint ?? this.prettyPrint,
       indentSpaces: indentSpaces ?? this.indentSpaces,
-
       useTypedNodes: useTypedNodes ?? this.useTypedNodes,
+      includeBaseDeclaration:
+          includeBaseDeclaration ?? this.includeBaseDeclaration,
       customPrefixes: customPrefixes ?? this.customPrefixes,
     );
   }
@@ -223,16 +238,23 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
     return other is RdfXmlEncoderOptions &&
         other.prettyPrint == prettyPrint &&
         other.indentSpaces == indentSpaces &&
-        other.useTypedNodes == useTypedNodes;
+        other.useTypedNodes == useTypedNodes &&
+        other.includeBaseDeclaration == includeBaseDeclaration;
   }
 
   @override
-  int get hashCode => Object.hash(prettyPrint, indentSpaces, useTypedNodes);
+  int get hashCode => Object.hash(
+    prettyPrint,
+    indentSpaces,
+    useTypedNodes,
+    includeBaseDeclaration,
+  );
 
   @override
   String toString() =>
       'RdfXmlEncoderOptions('
       'prettyPrint: $prettyPrint, '
       'indentSpaces: $indentSpaces, '
-      'useTypedNodes: $useTypedNodes)';
+      'useTypedNodes: $useTypedNodes, '
+      'includeBaseDeclaration: $includeBaseDeclaration)';
 }

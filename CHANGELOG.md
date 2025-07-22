@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test coverage for relative URL decoding scenarios
 - Better error messages with clear instructions for fixing base URI issues
 - Comprehensive test coverage for URI relativization in serialization
+- New `includeBaseDeclaration` option in `RdfXmlEncoderOptions` to control xml:base attribute inclusion
 
 ### Changed
 

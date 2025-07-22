@@ -195,9 +195,19 @@ final customCodec = RdfXmlCodec(
     prettyPrint: true,
     indentSpaces: 4,
     useTypedNodes: true,
+    includeBaseDeclaration: true, // Controls xml:base attribute inclusion
   ),
 );
+
+// Control base URI handling
+final baseUri = 'http://example.org/base/';
+final withBase = rdfxml.encode(graph, baseUri: baseUri); // Includes xml:base
+final withoutBase = RdfXmlCodec(
+  encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false)
+).encode(graph, baseUri: baseUri); // Omits xml:base but still relativizes URIs
 ```
+
+> 💡 **See also**: Check out [`example/base_uri_handling.dart`](example/base_uri_handling.dart) for a comprehensive demonstration of base URI options and practical use cases.
 
 ## 📚 RDF/XML Features
 

@@ -98,7 +98,12 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
       );
 
       // Build XML document
-      final document = _xmlBuilder.buildDocument(graph, baseUri, namespaces);
+      final document = _xmlBuilder.buildDocument(
+        graph,
+        baseUri,
+        namespaces,
+        _options,
+      );
 
       // Generate XML string with configured formatting options
       return document.toXmlString(

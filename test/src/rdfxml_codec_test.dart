@@ -186,9 +186,31 @@ rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
         ]),
         baseUri: 'http://example.org/resource',
       );
-      print(newXml);
+      expect(newXml, contains('xml:base="http://example.org/resource"'));
       expect(newXml, contains('<rdf:Description rdf:about="">'));
     });
+    test(
+      "Encodes empty (relative) IRITerm attributes with baseUri, but without xml:base",
+      () {
+        final newXml = rdfxml.encode(
+          RdfGraph.fromTriples([
+            Triple(
+              IriTerm("http://example.org/resource"),
+              IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+              LiteralTerm("4711"),
+            ),
+          ]),
+          baseUri: 'http://example.org/resource',
+          options: RdfXmlEncoderOptions(includeBaseDeclaration: false),
+        );
+        expect(
+          newXml,
+          isNot(contains('xml:base="http://example.org/resource"')),
+        );
+        expect(newXml, isNot(contains('xml:base')));
+        expect(newXml, contains('<rdf:Description rdf:about="">'));
+      },
+    );
     test("Encodes relative IRITerm attributes with baseUri", () {
       final newXml = rdfxml.encode(
         RdfGraph.fromTriples([

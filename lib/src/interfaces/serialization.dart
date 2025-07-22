@@ -7,6 +7,8 @@ library rdfxml.interfaces.serialization;
 import 'package:rdf_core/rdf_core.dart';
 import 'package:xml/xml.dart';
 
+import '../configuration.dart';
+
 /// Contract for RDF/XML serialization functionality
 abstract interface class IRdfXmlSerializer {
   /// Serializes an RDF graph to RDF/XML format
@@ -56,5 +58,6 @@ abstract interface class IRdfXmlBuilder {
     RdfGraph graph,
     String? baseUri,
     Map<String, String> namespaces,
+    RdfXmlEncoderOptions options,
   );
 }
