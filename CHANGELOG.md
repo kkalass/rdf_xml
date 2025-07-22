@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-07-22
+
+### Fixed
+
+- **Base URI Resolution**: Fixed hierarchical xml:base attribute resolution to properly resolve relative xml:base values against their parent element's base URI
+- **xml:base Attribute Parsing**: Fixed issue where xml:base attributes were incorrectly parsed as RDF property triples instead of being used for URI resolution only
+- **RFC 3986 Compliance**: Ensured full RFC 3986 compliance for URI resolution, particularly for edge cases like base URIs ending with fragment identifiers
+
+### Added
+
+- Comprehensive test suite for RFC 3986 URI resolution compliance
+- Integration tests for complex xml:base scenarios including nested base URI declarations
+- Tests covering various URI resolution edge cases (fragments, queries, relative paths, absolute paths)
+
+### Improved
+
+- Enhanced URI resolution to properly handle nested xml:base attributes in RDF/XML documents
+- Better separation of xml:base processing from regular RDF attribute processing
+- More robust handling of relative URI resolution in complex document structures
+
 ## [0.4.1] - 2025-07-21
 
 ### Added
