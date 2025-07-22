@@ -129,7 +129,7 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
         () => rdfxml.decode(xml),
         throwsA(
           allOf(
-            isA<BaseUriRequiredException>(),
+            isA<RdfXmlBaseUriRequiredException>(),
             predicate((e) => e.toString().trim() == expectedMessage),
           ),
         ),

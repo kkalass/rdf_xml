@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/src/iri_util.dart';
 import 'package:xml/xml.dart';
 
 import '../interfaces/serialization.dart';
@@ -1133,100 +1134,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
       return iri;
     }
 
-    // Use RFC 3986 compliant relativization
-    return _relativizeUri(iri, baseUri);
-  }
-
-  /// Relativizes a URI against a base URI using RFC 3986 compliant logic
-  ///
-  /// This method ensures that relativizing a URI and then resolving it back
-  /// produces the original URI, maintaining consistency with the parser.
-  String _relativizeUri(String iri, String baseUri) {
-    try {
-      final baseUriParsed = Uri.parse(baseUri);
-      final iriParsed = Uri.parse(iri);
-
-      // Only relativize if both URIs have scheme and authority
-      if (baseUriParsed.scheme.isEmpty ||
-          iriParsed.scheme.isEmpty ||
-          !baseUriParsed.hasAuthority ||
-          !iriParsed.hasAuthority) {
-        return iri;
-      }
-
-      if (baseUriParsed.scheme != iriParsed.scheme ||
-          baseUriParsed.authority != iriParsed.authority) {
-        return iri;
-      }
-
-      // Special case: if URIs are identical, return empty string
-      if (iri == baseUri) {
-        return '';
-      }
-
-      // Check for fragment-only differences (most optimal case)
-      if (baseUriParsed.path == iriParsed.path &&
-          baseUriParsed.query == iriParsed.query &&
-          iriParsed.hasFragment) {
-        // Only the fragment differs, return just the fragment
-        final fragmentRef = '#${iriParsed.fragment}';
-        final resolvedBack = baseUriParsed.resolveUri(Uri.parse(fragmentRef));
-        if (resolvedBack.toString() == iri) {
-          return fragmentRef;
-        }
-      }
-
-      // Try simple path-based relativization
-      if (!baseUriParsed.hasQuery && !baseUriParsed.hasFragment) {
-        final basePath = baseUriParsed.path;
-        final iriPath = iriParsed.path;
-
-        // For simple cases where base ends with / and IRI starts with base path
-        if (basePath.endsWith('/') && iriPath.startsWith(basePath)) {
-          final relativePath = iriPath.substring(basePath.length);
-
-          // Construct candidate relative URI
-          var relativeUri = relativePath;
-          if (iriParsed.hasQuery) {
-            relativeUri += '?${iriParsed.query}';
-          }
-          if (iriParsed.hasFragment) {
-            relativeUri += '#${iriParsed.fragment}';
-          }
-
-          // Verify roundtrip: resolve relative URI against base should give original
-          final resolvedBack = baseUriParsed.resolveUri(Uri.parse(relativeUri));
-          if (resolvedBack.toString() == iri) {
-            return relativeUri;
-          }
-        }
-      }
-
-      // Try filename-only relativization (for cases like http://my.host/foo vs http://my.host/path#)
-      if (iriParsed.pathSegments.isNotEmpty) {
-        final filename = iriParsed.pathSegments.last;
-        if (filename.isNotEmpty) {
-          var candidate = filename;
-          if (iriParsed.hasQuery) {
-            candidate += '?${iriParsed.query}';
-          }
-          if (iriParsed.hasFragment) {
-            candidate += '#${iriParsed.fragment}';
-          }
-
-          final resolvedBack = baseUriParsed.resolveUri(Uri.parse(candidate));
-          if (resolvedBack.toString() == iri) {
-            return candidate;
-          }
-        }
-      }
-
-      // If no safe relativization found, return absolute URI
-      return iri;
-    } catch (e) {
-      // If any parsing fails, return the absolute URI
-      return iri;
-    }
+    return relativizeIri(iri, baseUri);
   }
 
   List<BlankNodeTerm>? _buildCollectionChain(

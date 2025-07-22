@@ -22,12 +22,12 @@ class CustomUriResolver implements IUriResolver {
     // For other URIs, perform standard resolution
     if (uri.startsWith('#')) {
       if (baseUri == null) {
-        throw BaseUriRequiredException(relativeUri: uri);
+        throw RdfXmlBaseUriRequiredException(relativeUri: uri);
       }
       return '$baseUri$uri';
     } else if (!uri.contains(':')) {
       if (baseUri == null) {
-        throw BaseUriRequiredException(relativeUri: uri);
+        throw RdfXmlBaseUriRequiredException(relativeUri: uri);
       }
 
       return '$baseUri$uri';

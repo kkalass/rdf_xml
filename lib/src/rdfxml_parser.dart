@@ -787,8 +787,8 @@ final class RdfXmlParser implements IRdfXmlParser {
         _uriLogger.severe('Failed to resolve rdf:about URI', e);
 
         // Re-throw BaseUriRequiredException with context
-        if (e is BaseUriRequiredException) {
-          throw BaseUriRequiredException(
+        if (e is RdfXmlBaseUriRequiredException) {
+          throw RdfXmlBaseUriRequiredException(
             relativeUri: e.relativeUri,
             sourceContext: element.name.qualified,
           );
@@ -809,7 +809,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       try {
         // rdf:ID creates a URI relative to the document base URI
         if (baseUri == null || baseUri.isEmpty) {
-          throw BaseUriRequiredException(
+          throw RdfXmlBaseUriRequiredException(
             relativeUri: '#$idAttr',
             sourceContext: element.name.qualified,
           );
@@ -820,12 +820,12 @@ final class RdfXmlParser implements IRdfXmlParser {
         _uriLogger.severe('Failed to create IRI from rdf:ID', e);
 
         // Re-throw BaseUriRequiredException with context if not already set
-        if (e is BaseUriRequiredException && e.sourceContext == null) {
-          throw BaseUriRequiredException(
+        if (e is RdfXmlBaseUriRequiredException && e.sourceContext == null) {
+          throw RdfXmlBaseUriRequiredException(
             relativeUri: e.relativeUri,
             sourceContext: element.name.qualified,
           );
-        } else if (e is BaseUriRequiredException) {
+        } else if (e is RdfXmlBaseUriRequiredException) {
           rethrow;
         }
 

@@ -141,13 +141,13 @@ final class UriResolutionException extends RdfXmlDecoderException {
 /// Thrown when attempting to resolve relative URIs without a base URI.
 /// This happens when the RDF/XML document has no xml:base attribute
 /// and no documentUrl was provided to the parser.
-final class BaseUriRequiredException extends RdfXmlDecoderException {
+final class RdfXmlBaseUriRequiredException extends RdfXmlDecoderException {
   /// Creates a new base URI required exception
   ///
   /// Parameters:
   /// - [relativeUri] The relative URI that could not be resolved
   /// - [sourceContext] Optional source context where the error occurred
-  const BaseUriRequiredException({
+  const RdfXmlBaseUriRequiredException({
     required this.relativeUri,
     super.sourceContext,
   }) : super("""\n
