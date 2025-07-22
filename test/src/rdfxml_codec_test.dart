@@ -117,6 +117,12 @@ To fix this, either add an xml:base attribute to your RDF/XML document or
 provide a documentUrl parameter when calling the decoder: 
 
 rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
+
+Tip: To encode documents like this (with relative URIs but without xml:base declaration), 
+use the includeBaseDeclaration option and provide a baseUri parameter:
+
+RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
+  .encode(graph, baseUri: 'https://example.org/base/')
 '''.trim();
 
       expect(
@@ -162,7 +168,7 @@ rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
           rdfxml
               .decode(xml, documentUrl: 'http://example.org/resource')
               .triples;
-      print(triples);
+
       expect(triples, isNotEmpty);
       expect(
         triples.first.subject,
@@ -236,7 +242,7 @@ rdfxml.decode(xmlString, documentUrl: 'https://example.org/base/')
   ''';
 
       final triples = rdfxml.decode(xml).triples;
-      print(triples);
+
       expect(triples, isNotEmpty);
       expect(
         triples.first.subject,
