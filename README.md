@@ -41,7 +41,7 @@ Or add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  rdf_xml: ^0.4.0
+  rdf_xml: ^0.4.1
 ```
 
 ## 📖 Usage

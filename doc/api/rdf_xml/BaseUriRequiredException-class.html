@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the IUriResolver class from the rdf_xml library, for the Dart programming language.">
-  <title>IUriResolver class - rdf_xml library - Dart API</title>
+  <meta name="description" content="API docs for the BaseUriRequiredException class from the rdf_xml library, for the Dart programming language.">
+  <title>BaseUriRequiredException class - rdf_xml library - Dart API</title>
 
 
   
@@ -26,9 +26,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rdf_xml</a></li>
     <li><a href="../rdf_xml/">rdf_xml.dart</a></li>
-    <li class="self-crumb">IUriResolver class</li>
+    <li class="self-crumb">BaseUriRequiredException class</li>
   </ol>
-  <div class="self-name">IUriResolver</div>
+  <div class="self-name">BaseUriRequiredException</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,30 +46,90 @@
     id="dartdoc-main-content"
     class="main-content"
     data-above-sidebar="rdf_xml&#47;rdf_xml-library-sidebar.html"
-    data-below-sidebar="rdf_xml&#47;IUriResolver-class-sidebar.html">
+    data-below-sidebar="rdf_xml&#47;BaseUriRequiredException-class-sidebar.html">
     <div>
-<h1><span class="kind-class">IUriResolver</span> class 
-    <a href="https://dart.dev/language/class-modifiers#abstract" class="feature feature-abstract" title="This type can not be directly constructed.">abstract</a>
-    <a href="https://dart.dev/language/class-modifiers#interface" class="feature feature-interface" title="This class can only be implemented (not extended or mixed in).">interface</a>
+<h1><span class="kind-class">BaseUriRequiredException</span> class 
+    <a href="https://dart.dev/language/class-modifiers#final" class="feature feature-final" title="This class can neither be extended, implemented, nor mixed in.">final</a>
  
 </h1></div>
 
     
 <section class="desc markdown">
-  <p>Handles URI resolution for RDF/XML processing</p>
-<p>Responsible for resolving relative URIs against base URIs
-and extracting base URIs from XML documents.</p>
+  <p>Exception for cases where a base URI is required but not available</p>
+<p>Thrown when attempting to resolve relative URIs without a base URI.
+This happens when the RDF/XML document has no xml:base attribute
+and no documentUrl was provided to the parser.</p>
 </section>
 
 
+    <section>
+      <dl class="dl-horizontal">
+        
+  <dt>Inheritance</dt>
+  <dd>
+    <ul class="gt-separated dark clazz-relationships">
+      <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException-class.html">RdfException</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfDecoderException-class.html">RdfDecoderException</a></li>
+        <li><a href="../rdf_xml/RdfXmlDecoderException-class.html">RdfXmlDecoderException</a></li>
+      <li>BaseUriRequiredException</li>
+    </ul>
+  </dd>
+
+        
+        
+
+
+        
+        
+
+
+      </dl>
+    </section>
 
     
+  <section class="summary offset-anchor" id="constructors">
+    <h2>Constructors</h2>
+    <dl class="constructor-summary-list">
+        <dt id="BaseUriRequiredException.new" class="callable">
+          <span class="name"><a href="../rdf_xml/BaseUriRequiredException/BaseUriRequiredException.html">BaseUriRequiredException.new</a></span><span class="signature">({<span class="parameter" id="-param-relativeUri"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">relativeUri</span>, </span><span class="parameter" id="-param-sourceContext"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">sourceContext</span></span>})</span>
+        </dt>
+        <dd>
+          Creates a new base URI required exception
+            <div class="constructor-modifier features">const</div>
+        </dd>
+    </dl>
+  </section>
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="cause" class="property inherited">
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/cause.html">cause</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  The original error that caused this exception, if any
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="format" class="property inherited">
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfDecoderException/format.html">format</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Format being decoded when the exception occurred
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="hashCode" class="property inherited">
   <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>
@@ -79,6 +139,30 @@ and extracting base URIs from XML documents.</p>
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="message" class="property inherited">
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/message.html">message</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Human-readable error message describing the issue
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="relativeUri" class="property">
+  <span class="name"><a href="../rdf_xml/BaseUriRequiredException/relativeUri.html">relativeUri</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  
+
+</dt>
+<dd>
+  The relative URI that could not be resolved
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -94,12 +178,36 @@ and extracting base URIs from XML documents.</p>
 
 </dd>
 
+        <dt id="source" class="property inherited">
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/source.html">source</a></span>
+  <span class="signature">&#8594; <a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/SourceLocation-class.html">SourceLocation</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Optional source information where the error occurred
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="sourceContext" class="property inherited">
+  <span class="name"><a href="../rdf_xml/RdfXmlDecoderException/sourceContext.html">sourceContext</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  Source context where the error occurred
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
     </dl>
   </section>
 
     
   <section
-      class="summary offset-anchor"
+      class="summary offset-anchor inherited"
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
@@ -116,21 +224,8 @@ and extracting base URIs from XML documents.</p>
 
 </dd>
 
-        <dt id="resolveUri" class="callable">
-  <span class="name"><a href="../rdf_xml/IUriResolver/resolveUri.html">resolveUri</a></span><span class="signature">(<wbr><span class="parameter" id="resolveUri-param-uri"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">uri</span>, </span><span class="parameter" id="resolveUri-param-baseUri"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">baseUri</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  Resolves a potentially relative URI against the base URI
-  
-
-</dd>
-
         <dt id="toString" class="callable inherited">
-  <span class="name"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+  <span class="name"><a href="../rdf_xml/RdfXmlDecoderException/toString.html">toString</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
   </span>
   
@@ -180,7 +275,7 @@ and extracting base URIs from XML documents.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rdf_xml</a></li>
     <li><a href="../rdf_xml/">rdf_xml</a></li>
-    <li class="self-crumb">IUriResolver class</li>
+    <li class="self-crumb">BaseUriRequiredException class</li>
 </ol>
 
     <h5>rdf_xml library</h5>

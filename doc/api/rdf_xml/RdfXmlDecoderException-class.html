@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rdf_xml</a></li>
-    <li><a href="../rdf_xml">rdf_xml.dart</a></li>
+    <li><a href="../rdf_xml/">rdf_xml.dart</a></li>
     <li class="self-crumb">RdfXmlDecoderException class</li>
   </ol>
   <div class="self-name">RdfXmlDecoderException</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -71,8 +68,8 @@ to RDF/XML processing errors.</p>
   <dd>
     <ul class="gt-separated dark clazz-relationships">
       <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
-        <li><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfException-class.html">RdfException</a></li>
-        <li><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfDecoderException-class.html">RdfDecoderException</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException-class.html">RdfException</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfDecoderException-class.html">RdfDecoderException</a></li>
       <li>RdfXmlDecoderException</li>
     </ul>
   </dd>
@@ -82,6 +79,7 @@ to RDF/XML processing errors.</p>
 
           <dt>Implementers</dt>
           <dd><ul class="comma-separated clazz-relationships">
+              <li><a href="../rdf_xml/BaseUriRequiredException-class.html">BaseUriRequiredException</a></li>
               <li><a href="../rdf_xml/RdfStructureException-class.html">RdfStructureException</a></li>
               <li><a href="../rdf_xml/UriResolutionException-class.html">UriResolutionException</a></li>
               <li><a href="../rdf_xml/XmlParseException-class.html">XmlParseException</a></li>
@@ -102,7 +100,7 @@ to RDF/XML processing errors.</p>
     <h2>Properties</h2>
     <dl class="properties">
         <dt id="cause" class="property inherited">
-  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfException/cause.html">cause</a></span>
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/cause.html">cause</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span>
   
 
@@ -114,7 +112,7 @@ to RDF/XML processing errors.</p>
 </dd>
 
         <dt id="format" class="property inherited">
-  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfDecoderException/format.html">format</a></span>
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfDecoderException/format.html">format</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
   
 
@@ -138,7 +136,7 @@ to RDF/XML processing errors.</p>
 </dd>
 
         <dt id="message" class="property inherited">
-  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfException/message.html">message</a></span>
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/message.html">message</a></span>
   <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
   
 
@@ -162,8 +160,8 @@ to RDF/XML processing errors.</p>
 </dd>
 
         <dt id="source" class="property inherited">
-  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfException/source.html">source</a></span>
-  <span class="signature">&#8594; <a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/SourceLocation-class.html">SourceLocation</a>?</span>
+  <span class="name"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfException/source.html">source</a></span>
+  <span class="signature">&#8594; <a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/SourceLocation-class.html">SourceLocation</a>?</span>
   
 
 </dt>
@@ -257,7 +255,7 @@ to RDF/XML processing errors.</p>
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rdf_xml</a></li>
-    <li><a href="../rdf_xml">rdf_xml</a></li>
+    <li><a href="../rdf_xml/">rdf_xml</a></li>
     <li class="self-crumb">RdfXmlDecoderException class</li>
 </ol>
 
@@ -270,7 +268,7 @@ to RDF/XML processing errors.</p>
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.0
+      0.4.1
   </span>
   
 </footer>

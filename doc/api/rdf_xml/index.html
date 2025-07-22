@@ -31,17 +31,14 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -220,6 +217,14 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
     <section class="summary offset-anchor" id="exceptions">
       <h2>Exceptions / Errors</h2>
       <dl>
+          <dt id="BaseUriRequiredException">
+  <span class="name "><a href="../rdf_xml/BaseUriRequiredException-class.html">BaseUriRequiredException</a></span> 
+
+</dt>
+<dd>
+  Exception for cases where a base URI is required but not available
+</dd>
+
           <dt id="RdfStructureException">
   <span class="name "><a href="../rdf_xml/RdfStructureException-class.html">RdfStructureException</a></span> 
 
@@ -278,7 +283,7 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
     <h5><span class="package-name">rdf_xml</span> <span class="package-kind">package</span></h5>
     <ol>
       <li class="section-title">Libraries</li>
-      <li><a href="../rdf_xml">rdf_xml</a></li>
+      <li><a href="../rdf_xml/">rdf_xml</a></li>
 </ol>
 
   </div>
@@ -289,7 +294,7 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.0
+      0.4.1
   </span>
   
 </footer>

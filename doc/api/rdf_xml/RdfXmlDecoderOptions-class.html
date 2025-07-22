@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rdf_xml</a></li>
-    <li><a href="../rdf_xml">rdf_xml.dart</a></li>
+    <li><a href="../rdf_xml/">rdf_xml.dart</a></li>
     <li class="self-crumb">RdfXmlDecoderOptions class</li>
   </ol>
   <div class="self-name">RdfXmlDecoderOptions</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -70,7 +67,7 @@
   <dd>
     <ul class="gt-separated dark clazz-relationships">
       <li><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a></li>
-        <li><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a></li>
+        <li><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a></li>
       <li>RdfXmlDecoderOptions</li>
     </ul>
   </dd>
@@ -90,8 +87,8 @@
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
-        <dt id="RdfXmlDecoderOptions" class="callable">
-          <span class="name"><a href="../rdf_xml/RdfXmlDecoderOptions/RdfXmlDecoderOptions.html">RdfXmlDecoderOptions</a></span><span class="signature">({<span class="parameter" id="-param-strictMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">strictMode</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-normalizeWhitespace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">normalizeWhitespace</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-validateOutput"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">validateOutput</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-maxNestingDepth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxNestingDepth</span> = <span class="default-value">100</span></span>})</span>
+        <dt id="RdfXmlDecoderOptions.new" class="callable">
+          <span class="name"><a href="../rdf_xml/RdfXmlDecoderOptions/RdfXmlDecoderOptions.html">RdfXmlDecoderOptions.new</a></span><span class="signature">({<span class="parameter" id="-param-strictMode"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">strictMode</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-normalizeWhitespace"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">normalizeWhitespace</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-validateOutput"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">validateOutput</span> = <span class="default-value">true</span>, </span><span class="parameter" id="-param-maxNestingDepth"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">maxNestingDepth</span> = <span class="default-value">100</span></span>})</span>
         </dt>
         <dd>
           Creates a new immutable decoder options object
@@ -275,7 +272,7 @@
     <h2>Static Methods</h2>
     <dl class="callables">
         <dt id="from" class="callable">
-  <span class="name"><a href="../rdf_xml/RdfXmlDecoderOptions/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-options"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.0/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a></span> <span class="parameter-name">options</span></span>)
+  <span class="name"><a href="../rdf_xml/RdfXmlDecoderOptions/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-options"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a></span> <span class="parameter-name">options</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rdf_xml/RdfXmlDecoderOptions-class.html">RdfXmlDecoderOptions</a></span>
   </span>
   
@@ -301,7 +298,7 @@
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rdf_xml</a></li>
-    <li><a href="../rdf_xml">rdf_xml</a></li>
+    <li><a href="../rdf_xml/">rdf_xml</a></li>
     <li class="self-crumb">RdfXmlDecoderOptions class</li>
 </ol>
 
@@ -314,7 +311,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.0
+      0.4.1
   </span>
   
 </footer>

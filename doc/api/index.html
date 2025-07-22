@@ -30,17 +30,14 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
   <div id="dartdoc-main-content" class="main-content">
@@ -77,7 +74,7 @@
 </code></pre>
 <p>Or add to your <code>pubspec.yaml</code>:</p>
 <pre class="language-yaml"><code class="language-yaml">dependencies:
-  rdf_xml: ^0.4.0
+  rdf_xml: ^0.4.1
 </code></pre>
 <h2 id="-usage">📖 Usage</h2>
 <h3 id="decoding-rdfxml">Decoding RDF/XML</h3>
@@ -209,9 +206,20 @@ final customCodec = RdfXmlCodec(
     prettyPrint: true,
     indentSpaces: 4,
     useTypedNodes: true,
+    includeBaseDeclaration: true, // Controls xml:base attribute inclusion
   ),
 );
+
+// Control base URI handling
+final baseUri = 'http://example.org/base/';
+final withBase = rdfxml.encode(graph, baseUri: baseUri); // Includes xml:base
+final withoutBase = RdfXmlCodec(
+  encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false)
+).encode(graph, baseUri: baseUri); // Omits xml:base but still relativizes URIs
 </code></pre>
+<blockquote>
+<p>💡 <strong>See also</strong>: Check out <a href="example/base_uri_handling.dart"><code>example/base_uri_handling.dart</code></a> for a comprehensive demonstration of base URI options and practical use cases.</p>
+</blockquote>
 <h2 id="-rdfxml-features">📚 RDF/XML Features</h2>
 <p>This library supports all features of the RDF/XML syntax:</p>
 <ul>
@@ -248,7 +256,7 @@ final customCodec = RdfXmlCodec(
           <h2>Libraries</h2>
         <dl>
           <dt id="rdf_xml">
-  <span class="name"><a href="rdf_xml">rdf_xml</a></span> 
+  <span class="name"><a href="rdf_xml/">rdf_xml</a></span> 
 
 </dt>
 <dd>RDF/XML Codec Implementation for rdf_core
@@ -271,7 +279,7 @@ final customCodec = RdfXmlCodec(
     <h5 class="hidden-xs"><span class="package-name">rdf_xml</span> <span class="package-kind">package</span></h5>
     <ol>
       <li class="section-title">Libraries</li>
-      <li><a href="rdf_xml">rdf_xml</a></li>
+      <li><a href="rdf_xml/">rdf_xml</a></li>
 </ol>
 
   </div>
@@ -281,7 +289,7 @@ final customCodec = RdfXmlCodec(
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.0
+      0.4.1
   </span>
   
 </footer>
