@@ -5,72 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.3] - 2025-07-23
 
-### Changed
+## [0.4.2] - 2025-07-23
 
-- **Breaking**: Replaced custom namespace management with rdf_core's IriCompaction system for improved IRI handling and consistency across RDF libraries
-- **Breaking**: Removed `INamespaceManager` interface and `DefaultNamespaceManager` implementation in favor of standardized IRI compaction
-- **Dependency**: Updated rdf_core dependency from 0.9.7 to 0.9.9 to leverage new IRI compaction features
+### Breaking Changes
 
-### Removed
-
-- Custom IRI utility code (`iri_util.dart`) - now using rdf_core's standardized implementation
-- Namespace manager test suite as functionality is now provided by rdf_core
-- Custom URI resolution and relativization logic in favor of RFC 3986 compliant implementation from rdf_core
+- **Namespace Management**: Replaced `INamespaceManager` interface and `DefaultNamespaceManager` with rdf_core's standardized IRI compaction system for better consistency across RDF libraries
+- **Dependency**: Updated rdf_core dependency from 0.9.7 to 0.9.9
 
 ### Fixed
 
-- **URI Resolution**: Now uses rdf_core's `resolveIri` function with proper `BaseIriRequiredException` handling for consistent behavior
-- **Error Handling**: Enhanced `RdfXmlEncoderException` with `cause` parameter for better error tracking and debugging
+- **xml:base Attribute Handling**: Fixed hierarchical xml:base resolution where relative xml:base values are now properly resolved against their parent element's base URI
+- **xml:base Parsing**: Fixed issue where xml:base attributes were incorrectly parsed as RDF property triples instead of being used solely for URI resolution
+- **URI Resolution**: Improved RFC 3986 compliance for URI resolution, particularly edge cases involving base URIs with fragment identifiers
+- **URI Relativization**: Fixed roundtrip consistency issues where relativized URIs could not be correctly resolved back to their original form
+- **Fragment URI Handling**: Better handling of URIs that differ only by fragment from the base URI
+- **Error Handling**: Enhanced `RdfXmlEncoderException` with `cause` parameter for better error tracking
 
 ### Improved
 
-- **Code Maintainability**: Significant reduction in custom code by leveraging battle-tested implementations from rdf_core
-- **IRI Compaction**: More sophisticated IRI compaction with role-based compaction settings (predicates, types, subjects, objects)
-- **XML Serialization**: Better handling of QName generation with proper validation for XML local names
-- **Test Quality**: Replaced print statements with proper logging in test suite
-
-## [0.4.2] - 2025-07-22
-
-### Fixed
-
-- **URI Relativization**: Complete rewrite of URI relativization logic in RDF/XML serialization to ensure RFC 3986 compliance
-- **Roundtrip Consistency**: Fixed issue where relativized URIs could not be correctly resolved back to their original form
-- **Fragment-only URI Handling**: Improved handling of URIs that differ only by fragment from the base URI
-- **Empty Relative URI Generation**: Fixed generation of empty relative URIs when the target URI exactly matches the base URI
-
-### Added
-
-- Comprehensive RFC 3986 compliant URI relativization algorithm with proper roundtrip verification
-- New test suite `uri_relativization_consistency_test.dart` for verifying URI relativization and resolution consistency
-- Enhanced error handling in URI relativization with fallback to absolute URIs when safe relativization is not possible
-
-### Improved
-
+- **IRI Compaction**: More sophisticated IRI compaction with role-based settings for predicates, types, subjects, and objects
+- **XML Serialization**: Better QName generation with proper validation for XML local names
 - **Serialization Performance**: More efficient URI relativization with optimized checks for common cases
-- **URI Resolution Accuracy**: Better handling of edge cases in URI relativization including fragment-only differences and path-based relativization
-- **Code Maintainability**: Extracted URI relativization logic into dedicated method with comprehensive documentation
-
-## [0.4.2] - 2025-07-22
-
-### Fixed
-
-- **Base URI Resolution**: Fixed hierarchical xml:base attribute resolution to properly resolve relative xml:base values against their parent element's base URI
-- **xml:base Attribute Parsing**: Fixed issue where xml:base attributes were incorrectly parsed as RDF property triples instead of being used for URI resolution only
-- **RFC 3986 Compliance**: Ensured full RFC 3986 compliance for URI resolution, particularly for edge cases like base URIs ending with fragment identifiers
-
-### Added
-
-- Comprehensive test suite for RFC 3986 URI resolution compliance
-- Integration tests for complex xml:base scenarios including nested base URI declarations
-- Tests covering various URI resolution edge cases (fragments, queries, relative paths, absolute paths)
-
-### Improved
-
-- Enhanced URI resolution to properly handle nested xml:base attributes in RDF/XML documents
-- Better separation of xml:base processing from regular RDF attribute processing
-- More robust handling of relative URI resolution in complex document structures
+- **URI Resolution**: Enhanced handling of nested xml:base attributes in complex RDF/XML documents
 
 ## [0.4.1] - 2025-07-21
 
