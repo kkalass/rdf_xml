@@ -5,7 +5,7 @@
 library rdfxml.parsing.implementations;
 
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/src/iri_util.dart';
+import 'package:rdf_core/rdf_core_extend.dart';
 import 'package:xml/xml.dart';
 
 import '../exceptions.dart';
@@ -35,7 +35,7 @@ final class DefaultUriResolver implements IUriResolver {
   String resolveUri(String uri, String? baseUri) {
     try {
       return resolveIri(uri, baseUri);
-    } on BaseUriRequiredException catch (e) {
+    } on BaseIriRequiredException catch (e) {
       throw RdfXmlBaseUriRequiredException(relativeUri: e.relativeUri);
     }
   }

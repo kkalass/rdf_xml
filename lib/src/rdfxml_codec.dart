@@ -33,9 +33,6 @@ final class RdfXmlCodec extends RdfGraphCodec {
   /// URI resolver for handling URI resolution
   final IUriResolver _uriResolver;
 
-  /// Namespace manager for handling namespace declarations
-  final INamespaceManager _namespaceManager;
-
   final RdfNamespaceMappings _namespaceMappings;
 
   /// XML builder for creating XML documents
@@ -52,14 +49,13 @@ final class RdfXmlCodec extends RdfGraphCodec {
   /// Parameters:
   /// - [xmlDocumentProvider] Optional XML document provider
   /// - [uriResolver] Optional URI resolver
-  /// - [namespaceManager] Optional namespace manager
+  /// - [namespaceMappings] Optional namespace mappings
   /// - [xmlBuilder] Optional XML builder
   /// - [decoderOptions] Optional decoder options
   /// - [encoderOptions] Optional encoder options
   RdfXmlCodec({
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
-    INamespaceManager? namespaceManager,
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlDecoderOptions? decoderOptions,
     RdfXmlEncoderOptions? encoderOptions,
@@ -68,12 +64,6 @@ final class RdfXmlCodec extends RdfGraphCodec {
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
        _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
-       _namespaceManager =
-           namespaceManager ??
-           DefaultNamespaceManager(
-             namespaceMappings:
-                 namespaceMappings ?? const RdfNamespaceMappings(),
-           ),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
        _decoderOptions = decoderOptions ?? const RdfXmlDecoderOptions(),
        _encoderOptions = encoderOptions ?? const RdfXmlEncoderOptions();
@@ -101,7 +91,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
   @override
   RdfGraphEncoder get encoder {
     return RdfXmlEncoder(
-      namespaceManager: _namespaceManager,
+      namespaceMappings: _namespaceMappings,
       xmlBuilder: _xmlBuilder,
       options: _encoderOptions,
     );
@@ -114,7 +104,6 @@ final class RdfXmlCodec extends RdfGraphCodec {
   }) => RdfXmlCodec(
     xmlDocumentProvider: _xmlDocumentProvider,
     uriResolver: _uriResolver,
-    namespaceManager: _namespaceManager,
     namespaceMappings: _namespaceMappings,
     xmlBuilder: _xmlBuilder,
     decoderOptions: RdfXmlDecoderOptions.from(decoder ?? _decoderOptions),
@@ -165,7 +154,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
   RdfXmlCodec copyWith({
     IXmlDocumentProvider? xmlDocumentProvider,
     IUriResolver? uriResolver,
-    INamespaceManager? namespaceManager,
+    RdfNamespaceMappings? namespaceMappings,
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlDecoderOptions? decoderOptions,
     RdfXmlEncoderOptions? encoderOptions,
@@ -173,7 +162,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
     return RdfXmlCodec(
       xmlDocumentProvider: xmlDocumentProvider ?? _xmlDocumentProvider,
       uriResolver: uriResolver ?? _uriResolver,
-      namespaceManager: namespaceManager ?? _namespaceManager,
+      namespaceMappings: namespaceMappings ?? _namespaceMappings,
       xmlBuilder: xmlBuilder ?? _xmlBuilder,
       decoderOptions: decoderOptions ?? _decoderOptions,
       encoderOptions: encoderOptions ?? _encoderOptions,
@@ -231,7 +220,7 @@ final class RdfXmlDecoder extends RdfGraphDecoder {
 /// Adapter class to make RdfXmlSerializer compatible with the RdfGraphEncoder interface
 final class RdfXmlEncoder extends RdfGraphEncoder {
   /// Namespace manager for handling namespace declarations
-  final INamespaceManager _namespaceManager;
+  final RdfNamespaceMappings _namespaceMappings;
 
   /// XML builder for creating XML documents
   final IRdfXmlBuilder _xmlBuilder;
@@ -241,16 +230,16 @@ final class RdfXmlEncoder extends RdfGraphEncoder {
 
   /// Creates a new adapter for RdfXmlSerializer
   const RdfXmlEncoder({
-    required INamespaceManager namespaceManager,
+    required RdfNamespaceMappings namespaceMappings,
     required IRdfXmlBuilder xmlBuilder,
     required RdfXmlEncoderOptions options,
-  }) : _namespaceManager = namespaceManager,
+  }) : _namespaceMappings = namespaceMappings,
        _xmlBuilder = xmlBuilder,
        _options = options;
 
   @override
   RdfGraphEncoder withOptions(RdfGraphEncoderOptions options) => RdfXmlEncoder(
-    namespaceManager: _namespaceManager,
+    namespaceMappings: _namespaceMappings,
     xmlBuilder: _xmlBuilder,
     options: RdfXmlEncoderOptions.from(options),
   );
@@ -258,7 +247,7 @@ final class RdfXmlEncoder extends RdfGraphEncoder {
   @override
   String convert(RdfGraph graph, {String? baseUri}) {
     final serializer = RdfXmlSerializer(
-      namespaceManager: _namespaceManager,
+      namespaceMappings: _namespaceMappings,
       xmlBuilder: _xmlBuilder,
       options: _options,
     );

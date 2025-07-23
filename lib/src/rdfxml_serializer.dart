@@ -28,11 +28,47 @@ library rdfxml_serializer;
 
 import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
+import 'package:rdf_xml/src/rdfxml_constants.dart';
 
 import 'configuration.dart';
 import 'exceptions.dart';
 import 'implementations/serialization_impl.dart';
 import 'interfaces/serialization.dart';
+
+/// Checks if a string is a valid XML local name
+///
+/// Simple validation for XML names.
+
+bool _isValidXmlName(String name) {
+  if (name.isEmpty) {
+    return false;
+  }
+
+  // First character must be a letter or underscore
+  final firstChar = name.codeUnitAt(0);
+  if (!((firstChar >= 65 && firstChar <= 90) || // A-Z
+      (firstChar >= 97 && firstChar <= 122) || // a-z
+      firstChar == 95)) {
+    // _
+    return false;
+  }
+
+  // Subsequent characters can also include digits and some symbols
+  for (int i = 1; i < name.length; i++) {
+    final char = name.codeUnitAt(i);
+    if (!((char >= 65 && char <= 90) || // A-Z
+        (char >= 97 && char <= 122) || // a-z
+        (char >= 48 && char <= 57) || // 0-9
+        char == 95 || // _
+        char == 45 || // -
+        char == 46)) {
+      // .
+      return false;
+    }
+  }
+
+  return true;
+}
 
 /// Serializer for RDF/XML format
 ///
@@ -49,7 +85,7 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
   static final _logger = Logger('rdf.serializer.rdfxml');
 
   /// Namespace manager for handling namespace declarations
-  final INamespaceManager _namespaceManager;
+  final IriCompaction _iriCompaction;
 
   /// XML builder for creating XML documents
   final IRdfXmlBuilder _xmlBuilder;
@@ -60,14 +96,40 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
   /// Creates a new RDF/XML serializer
   ///
   /// Parameters:
-  /// - [namespaceManager] Optional namespace manager for handling namespace operations
+
   /// - [xmlBuilder] Optional XML builder for creating XML documents
   /// - [options] Optional serializer options
   RdfXmlSerializer({
-    INamespaceManager? namespaceManager,
+    RdfNamespaceMappings? namespaceMappings,
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlEncoderOptions? options,
-  }) : _namespaceManager = namespaceManager ?? const DefaultNamespaceManager(),
+  }) : _iriCompaction = IriCompaction(
+         namespaceMappings ?? const RdfNamespaceMappings(),
+         IriCompactionSettings(
+           // Really important in XML: we usually do not want full iris, but for example predicates must be prefix:localName
+           generateMissingPrefixes: true,
+           allowedCompactionTypes: {
+             ...allowedCompactionTypesAll,
+             IriRole.datatype: {
+               IriCompactionType.full,
+               IriCompactionType.prefixed,
+             },
+             IriRole.predicate: {IriCompactionType.prefixed},
+             IriRole.type: {IriCompactionType.prefixed},
+             IriRole.subject: {
+               IriCompactionType.full,
+               IriCompactionType.relative,
+             },
+             IriRole.object: {
+               IriCompactionType.full,
+               IriCompactionType.relative,
+             },
+           },
+           specialPredicates: {},
+           specialDatatypes: {RdfTerms.string},
+         ),
+         _isValidXmlName,
+       ),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
        _options = options ?? const RdfXmlEncoderOptions();
 
@@ -92,16 +154,17 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
       }
 
       // Build namespace declarations
-      final namespaces = _namespaceManager.buildNamespaceDeclarations(
+      final iriCompactionResult = _iriCompaction.compactAllIris(
         graph,
         customPrefixes,
+        baseUri: baseUri,
       );
 
       // Build XML document
       final document = _xmlBuilder.buildDocument(
         graph,
         baseUri,
-        namespaces,
+        iriCompactionResult,
         _options,
       );
 
@@ -110,12 +173,16 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
         pretty: _options.prettyPrint,
         indent: ' ' * _options.indentSpaces,
       );
-    } catch (e) {
-      _logger.severe('Error serializing to RDF/XML: $e');
+    } catch (e, stackTrace) {
+      _logger.severe('Error serializing to RDF/XML: $e', e, stackTrace);
+      print(stackTrace);
       if (e is RdfXmlEncoderException) {
         rethrow;
       }
-      throw RdfXmlEncoderException('Error serializing to RDF/XML: $e');
+      throw RdfXmlEncoderException(
+        'Error serializing to RDF/XML: $e',
+        cause: e,
+      );
     }
   }
 }

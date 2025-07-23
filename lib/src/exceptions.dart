@@ -183,8 +183,11 @@ final class RdfXmlEncoderException extends RdfEncoderException {
   /// Parameters:
   /// - [message] Detailed error message
   /// - [subjectContext] Optional subject context where the error occurred
-  const RdfXmlEncoderException(super.message, {this.subjectContext})
-    : super(format: 'application/rdf+xml');
+  const RdfXmlEncoderException(
+    super.message, {
+    this.subjectContext,
+    super.cause,
+  }) : super(format: 'application/rdf+xml');
 
   /// Subject context where the error occurred
   final String? subjectContext;

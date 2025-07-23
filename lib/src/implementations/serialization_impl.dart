@@ -8,12 +8,11 @@ import 'dart:math';
 
 import 'package:logging/logging.dart';
 import 'package:rdf_core/rdf_core.dart';
-import 'package:rdf_xml/src/iri_util.dart';
 import 'package:xml/xml.dart';
 
+import '../configuration.dart';
 import '../interfaces/serialization.dart';
 import '../rdfxml_constants.dart';
-import '../configuration.dart';
 
 final _logger = Logger('rdf.serializer.rdfxml');
 
@@ -237,289 +236,17 @@ final class _SubjectGroup {
   }
 }
 
-/// Default implementation of INamespaceManager
-///
-/// Manages namespaces and QName conversions for RDF/XML serialization.
-/// Includes caching and optimized algorithms for better performance with large documents.
-///
-final class DefaultNamespaceManager implements INamespaceManager {
-  /// Namespace mappings registry
-  final RdfNamespaceMappings _namespaceMappings;
-
-  /// Cache for QName conversions
-  static final Map<String, Map<String, String?>> _qnameCache = {};
-
-  /// Cache for namespace extractions from IRIs
-  static final Map<String, String?> _namespaceExtractionCache = {};
-
-  /// Creates a new DefaultNamespaceManager
-  ///
-  /// Parameters:
-  /// - [namespaceMappings] Optional namespace mappings to use
-  const DefaultNamespaceManager({RdfNamespaceMappings? namespaceMappings})
-    : _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings();
-
-  @override
-  Map<String, String> buildNamespaceDeclarations(
-    RdfGraph graph,
-    Map<String, String> customPrefixes,
-  ) {
-    // Track which namespaces are actually used
-    final usedNamespaces = <String, String>{};
-
-    // Always include RDF namespace, as it's required for RDF/XML
-    final rdfNamespace = RdfTerms.rdfNamespace;
-    usedNamespaces['rdf'] = rdfNamespace;
-
-    // Create maps to track namespaces and IRIs
-    final allNamespaces = Map<String, String>.from(_namespaceMappings.asMap());
-    allNamespaces.addAll(customPrefixes);
-
-    // Track processed IRIs to avoid duplicates
-    final processedIris = <String>{};
-
-    // Extract namespaces from IRI terms in the graph
-    for (final triple in graph.triples) {
-      _extractNamespacesFromTriple(
-        triple,
-        allNamespaces,
-        usedNamespaces,
-        processedIris,
-      );
-    }
-
-    return usedNamespaces;
-  }
-
-  /// Extracts namespaces from a triple's components
-  void _extractNamespacesFromTriple(
-    Triple triple,
-    Map<String, String> allNamespaces,
-    Map<String, String> usedNamespaces,
-    Set<String> processedIris,
-  ) {
-    // Only predicate and type object are relevant for namespace extraction
-    _collectUsedNamespace(
-      triple.predicate,
-      allNamespaces,
-      usedNamespaces,
-      processedIris,
-    );
-    if (triple.predicate == RdfTerms.type) {
-      _collectUsedNamespace(
-        triple.object,
-        allNamespaces,
-        usedNamespaces,
-        processedIris,
-      );
-    }
-  }
-
-  @override
-  String? iriToQName(String iri, Map<String, String> namespaces) {
-    // Check if this combination is in the cache
-    final cacheKey = iri;
-    final nsKey = namespaces.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join(',');
-
-    if (_qnameCache.containsKey(nsKey) &&
-        _qnameCache[nsKey]!.containsKey(cacheKey)) {
-      return _qnameCache[nsKey]![cacheKey];
-    }
-
-    // Initialize the namespace cache if needed
-    _qnameCache[nsKey] ??= {};
-
-    // Try to convert to QName
-    String? result;
-
-    // Sort namespaces by length (descending) for best match
-    final sortedNamespaces =
-        namespaces.entries.toList()
-          ..sort((a, b) => b.value.length.compareTo(a.value.length));
-
-    for (final entry in sortedNamespaces) {
-      final prefix = entry.key;
-      final namespace = entry.value;
-
-      if (iri.startsWith(namespace)) {
-        final localName = iri.substring(namespace.length);
-        // Ensure the local name is a valid XML name
-        if (_isValidXmlName(localName) && localName.isNotEmpty) {
-          result = '$prefix:$localName';
-          break;
-        }
-      }
-    }
-
-    // Cache the result
-    _qnameCache[nsKey]![cacheKey] = result;
-    return result;
-  }
-
-  /// Collects namespaces that are actually used in the document
-  void _collectUsedNamespace(
-    RdfTerm term,
-    Map<String, String> allNamespaces,
-    Map<String, String> usedNamespaces,
-    Set<String> processedIris,
-  ) {
-    if (term is! IriTerm) {
-      return;
-    }
-
-    final iri = term.iri;
-
-    // Skip if already processed
-    if (processedIris.contains(iri)) {
-      return;
-    }
-    processedIris.add(iri);
-
-    // Check if this IRI uses a known namespace
-    final qname = iriToQName(iri, allNamespaces);
-    if (qname != null) {
-      // Extract prefix from QName
-      final prefixEnd = qname.indexOf(':');
-      if (prefixEnd > 0) {
-        final prefix = qname.substring(0, prefixEnd);
-
-        // Find the namespace for this prefix
-        final namespace = allNamespaces[prefix];
-        if (namespace != null) {
-          // Add this namespace to used namespaces
-          usedNamespaces[prefix] = namespace;
-          return;
-        }
-      }
-    }
-
-    // If we get here, we need to create a new namespace entry
-    _extractNamespace(iri, usedNamespaces);
-  }
-
-  /// Extracts namespace from an IRI
-  ///
-  /// Helper method to find namespaces used in the graph data with caching.
-  /// This helps to generate compact QNames where possible.
-  void _extractNamespace(String iri, Map<String, String> namespaces) {
-    // Skip if this is an already known namespace
-    if (namespaces.containsValue(iri)) {
-      return;
-    }
-
-    // Check namespace extraction cache
-    if (_namespaceExtractionCache.containsKey(iri)) {
-      final cachedNamespace = _namespaceExtractionCache[iri];
-      if (cachedNamespace != null) {
-        // Check if this namespace is already registered with any prefix
-        if (!namespaces.containsValue(cachedNamespace)) {
-          _assignPrefixToNamespace(cachedNamespace, namespaces);
-        }
-      }
-      return;
-    }
-
-    // Try to extract a namespace using common namespace delimiters
-    final lastHash = iri.lastIndexOf('#');
-    final lastSlash = iri.lastIndexOf('/');
-
-    // Prefer hash-based namespaces over path-based ones
-    final nsEnd =
-        lastHash > 0
-            ? lastHash + 1
-            : lastSlash > 0
-            ? lastSlash + 1
-            : -1;
-
-    if (nsEnd > 0) {
-      final namespace = iri.substring(0, nsEnd);
-
-      // Cache the extraction result
-      _namespaceExtractionCache[iri] = namespace;
-
-      // Skip if this namespace is already registered with any prefix
-      if (namespaces.containsValue(namespace)) {
-        return;
-      }
-
-      _assignPrefixToNamespace(namespace, namespaces);
-    } else {
-      // Cache the failed extraction
-      _namespaceExtractionCache[iri] = null;
-    }
-  }
-
-  /// Assigns a prefix to a namespace, maintaining consistency
-  void _assignPrefixToNamespace(
-    String namespace,
-    Map<String, String> namespaces,
-  ) {
-    // Check known namespace mappings first for consistent prefixes
-    final (prefix, generated) = _namespaceMappings.getOrGeneratePrefix(
-      namespace,
-      customMappings: namespaces,
-    );
-    // make sure we know the prefix from now on
-    namespaces[prefix] = namespace;
-  }
-
-  /// Checks if a string is a valid XML local name
-  ///
-  /// Simple validation for XML names.
-  bool _isValidXmlName(String name) {
-    if (name.isEmpty) {
-      return false;
-    }
-
-    // First character must be a letter or underscore
-    final firstChar = name.codeUnitAt(0);
-    if (!((firstChar >= 65 && firstChar <= 90) || // A-Z
-        (firstChar >= 97 && firstChar <= 122) || // a-z
-        firstChar == 95)) {
-      // _
-      return false;
-    }
-
-    // Subsequent characters can also include digits and some symbols
-    for (int i = 1; i < name.length; i++) {
-      final char = name.codeUnitAt(i);
-      if (!((char >= 65 && char <= 90) || // A-Z
-          (char >= 97 && char <= 122) || // a-z
-          (char >= 48 && char <= 57) || // 0-9
-          char == 95 || // _
-          char == 45 || // -
-          char == 46)) {
-        // .
-        return false;
-      }
-    }
-
-    return true;
-  }
-}
-
 /// Default implementation of IRdfXmlBuilder
 ///
 /// Builds XML documents from RDF graphs for serialization.
 /// Includes performance optimizations for handling large datasets.
 final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
-  /// Namespace manager for handling namespace declarations and QName conversions
-  final INamespaceManager _namespaceManager;
-
-  /// Cache for type-to-QName lookups to improve serialization performance
-  static final Map<IriTerm, Map<String, String?>> _typeQNameCache = {};
-
   /// Current base URI for the document being serialized
   String? _currentBaseUri;
 
   /// Creates a new DefaultRdfXmlBuilder
   ///
-  /// Parameters:
-  /// - [namespaceManager] Namespace manager for handling namespace operations
-  DefaultRdfXmlBuilder({INamespaceManager? namespaceManager})
-    : _namespaceManager = namespaceManager ?? const DefaultNamespaceManager();
+  DefaultRdfXmlBuilder();
 
   /// Current mapping of subject to triples for the current serialization
   /// Initialized in buildDocument
@@ -541,7 +268,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   XmlDocument buildDocument(
     RdfGraph graph,
     String? baseUri,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     RdfXmlEncoderOptions options,
   ) {
     // Store the base URI for use in reification
@@ -553,7 +280,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     builder.declaration(version: '1.0', encoding: 'UTF-8');
 
     // Group triples by subject for more compact output
-    _currentSubjectGroups = _groupTriplesBySubject(graph, namespaces);
+    _currentSubjectGroups = _groupTriplesBySubject(graph, iriCompaction);
 
     // Detect reification patterns in the graph
     _reifiedStatementsMap = _identifyReificationPatterns(_currentSubjectGroups);
@@ -573,7 +300,11 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
       'rdf:RDF',
       nest: () {
         // Add namespace declarations
-        for (final entry in namespaces.entries) {
+        final namespaces = iriCompaction.prefixes.entries.where(
+          (e) => e.key != 'rdf',
+        );
+        builder.attribute('xmlns:rdf', RdfTerms.rdfNamespace);
+        for (final entry in namespaces) {
           builder.attribute('xmlns:${entry.key}', entry.value);
         }
 
@@ -612,14 +343,14 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
               _serializeSubject(
                 builder,
                 _SubjectGroup(sg.subject, sg._baseUrl, newTriples, null),
-                namespaces,
+                iriCompaction,
                 processedBlankNodes,
               );
             }
             continue;
           }
 
-          _serializeSubject(builder, sg, namespaces, processedBlankNodes);
+          _serializeSubject(builder, sg, iriCompaction, processedBlankNodes);
         }
 
         // Second pass: serialize  nodes that were not processed inline
@@ -627,7 +358,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           // process blank nodes that were not already processed as nested resources
           if (sg.subject is BlankNodeTerm &&
               !processedBlankNodes.contains(sg.subject)) {
-            _serializeSubject(builder, sg, namespaces, processedBlankNodes);
+            _serializeSubject(builder, sg, iriCompaction, processedBlankNodes);
           }
         }
       },
@@ -687,7 +418,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   /// nesting multiple predicates under a single subject.
   Map<RdfSubject, _SubjectGroup> _groupTriplesBySubject(
     RdfGraph graph,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
   ) {
     final groups = <RdfSubject, List<Triple>>{};
 
@@ -701,31 +432,28 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         e.key,
         _currentBaseUri,
         e.value,
-        (typeIri) => _getTypeQName(typeIri, namespaces),
+        (typeIri) => _getTypeQName(typeIri, iriCompaction),
       );
     }
     return result;
   }
 
   /// Gets a QName for a type IRI with caching for better performance
-  String? _getTypeQName(IriTerm typeIri, Map<String, String> namespaces) {
-    final nsKey = namespaces.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join(',');
+  String? _getTypeQName(IriTerm typeIri, IriCompactionResult iriCompaction) {
+    final compacted = iriCompaction.compactIri(typeIri, IriRole.type);
+    return _toQName(compacted, typeIri);
+  }
 
-    // Initialize cache for this namespace set if needed
-    _typeQNameCache[typeIri] ??= {};
-
-    // Check cache
-    if (_typeQNameCache[typeIri]!.containsKey(nsKey)) {
-      return _typeQNameCache[typeIri]![nsKey];
-    }
-
-    // Compute and cache
-    final result = _namespaceManager.iriToQName(typeIri.iri, namespaces);
-    _typeQNameCache[typeIri]![nsKey] = result;
-
-    return result;
+  String _toQName(CompactIri? compacted, IriTerm typeIri) {
+    return switch (compacted) {
+      PrefixedIri(prefix: var prefix, localPart: var localPart) =>
+        '$prefix:$localPart',
+      null => throw ArgumentError('Unknown IRI compacted form for $typeIri'),
+      _ =>
+        throw ArgumentError(
+          'QName required - must be PrefixedIri - the other types are illegal $typeIri - $compacted. Check the compaction settings.',
+        ),
+    };
   }
 
   Map<BlankNodeTerm, String> _blankNodeIds = {};
@@ -738,7 +466,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
   void _serializeSubject(
     XmlBuilder builder,
     _SubjectGroup subjectGroup,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     Set<BlankNodeTerm> processedBlankNodes, {
     bool suppressNodeId = false,
   }) {
@@ -755,7 +483,10 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         // Add subject identification
         switch (subject) {
           case IriTerm _:
-            builder.attribute('rdf:about', getResourceReference(subject));
+            builder.attribute(
+              'rdf:about',
+              _getResourceReference(subject, IriRole.subject, iriCompaction),
+            );
           case BlankNodeTerm _:
             if (!suppressNodeId) {
               builder.attribute('rdf:nodeID', _blankNodeId(subject));
@@ -775,7 +506,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             subjectGroup,
             triple.predicate,
             triple.object,
-            namespaces,
+            iriCompaction,
             processedBlankNodes,
           );
         }
@@ -792,16 +523,20 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     _SubjectGroup subjectGroup,
     RdfPredicate predicate,
     RdfObject object,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     Set<BlankNodeTerm> processedBlankNodes,
   ) {
-    final iri = (predicate as IriTerm).iri;
+    final iri = predicate as IriTerm;
     // Get QName for predicate if possible
-    final predicateQName = _namespaceManager.iriToQName(iri, namespaces);
-    if (predicateQName == null) {
+    final compacted = iriCompaction.compactIri(iri, IriRole.predicate);
+    final String predicateQName;
+    try {
+      predicateQName = _toQName(compacted, iri);
+    } catch (e) {
       throw RdfEncoderException(
-        "Could not create a qname for ${iri} and known prefixes ${namespaces.keys}}",
+        "Could not create a qname for ${iri} and known prefixes ${iriCompaction.prefixes.keys}",
         format: "rdf/xml",
+        cause: e,
       );
     }
 
@@ -814,7 +549,11 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         builder.element(
           predicateQName,
           attributes: {
-            'rdf:resource': getResourceReference(object),
+            'rdf:resource': _getResourceReference(
+              object,
+              predicate == RdfTerms.type ? IriRole.type : IriRole.object,
+              iriCompaction,
+            ),
             if (localId != null) 'rdf:ID': localId,
           },
         );
@@ -830,7 +569,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             localId,
             object,
             containerGroup.containerType!,
-            namespaces,
+            iriCompaction,
             processedBlankNodes,
           );
         } else if (_collectionsMap.containsKey(object)) {
@@ -840,7 +579,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
             predicateQName,
             localId,
             object,
-            namespaces,
+            iriCompaction,
             processedBlankNodes,
           );
         } else if (_collectionChainNodes.contains(object)) {
@@ -879,7 +618,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
                 _serializeSubject(
                   builder,
                   containerGroup,
-                  namespaces,
+                  iriCompaction,
                   processedBlankNodes,
                   suppressNodeId: true,
                 );
@@ -941,7 +680,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     String? localId,
     BlankNodeTerm containerNode,
     String containerType,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     Set<BlankNodeTerm> processedBlankNodes,
   ) {
     // Get container triples
@@ -1023,7 +762,13 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
                 case IriTerm iri:
                   builder.element(
                     qName,
-                    attributes: {'rdf:resource': getResourceReference(iri)},
+                    attributes: {
+                      'rdf:resource': _getResourceReference(
+                        iri,
+                        IriRole.object,
+                        iriCompaction,
+                      ),
+                    },
                   );
                 case BlankNodeTerm blankNodeTerm:
                   // Blank node reference
@@ -1062,7 +807,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     String predicateQName,
     String? localId,
     BlankNodeTerm collectionNode,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     Set<BlankNodeTerm> processedBlankNodes,
   ) {
     // Get collection info
@@ -1096,7 +841,13 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
               // Resource reference
               builder.element(
                 'rdf:Description',
-                attributes: {'rdf:about': getResourceReference(item)},
+                attributes: {
+                  'rdf:about': _getResourceReference(
+                    item,
+                    IriRole.object,
+                    iriCompaction,
+                  ),
+                },
               );
             case BlankNodeTerm blankNode:
               // Check if this is a typed node
@@ -1113,7 +864,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
               _serializeSubject(
                 builder,
                 nodeGroup,
-                namespaces,
+                iriCompaction,
                 processedBlankNodes,
               );
 
@@ -1126,15 +877,26 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     );
   }
 
-  String getResourceReference(IriTerm item) {
-    final iri = item.iri;
-    final baseUri = _currentBaseUri;
-
-    if (baseUri == null || baseUri.isEmpty) {
-      return iri;
-    }
-
-    return relativizeIri(iri, baseUri);
+  String _getResourceReference(
+    IriTerm item,
+    IriRole role,
+    IriCompactionResult iriCompaction,
+  ) {
+    final compacted = iriCompaction.compactIri(item, role);
+    return switch (compacted) {
+      PrefixedIri(prefix: var prefix, localPart: var localPart) =>
+        '$prefix:$localPart',
+      RelativeIri(relative: var relative) => relative,
+      FullIri(iri: var iri) => iri,
+      SpecialIri(iri: var iri) => () {
+        _logger.warning(
+          'WARNING: Special IRI $iri used in serialization. '
+          'This either means that a special treatment was not applied, or an IRI was configured as special which is not so special at all.',
+        );
+        return iri.iri;
+      }(),
+      null => throw ArgumentError('Unknown IRI compacted form for $item'),
+    };
   }
 
   List<BlankNodeTerm>? _buildCollectionChain(

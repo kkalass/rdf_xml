@@ -1,6 +1,8 @@
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'package:rdf_xml/src/implementations/parsing_impl.dart';
 
+final _log = Logger('URI Resolution Test');
 void main() {
   group('URI Resolution RFC 3986 Compliance', () {
     late DefaultUriResolver resolver;
@@ -17,9 +19,9 @@ void main() {
 
       final result = resolver.resolveUri(relativeUri, baseUri);
 
-      print('Base URI: $baseUri');
-      print('Relative URI: $relativeUri');
-      print('Resolved result: $result');
+      _log.info('Base URI: $baseUri');
+      _log.info('Relative URI: $relativeUri');
+      _log.info('Resolved result: $result');
 
       // This should NOT be 'http://my.host/path#foo'
       expect(result, isNot(equals('http://my.host/path#foo')));

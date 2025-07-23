@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.3] - 2025-07-22
+## [0.4.3] - 2025-07-23
+
+### Changed
+
+- **Breaking**: Replaced custom namespace management with rdf_core's IriCompaction system for improved IRI handling and consistency across RDF libraries
+- **Breaking**: Removed `INamespaceManager` interface and `DefaultNamespaceManager` implementation in favor of standardized IRI compaction
+- **Dependency**: Updated rdf_core dependency from 0.9.7 to 0.9.9 to leverage new IRI compaction features
+
+### Removed
+
+- Custom IRI utility code (`iri_util.dart`) - now using rdf_core's standardized implementation
+- Namespace manager test suite as functionality is now provided by rdf_core
+- Custom URI resolution and relativization logic in favor of RFC 3986 compliant implementation from rdf_core
+
+### Fixed
+
+- **URI Resolution**: Now uses rdf_core's `resolveIri` function with proper `BaseIriRequiredException` handling for consistent behavior
+- **Error Handling**: Enhanced `RdfXmlEncoderException` with `cause` parameter for better error tracking and debugging
+
+### Improved
+
+- **Code Maintainability**: Significant reduction in custom code by leveraging battle-tested implementations from rdf_core
+- **IRI Compaction**: More sophisticated IRI compaction with role-based compaction settings (predicates, types, subjects, objects)
+- **XML Serialization**: Better handling of QName generation with proper validation for XML local names
+- **Test Quality**: Replaced print statements with proper logging in test suite
+
+## [0.4.2] - 2025-07-22
 
 ### Fixed
 

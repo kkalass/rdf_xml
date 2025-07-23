@@ -24,27 +24,6 @@ abstract interface class IRdfXmlSerializer {
   });
 }
 
-/// Provides namespace management functionality
-///
-/// Handles extraction, resolution and management of namespaces
-/// used in RDF/XML serialization.
-abstract interface class INamespaceManager {
-  /// Builds namespace declarations for the RDF/XML document
-  ///
-  /// Combines standard RDF namespaces, custom prefixes, and extracts
-  /// namespaces used in the graph triples.
-  Map<String, String> buildNamespaceDeclarations(
-    RdfGraph graph,
-    Map<String, String> customPrefixes,
-  );
-
-  /// Converts an IRI to a QName using the namespace mappings
-  ///
-  /// Returns a prefixed name (e.g., "dc:title") if a matching prefix is found,
-  /// or null if no prefix matches.
-  String? iriToQName(String iri, Map<String, String> namespaces);
-}
-
 /// Provides XML building functionality for RDF/XML serialization
 ///
 /// Abstracts the XML building process to enable better testability
@@ -57,7 +36,7 @@ abstract interface class IRdfXmlBuilder {
   XmlDocument buildDocument(
     RdfGraph graph,
     String? baseUri,
-    Map<String, String> namespaces,
+    IriCompactionResult iriCompaction,
     RdfXmlEncoderOptions options,
   );
 }

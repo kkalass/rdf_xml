@@ -85,6 +85,7 @@ void main() {
       final graph = RdfGraph(triples: [Triple(subject, predicate, object)]);
 
       final xml = encoder.convert(graph);
+
       expect(xml, contains('<rdf:RDF'));
       expect(
         xml,
@@ -192,6 +193,7 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
         ]),
         baseUri: 'http://example.org/resource',
       );
+
       expect(newXml, contains('xml:base="http://example.org/resource"'));
       expect(newXml, contains('<rdf:Description rdf:about="">'));
     });
