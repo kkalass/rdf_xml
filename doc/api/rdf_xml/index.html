@@ -114,14 +114,6 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
   Manages blank node creation and retrieval
 </dd>
 
-          <dt id="INamespaceManager">
-  <span class="name "><a href="../rdf_xml/INamespaceManager-class.html">INamespaceManager</a></span> 
-
-</dt>
-<dd>
-  Provides namespace management functionality
-</dd>
-
           <dt id="IRdfXmlBuilder">
   <span class="name "><a href="../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a></span> 
 
@@ -217,20 +209,20 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
     <section class="summary offset-anchor" id="exceptions">
       <h2>Exceptions / Errors</h2>
       <dl>
-          <dt id="BaseUriRequiredException">
-  <span class="name "><a href="../rdf_xml/BaseUriRequiredException-class.html">BaseUriRequiredException</a></span> 
-
-</dt>
-<dd>
-  Exception for cases where a base URI is required but not available
-</dd>
-
           <dt id="RdfStructureException">
   <span class="name "><a href="../rdf_xml/RdfStructureException-class.html">RdfStructureException</a></span> 
 
 </dt>
 <dd>
   Exception for RDF structure errors
+</dd>
+
+          <dt id="RdfXmlBaseUriRequiredException">
+  <span class="name "><a href="../rdf_xml/RdfXmlBaseUriRequiredException-class.html">RdfXmlBaseUriRequiredException</a></span> 
+
+</dt>
+<dd>
+  Exception for cases where a base URI is required but not available
 </dd>
 
           <dt id="RdfXmlDecoderException">
@@ -294,7 +286,7 @@ final rdfXml = rdfCore.encode(rdfGraph, contentType: "application/rdf+xml");
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.1
+      0.4.2
   </span>
   
 </footer>

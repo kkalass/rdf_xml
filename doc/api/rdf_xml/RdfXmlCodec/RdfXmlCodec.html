@@ -56,11 +56,10 @@
       
       <span class="name ">RdfXmlCodec</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="-param-xmlDocumentProvider"><span class="type-annotation"><a href="../../rdf_xml/IXmlDocumentProvider-class.html">IXmlDocumentProvider</a>?</span> <span class="parameter-name">xmlDocumentProvider</span>, </span></li>
 <li><span class="parameter" id="-param-uriResolver"><span class="type-annotation"><a href="../../rdf_xml/IUriResolver-class.html">IUriResolver</a>?</span> <span class="parameter-name">uriResolver</span>, </span></li>
-<li><span class="parameter" id="-param-namespaceManager"><span class="type-annotation"><a href="../../rdf_xml/INamespaceManager-class.html">INamespaceManager</a>?</span> <span class="parameter-name">namespaceManager</span>, </span></li>
 <li><span class="parameter" id="-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="-param-decoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlDecoderOptions-class.html">RdfXmlDecoderOptions</a>?</span> <span class="parameter-name">decoderOptions</span>, </span></li>
 <li><span class="parameter" id="-param-encoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a>?</span> <span class="parameter-name">encoderOptions</span>, </span></li>
-<li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
+<li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.9/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
 </ol>})
     </section>
     
@@ -70,7 +69,7 @@
 <ul>
 <li><code>xmlDocumentProvider</code> Optional XML document provider</li>
 <li><code>uriResolver</code> Optional URI resolver</li>
-<li><code>namespaceManager</code> Optional namespace manager</li>
+<li><code>namespaceMappings</code> Optional namespace mappings</li>
 <li><code>xmlBuilder</code> Optional XML builder</li>
 <li><code>decoderOptions</code> Optional decoder options</li>
 <li><code>encoderOptions</code> Optional encoder options</li>
@@ -84,7 +83,6 @@
   <pre class="language-dart"><code class="language-dart">RdfXmlCodec({
   IXmlDocumentProvider? xmlDocumentProvider,
   IUriResolver? uriResolver,
-  INamespaceManager? namespaceManager,
   IRdfXmlBuilder? xmlBuilder,
   RdfXmlDecoderOptions? decoderOptions,
   RdfXmlEncoderOptions? encoderOptions,
@@ -93,12 +91,6 @@
          xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
      _uriResolver = uriResolver ?? const DefaultUriResolver(),
      _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
-     _namespaceManager =
-         namespaceManager ??
-         DefaultNamespaceManager(
-           namespaceMappings:
-               namespaceMappings ?? const RdfNamespaceMappings(),
-         ),
      _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
      _decoderOptions = decoderOptions ?? const RdfXmlDecoderOptions(),
      _encoderOptions = encoderOptions ?? const RdfXmlEncoderOptions();</code></pre>
@@ -129,7 +121,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.1
+      0.4.2
   </span>
   
 </footer>

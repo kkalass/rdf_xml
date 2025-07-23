@@ -64,7 +64,7 @@
         <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-      <span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.9.7/rdf/RdfGraphEncoder-class.html">RdfGraphEncoder</a></span>
+      <span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.9.9/rdf/RdfGraphEncoder-class.html">RdfGraphEncoder</a></span>
       get
       <span class="name ">encoder</span>
       <div class="features"><span class="feature">override</span></div>
@@ -83,7 +83,7 @@ to text in this codec's format.</p>
   <pre class="language-dart"><code class="language-dart">@override
 RdfGraphEncoder get encoder {
   return RdfXmlEncoder(
-    namespaceManager: _namespaceManager,
+    namespaceMappings: _namespaceMappings,
     xmlBuilder: _xmlBuilder,
     options: _encoderOptions,
   );
@@ -117,7 +117,7 @@ RdfGraphEncoder get encoder {
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.1
+      0.4.2
   </span>
   
 </footer>

@@ -56,6 +56,7 @@
       const
       <span class="name ">RdfXmlEncoderException</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-message"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">message</span>, {</span></li>
 <li><span class="parameter" id="-param-subjectContext"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">subjectContext</span>, </span></li>
+<li><span class="parameter" id="-param-cause"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Object-class.html">Object</a>?</span> <span class="parameter-name">cause</span>, </span></li>
 </ol>})
     </section>
     
@@ -72,8 +73,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">const RdfXmlEncoderException(super.message, {this.subjectContext})
-  : super(format: &#39;application&#47;rdf+xml&#39;);</code></pre>
+  <pre class="language-dart"><code class="language-dart">const RdfXmlEncoderException(
+  super.message, {
+  this.subjectContext,
+  super.cause,
+}) : super(format: &#39;application&#47;rdf+xml&#39;);</code></pre>
 </section>
 
 
@@ -101,7 +105,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.1
+      0.4.2
   </span>
   
 </footer>
