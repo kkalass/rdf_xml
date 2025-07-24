@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.3] - 2025-07-24
+
+### Changed
+
+- **Dependencies**: Updated rdf_core dependency from ^0.9.9 to ^0.9.11 to avoid potential issues during serialization and improve compatibility
+
 ## [0.4.2] - 2025-07-23
 
 ### Breaking Changes

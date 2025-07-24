@@ -895,7 +895,6 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         );
         return iri.iri;
       }(),
-      null => throw ArgumentError('Unknown IRI compacted form for $item'),
     };
   }
 
