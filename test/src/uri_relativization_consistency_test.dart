@@ -110,7 +110,7 @@ void main() {
           LiteralTerm.string('Sub Resource'),
         ),
         Triple(
-          IriTerm('http://my.host/other'), // Should NOT be relativized
+          IriTerm('http://my.host/other'), // Should also be relativized
           IriTerm('http://example.org/title'),
           LiteralTerm.string('Other Resource'),
         ),
@@ -121,8 +121,9 @@ void main() {
 
       // First should be relativized to 'subresource'
       expect(encodedXml, contains('rdf:about="subresource"'));
-      // Second should remain absolute
-      expect(encodedXml, contains('rdf:about="http://my.host/other"'));
+      // Second should also be relativized to '../other'
+      // because it is one level up from the base URI
+      expect(encodedXml, contains('rdf:about="../other"'));
     });
 
     test('edge case: empty relative URI', () {

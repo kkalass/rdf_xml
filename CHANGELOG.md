@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.4] - 2025-07-29
+
+### Changed
+
+- **Dependencies**: Updated rdf_core dependency from ^0.9.11 to ^0.9.12 for improved encoder options and IRI relativization features
+
+### Improved
+
+- **Encoder Options**: Enhanced `RdfXmlEncoderOptions` to properly inherit from `RdfGraphEncoderOptions` using super parameters for better compatibility and consistency
+- **IRI Relativization**: Added support for configurable IRI relativization options through the new `iriRelativization` parameter
+
+### Fixed
+
+- **URI Relativization Tests**: Corrected test expectations to match proper RFC 3986 compliant URI relativization behavior
+
 ## [0.4.3] - 2025-07-24
 
 ### Changed

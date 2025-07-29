@@ -159,16 +159,14 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   /// Has no effect if no baseUri is provided during encoding.
   final bool includeBaseDeclaration;
 
-  @override
-  final Map<String, String> customPrefixes;
-
   /// Creates a new immutable serializer options object
   ///
   /// All parameters are optional with sensible defaults.
   const RdfXmlEncoderOptions({
+    super.customPrefixes = const {},
+    super.iriRelativization = const IriRelativizationOptions.local(),
     this.prettyPrint = true,
     this.indentSpaces = 2,
-    this.customPrefixes = const {},
     this.useTypedNodes = true,
     this.includeBaseDeclaration = true,
   });
@@ -215,12 +213,14 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
   /// Creates a copy of this options object with the given values
   ///
   /// Returns a new instance with updated values.
+  @override
   RdfXmlEncoderOptions copyWith({
     bool? prettyPrint,
     int? indentSpaces,
     bool? useTypedNodes,
     bool? includeBaseDeclaration,
     Map<String, String>? customPrefixes,
+    IriRelativizationOptions? iriRelativization,
   }) {
     return RdfXmlEncoderOptions(
       prettyPrint: prettyPrint ?? this.prettyPrint,
@@ -229,6 +229,7 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
       includeBaseDeclaration:
           includeBaseDeclaration ?? this.includeBaseDeclaration,
       customPrefixes: customPrefixes ?? this.customPrefixes,
+      iriRelativization: iriRelativization ?? this.iriRelativization,
     );
   }
 
@@ -239,7 +240,8 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
         other.prettyPrint == prettyPrint &&
         other.indentSpaces == indentSpaces &&
         other.useTypedNodes == useTypedNodes &&
-        other.includeBaseDeclaration == includeBaseDeclaration;
+        other.includeBaseDeclaration == includeBaseDeclaration &&
+        other.iriRelativization == iriRelativization;
   }
 
   @override
@@ -248,6 +250,7 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
     indentSpaces,
     useTypedNodes,
     includeBaseDeclaration,
+    iriRelativization,
   );
 
   @override
@@ -256,5 +259,7 @@ final class RdfXmlEncoderOptions extends RdfGraphEncoderOptions {
       'prettyPrint: $prettyPrint, '
       'indentSpaces: $indentSpaces, '
       'useTypedNodes: $useTypedNodes, '
-      'includeBaseDeclaration: $includeBaseDeclaration)';
+      'includeBaseDeclaration: $includeBaseDeclaration, '
+      'customPrefixes(not part of equals/hashCode!): $customPrefixes, '
+      'iriRelativization: $iriRelativization)';
 }
