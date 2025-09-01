@@ -106,6 +106,8 @@ final class RdfXmlSerializer implements IRdfXmlSerializer {
   }) : _iriCompaction = IriCompaction(
          namespaceMappings ?? const RdfNamespaceMappings(),
          IriCompactionSettings(
+           iriRelativization:
+               options?.iriRelativization ?? IriRelativizationOptions.full(),
            // Really important in XML: we usually do not want full iris, but for example predicates must be prefix:localName
            generateMissingPrefixes: true,
            allowedCompactionTypes: {

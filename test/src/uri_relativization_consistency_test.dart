@@ -9,7 +9,13 @@ void main() {
     late RdfXmlCodec codec;
 
     setUp(() {
-      codec = RdfXmlCodec();
+      codec = RdfXmlCodec(
+        encoderOptions: RdfXmlEncoderOptions(
+          iriRelativization: IriRelativizationOptions.full().copyWith(
+            allowAbsolutePath: false,
+          ),
+        ),
+      );
     });
 
     test('roundtrip consistency: base URI ending with fragment', () {
