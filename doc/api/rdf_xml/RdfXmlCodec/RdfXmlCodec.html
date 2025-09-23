@@ -59,7 +59,8 @@
 <li><span class="parameter" id="-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="-param-decoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlDecoderOptions-class.html">RdfXmlDecoderOptions</a>?</span> <span class="parameter-name">decoderOptions</span>, </span></li>
 <li><span class="parameter" id="-param-encoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a>?</span> <span class="parameter-name">encoderOptions</span>, </span></li>
-<li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
+<li><span class="parameter" id="-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
+<li><span class="parameter" id="-param-iriTermFactory"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/IriTermFactory.html">IriTermFactory</a></span> <span class="parameter-name">iriTermFactory</span> = <span class="default-value">IriTerm.validated</span>, </span></li>
 </ol>})
     </section>
     
@@ -87,11 +88,13 @@
   RdfXmlDecoderOptions? decoderOptions,
   RdfXmlEncoderOptions? encoderOptions,
   RdfNamespaceMappings? namespaceMappings,
+  IriTermFactory iriTermFactory = IriTerm.validated,
 }) : _xmlDocumentProvider =
          xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
      _uriResolver = uriResolver ?? const DefaultUriResolver(),
      _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
      _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
+     _iriTermFactory = iriTermFactory,
      _decoderOptions = decoderOptions ?? const RdfXmlDecoderOptions(),
      _encoderOptions = encoderOptions ?? const RdfXmlEncoderOptions();</code></pre>
 </section>
@@ -121,7 +124,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.5
+      0.4.6
   </span>
   
 </footer>

@@ -59,9 +59,10 @@
         <li>@<a href="https://api.flutter.dev/flutter/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-<span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a></span>
-<span class="name ">withOptions</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="withOptions-param-encoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfGraphEncoderOptions-class.html">RdfGraphEncoderOptions</a>?</span> <span class="parameter-name">encoder</span>, </span></li>
-<li><span class="parameter" id="withOptions-param-decoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a>?</span> <span class="parameter-name">decoder</span>, </span></li>
+<span class="returntype"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a></span>
+<span class="name ">withOptions</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="withOptions-param-encoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfGraphEncoderOptions-class.html">RdfGraphEncoderOptions</a>?</span> <span class="parameter-name">encoder</span>, </span></li>
+<li><span class="parameter" id="withOptions-param-decoder"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfGraphDecoderOptions-class.html">RdfGraphDecoderOptions</a>?</span> <span class="parameter-name">decoder</span>, </span></li>
+<li><span class="parameter" id="withOptions-param-iriTermFactory"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/IriTermFactory.html">IriTermFactory</a>?</span> <span class="parameter-name">iriTermFactory</span>, </span></li>
 </ol>})
 
       <div class="features"><span class="feature">override</span></div>
@@ -74,7 +75,7 @@
 provided encoder and decoder options. The original codec instance remains unchanged.</p>
 <p>The <code>encoder</code> parameter contains optional encoder options to customize encoding behavior.
 The <code>decoder</code> parameter contains optional decoder options to customize decoding behavior.</p>
-<p>Returns a new <a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a> instance with the specified options applied.</p>
+<p>Returns a new <a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfGraphCodec-class.html">RdfGraphCodec</a> instance with the specified options applied.</p>
 <p>This follows the immutable configuration pattern, allowing for clean
 method chaining and configuration without side effects.</p>
 </section>
@@ -87,6 +88,7 @@ method chaining and configuration without side effects.</p>
 RdfGraphCodec withOptions({
   RdfGraphEncoderOptions? encoder,
   RdfGraphDecoderOptions? decoder,
+  IriTermFactory? iriTermFactory,
 }) =&gt; RdfXmlCodec(
   xmlDocumentProvider: _xmlDocumentProvider,
   uriResolver: _uriResolver,
@@ -94,6 +96,7 @@ RdfGraphCodec withOptions({
   xmlBuilder: _xmlBuilder,
   decoderOptions: RdfXmlDecoderOptions.from(decoder ?? _decoderOptions),
   encoderOptions: RdfXmlEncoderOptions.from(encoder ?? _encoderOptions),
+  iriTermFactory: iriTermFactory ?? _iriTermFactory,
 );</code></pre>
 </section>
 
@@ -122,7 +125,7 @@ RdfGraphCodec withOptions({
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.5
+      0.4.6
   </span>
   
 </footer>

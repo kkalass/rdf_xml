@@ -57,10 +57,11 @@
 <span class="returntype"><a href="../../rdf_xml/RdfXmlCodec-class.html">RdfXmlCodec</a></span>
 <span class="name ">copyWith</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="copyWith-param-xmlDocumentProvider"><span class="type-annotation"><a href="../../rdf_xml/IXmlDocumentProvider-class.html">IXmlDocumentProvider</a>?</span> <span class="parameter-name">xmlDocumentProvider</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-uriResolver"><span class="type-annotation"><a href="../../rdf_xml/IUriResolver-class.html">IUriResolver</a>?</span> <span class="parameter-name">uriResolver</span>, </span></li>
-<li><span class="parameter" id="copyWith-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.14/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-namespaceMappings"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/RdfNamespaceMappings-class.html">RdfNamespaceMappings</a>?</span> <span class="parameter-name">namespaceMappings</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-xmlBuilder"><span class="type-annotation"><a href="../../rdf_xml/IRdfXmlBuilder-class.html">IRdfXmlBuilder</a>?</span> <span class="parameter-name">xmlBuilder</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-decoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlDecoderOptions-class.html">RdfXmlDecoderOptions</a>?</span> <span class="parameter-name">decoderOptions</span>, </span></li>
 <li><span class="parameter" id="copyWith-param-encoderOptions"><span class="type-annotation"><a href="../../rdf_xml/RdfXmlEncoderOptions-class.html">RdfXmlEncoderOptions</a>?</span> <span class="parameter-name">encoderOptions</span>, </span></li>
+<li><span class="parameter" id="copyWith-param-iriTermFactory"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/IriTermFactory.html">IriTermFactory</a>?</span> <span class="parameter-name">iriTermFactory</span>, </span></li>
 </ol>})
 
       
@@ -83,6 +84,7 @@
   IRdfXmlBuilder? xmlBuilder,
   RdfXmlDecoderOptions? decoderOptions,
   RdfXmlEncoderOptions? encoderOptions,
+  IriTermFactory? iriTermFactory,
 }) {
   return RdfXmlCodec(
     xmlDocumentProvider: xmlDocumentProvider ?? _xmlDocumentProvider,
@@ -91,6 +93,7 @@
     xmlBuilder: xmlBuilder ?? _xmlBuilder,
     decoderOptions: decoderOptions ?? _decoderOptions,
     encoderOptions: encoderOptions ?? _encoderOptions,
+    iriTermFactory: iriTermFactory ?? _iriTermFactory,
   );
 }</code></pre>
 </section>
@@ -120,7 +123,7 @@
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.5
+      0.4.6
   </span>
   
 </footer>

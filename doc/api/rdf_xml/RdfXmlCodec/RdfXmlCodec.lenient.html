@@ -54,7 +54,8 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">RdfXmlCodec.lenient</span>(<wbr>)
+      <span class="name ">RdfXmlCodec.lenient</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="lenient-param-iriTermFactory"><span class="type-annotation"><a href="https://pub.dev/documentation/rdf_core/0.9.15/rdf/IriTermFactory.html">IriTermFactory</a></span> <span class="parameter-name">iriTermFactory</span> = <span class="default-value">IriTerm.validated</span>, </span></li>
+</ol>})
     </section>
     
 <section class="desc markdown">
@@ -67,8 +68,12 @@ even non-conformant RDF/XML.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">factory RdfXmlCodec.lenient() =&gt;
-    RdfXmlCodec(decoderOptions: RdfXmlDecoderOptions.lenient());</code></pre>
+  <pre class="language-dart"><code class="language-dart">factory RdfXmlCodec.lenient({
+  IriTermFactory iriTermFactory = IriTerm.validated,
+}) =&gt; RdfXmlCodec(
+  decoderOptions: RdfXmlDecoderOptions.lenient(),
+  iriTermFactory: iriTermFactory,
+);</code></pre>
 </section>
 
 
@@ -96,7 +101,7 @@ even non-conformant RDF/XML.</p>
 <footer>
   <span class="no-break">
     rdf_xml
-      0.4.5
+      0.4.6
   </span>
   
 </footer>
