@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.4.6] - 2025-09-23
+
+### Changed
+
+- **Dependencies**: Updated rdf_core dependency from ^0.9.14 to ^0.9.15 for improved IRI term factory support
+
+### Added
+
+- **IRI Term Factory Support**: Added configurable `IriTermFactory` parameter to `RdfXmlCodec`, `RdfXmlDecoder`, and `RdfXmlParser` constructors for custom IRI term creation
+- **Factory Methods**: Updated all factory methods (`strict()`, `lenient()`, `readable()`, `compact()`) to accept optional `iriTermFactory` parameter
+
+### Improved
+
+- **Performance**: Updated IRI term creation to use const constructors where possible for better performance
+- **API Consistency**: Updated internal usage from `IriTerm.iri` to `IriTerm.value` to match rdf_core API changes
+- **Code Examples**: Updated all example files to use const constructors for IRI terms
+
 ## [0.4.5] - 2025-08-01
 
 ### Fixed

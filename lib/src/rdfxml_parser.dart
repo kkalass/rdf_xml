@@ -80,6 +80,8 @@ final class RdfXmlParser implements IRdfXmlParser {
   /// Parser options for configuring behavior
   final RdfXmlDecoderOptions _options;
 
+  final IriTermFactory _iriTermFactory;
+
   /// XML document parsed from input
   late final XmlDocument _document;
 
@@ -103,7 +105,9 @@ final class RdfXmlParser implements IRdfXmlParser {
     IBlankNodeManager? blankNodeManager,
     RdfNamespaceMappings? namespaceMappings,
     RdfXmlDecoderOptions? options,
+    IriTermFactory iriTermFactory = IriTerm.validated,
   }) : _documentUri = baseUri,
+       _iriTermFactory = iriTermFactory,
        _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
@@ -354,7 +358,7 @@ final class RdfXmlParser implements IRdfXmlParser {
             elementName: element.name.qualified,
           );
         }
-        final typeIri = IriTerm(
+        final typeIri = _iriTermFactory(
           '${element.name.namespaceUri}${element.name.local}',
         );
         triples.add(Triple(currentSubject, RdfTerms.type, typeIri));
@@ -372,7 +376,7 @@ final class RdfXmlParser implements IRdfXmlParser {
               elementName: element.name.qualified,
             );
           }
-          final predicate = IriTerm(
+          final predicate = _iriTermFactory(
             '${attr.name.namespaceUri}${attr.name.local}',
           );
           final object = LiteralTerm.string(attr.value);
@@ -430,7 +434,7 @@ final class RdfXmlParser implements IRdfXmlParser {
       );
 
       // Create the base triple
-      final triple = Triple(subject, predicate, IriTerm(objectIri));
+      final triple = Triple(subject, predicate, _iriTermFactory(objectIri));
       triples.add(triple);
 
       // Handle reification if rdf:ID is present
@@ -505,7 +509,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           }
 
           // Add triple using the direct resource reference
-          triples.add(Triple(subject, predicate, IriTerm(objectIri)));
+          triples.add(Triple(subject, predicate, _iriTermFactory(objectIri)));
 
           // Also process the child element with its own subject
           _processNode(childElement, baseUri, triples);
@@ -559,7 +563,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           elementName: propertyElement.name.qualified,
         );
       }
-      final datatype = IriTerm(resolveUri);
+      final datatype = _iriTermFactory(resolveUri);
       triples.add(
         Triple(
           subject,
@@ -619,7 +623,7 @@ final class RdfXmlParser implements IRdfXmlParser {
     triples.add(Triple(subject, predicate, containerNode));
 
     // Add type triple
-    final containerType = IriTerm(
+    final containerType = _iriTermFactory(
       '${RdfTerms.rdfNamespace}${containerElement.localName}',
     );
     triples.add(Triple(containerNode, RdfTerms.type, containerType));
@@ -631,7 +635,9 @@ final class RdfXmlParser implements IRdfXmlParser {
       if (itemElement.localName == 'li' &&
           itemElement.namespaceUri == RdfTerms.rdfNamespace) {
         // Create predicate (rdf:_1, rdf:_2, etc.)
-        final itemPredicate = IriTerm('${RdfTerms.rdfNamespace}_$itemIndex');
+        final itemPredicate = _iriTermFactory(
+          '${RdfTerms.rdfNamespace}_$itemIndex',
+        );
 
         // Process item value
         final resourceAttr = itemElement.getAttribute(
@@ -642,7 +648,9 @@ final class RdfXmlParser implements IRdfXmlParser {
         if (resourceAttr != null) {
           // Resource reference
           final objectIri = _uriResolver.resolveUri(resourceAttr, itemBaseUri);
-          triples.add(Triple(containerNode, itemPredicate, IriTerm(objectIri)));
+          triples.add(
+            Triple(containerNode, itemPredicate, _iriTermFactory(objectIri)),
+          );
         } else if (itemElement.childElements.isNotEmpty) {
           // Nested resource
           final nestedNode = BlankNodeTerm();
@@ -674,7 +682,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           final langAttr = getLangAttribute(itemElement);
 
           if (datatypeAttr != null) {
-            final datatype = IriTerm(
+            final datatype = _iriTermFactory(
               _uriResolver.resolveUri(datatypeAttr, itemBaseUri),
             );
             triples.add(
@@ -723,39 +731,39 @@ final class RdfXmlParser implements IRdfXmlParser {
     }
 
     // Create the statement IRI
-    final statementIri = IriTerm('${baseUri}#$idAttr');
+    final statementIri = _iriTermFactory('${baseUri}#$idAttr');
 
     // Add the reification triples
     triples.add(
       Triple(
         statementIri,
         RdfTerms.type,
-        IriTerm('${RdfTerms.rdfNamespace}Statement'),
+        const IriTerm('${RdfTerms.rdfNamespace}Statement'),
       ),
     );
 
     triples.add(
       Triple(
         statementIri,
-        IriTerm('${RdfTerms.rdfNamespace}subject'),
+        const IriTerm('${RdfTerms.rdfNamespace}subject'),
         baseTriple.subject,
       ),
     );
 
     // Convert predicate to object
-    final predicateIri = (baseTriple.predicate as IriTerm).iri;
+    final predicateIri = (baseTriple.predicate as IriTerm).value;
     triples.add(
       Triple(
         statementIri,
-        IriTerm('${RdfTerms.rdfNamespace}predicate'),
-        IriTerm(predicateIri),
+        _iriTermFactory('${RdfTerms.rdfNamespace}predicate'),
+        _iriTermFactory(predicateIri),
       ),
     );
 
     triples.add(
       Triple(
         statementIri,
-        IriTerm('${RdfTerms.rdfNamespace}object'),
+        const IriTerm('${RdfTerms.rdfNamespace}object'),
         baseTriple.object,
       ),
     );
@@ -782,7 +790,7 @@ final class RdfXmlParser implements IRdfXmlParser {
             elementName: element.name.qualified,
           );
         }
-        return IriTerm(iri);
+        return _iriTermFactory(iri);
       } catch (e) {
         _uriLogger.severe('Failed to resolve rdf:about URI', e);
 
@@ -815,7 +823,7 @@ final class RdfXmlParser implements IRdfXmlParser {
           );
         }
         final iri = '${baseUri}#$idAttr';
-        return IriTerm(iri);
+        return _iriTermFactory(iri);
       } catch (e) {
         _uriLogger.severe('Failed to create IRI from rdf:ID', e);
 
@@ -863,7 +871,7 @@ final class RdfXmlParser implements IRdfXmlParser {
         elementName: element.name.qualified,
       );
     }
-    return IriTerm('$namespaceUri$localName');
+    return _iriTermFactory('$namespaceUri$localName');
   }
 
   /// Normalizes whitespace according to XML rules
@@ -1032,7 +1040,7 @@ final class RdfXmlParser implements IRdfXmlParser {
 
       if (datatypeAttr != null) {
         // Typed literal
-        final datatype = IriTerm(
+        final datatype = _iriTermFactory(
           _uriResolver.resolveUri(datatypeAttr, baseUri),
         );
         itemObject = LiteralTerm(literalValue, datatype: datatype);

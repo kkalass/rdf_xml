@@ -26,10 +26,10 @@ void main() {
       // when encoding, and correctly resolved back to 'http://my.host/foo' when decoding
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm(
+          const IriTerm(
             'http://my.host/foo',
           ), // This should be what we get after resolving 'foo'
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Test Resource'),
         ),
       ]);
@@ -46,10 +46,10 @@ void main() {
       final subject = decodedTriples[0].subject as IriTerm;
 
       _log.info('Original IRI: http://my.host/foo');
-      _log.info('Decoded IRI:  ${subject.iri}');
+      _log.info('Decoded IRI:  ${subject.value}');
 
       // This should work correctly with consistent relativization
-      expect(subject.iri, equals('http://my.host/foo'));
+      expect(subject.value, equals('http://my.host/foo'));
     });
 
     test('RFC 3986 compliant relativization with fragment base URI', () {
@@ -58,8 +58,10 @@ void main() {
 
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://my.host/foo'), // This should relativize to 'foo'
-          IriTerm('http://example.org/title'),
+          const IriTerm(
+            'http://my.host/foo',
+          ), // This should relativize to 'foo'
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Should be relativized to foo'),
         ),
       ]);
@@ -75,7 +77,7 @@ void main() {
       final decodedGraph = codec.decode(encodedXml, documentUrl: baseUri);
       final decodedTriples = decodedGraph.triples.toList();
       final subject = decodedTriples[0].subject as IriTerm;
-      expect(subject.iri, equals('http://my.host/foo'));
+      expect(subject.value, equals('http://my.host/foo'));
     });
 
     test('Fragment-only relativization optimization', () {
@@ -85,8 +87,8 @@ void main() {
       // This URI differs only by fragment and should be relativized to just #foo
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://my.host/path#foo'),
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://my.host/path#foo'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Should be relativized to #foo'),
         ),
       ]);
@@ -102,7 +104,7 @@ void main() {
       final decodedGraph = codec.decode(encodedXml, documentUrl: baseUri);
       final decodedTriples = decodedGraph.triples.toList();
       final subject = decodedTriples[0].subject as IriTerm;
-      expect(subject.iri, equals('http://my.host/path#foo'));
+      expect(subject.value, equals('http://my.host/path#foo'));
     });
 
     test('proper relativization examples', () {
@@ -111,13 +113,13 @@ void main() {
 
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://my.host/path/subresource'),
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://my.host/path/subresource'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Sub Resource'),
         ),
         Triple(
-          IriTerm('http://my.host/other'), // Should also be relativized
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://my.host/other'), // Should also be relativized
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Other Resource'),
         ),
       ]);
@@ -138,8 +140,8 @@ void main() {
 
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://my.host/document'), // Exactly equals base URI
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://my.host/document'), // Exactly equals base URI
+          const IriTerm('http://example.org/title'),
           LiteralTerm.string('Document'),
         ),
       ]);
@@ -155,7 +157,7 @@ void main() {
       final decodedTriples = decodedGraph.triples.toList();
       final subject = decodedTriples[0].subject as IriTerm;
 
-      expect(subject.iri, equals('http://my.host/document'));
+      expect(subject.value, equals('http://my.host/document'));
     });
   });
 }

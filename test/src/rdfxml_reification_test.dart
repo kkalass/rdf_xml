@@ -38,7 +38,7 @@ void main() {
       // Check the statement has the right type
       final typeTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
+            t.subject == const IriTerm('http://example.org/statement1') &&
             t.predicate == RdfTerms.type,
       );
       expect(typeTriple.object, equals(RdfTerms.Statement));
@@ -46,45 +46,48 @@ void main() {
       // Check the reified subject
       final subjectTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
+            t.subject == const IriTerm('http://example.org/statement1') &&
             t.predicate == RdfTerms.subject,
       );
       expect(
         subjectTriple.object,
-        equals(IriTerm('http://example.org/JohnDoe')),
+        equals(const IriTerm('http://example.org/JohnDoe')),
       );
 
       // Check the reified predicate
       final predicateTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
+            t.subject == const IriTerm('http://example.org/statement1') &&
             t.predicate == RdfTerms.predicate,
       );
       expect(
         predicateTriple.object,
-        equals(IriTerm('http://example.org/authorOf')),
+        equals(const IriTerm('http://example.org/authorOf')),
       );
 
       // Check the reified object
       final objectTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
+            t.subject == const IriTerm('http://example.org/statement1') &&
             t.predicate == RdfTerms.object,
       );
-      expect(objectTriple.object, equals(IriTerm('http://example.org/Book1')));
+      expect(
+        objectTriple.object,
+        equals(const IriTerm('http://example.org/Book1')),
+      );
 
       // Check the metadata about the reified statement
       final assertedByTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/assertedBy',
+            t.subject == const IriTerm('http://example.org/statement1') &&
+            (t.predicate as IriTerm).value == 'http://example.org/assertedBy',
       );
       expect(assertedByTriple.object, equals(LiteralTerm.string('Alice')));
 
       final certaintyTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/statement1') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/certainty',
+            t.subject == const IriTerm('http://example.org/statement1') &&
+            (t.predicate as IriTerm).value == 'http://example.org/certainty',
       );
       expect(certaintyTriple.object, equals(LiteralTerm.string('0.9')));
     });
@@ -113,69 +116,72 @@ void main() {
       // Check the original statement
       final originalTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/JohnDoe') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/authorOf',
+            t.subject == const IriTerm('http://example.org/JohnDoe') &&
+            (t.predicate as IriTerm).value == 'http://example.org/authorOf',
       );
       expect(
         originalTriple.object,
-        equals(IriTerm('http://example.org/Book1')),
+        equals(const IriTerm('http://example.org/Book1')),
       );
 
       // Check reification statements about the original triple
       // Type assertion
       final typeTriple = triples.firstWhere(
         (t) =>
-            (t.subject as IriTerm).iri.contains('statement1') &&
+            (t.subject as IriTerm).value.contains('statement1') &&
             t.predicate == RdfTerms.type,
       );
       expect(typeTriple.object, equals(RdfTerms.Statement));
 
       // Get the statement IRI
-      final statementIri = (typeTriple.subject as IriTerm).iri;
+      final statementIri = (typeTriple.subject as IriTerm).value;
 
       // Subject assertion
       final subjectTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm(statementIri) &&
+            t.subject == IriTerm.validated(statementIri) &&
             t.predicate == RdfTerms.subject,
       );
       expect(
         subjectTriple.object,
-        equals(IriTerm('http://example.org/JohnDoe')),
+        equals(const IriTerm('http://example.org/JohnDoe')),
       );
 
       // Predicate assertion
       final predicateTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm(statementIri) &&
+            t.subject == IriTerm.validated(statementIri) &&
             t.predicate == RdfTerms.predicate,
       );
       expect(
         predicateTriple.object,
-        equals(IriTerm('http://example.org/authorOf')),
+        equals(const IriTerm('http://example.org/authorOf')),
       );
 
       // Object assertion
       final objectTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm(statementIri) &&
+            t.subject == IriTerm.validated(statementIri) &&
             t.predicate == RdfTerms.object,
       );
-      expect(objectTriple.object, equals(IriTerm('http://example.org/Book1')));
+      expect(
+        objectTriple.object,
+        equals(const IriTerm('http://example.org/Book1')),
+      );
     });
 
     test('serializes and round-trips reified statements correctly', () {
       // Create the original assertion
-      final subject = IriTerm('http://example.org/JohnDoe');
-      final predicate = IriTerm('http://example.org/authorOf');
-      final object = IriTerm('http://example.org/Book1');
+      final subject = const IriTerm('http://example.org/JohnDoe');
+      final predicate = const IriTerm('http://example.org/authorOf');
+      final object = const IriTerm('http://example.org/Book1');
       final originalTriple = Triple(subject, predicate, object);
 
       // Create the reification node
       // Use a baseUri compatible identifier
       final baseUri = 'http://example.org/doc';
       final localId = 'statement1';
-      final statementNode = IriTerm('$baseUri#$localId');
+      final statementNode = IriTerm.validated('$baseUri#$localId');
 
       // Create the reification triples
       final triples = <Triple>[
@@ -186,7 +192,7 @@ void main() {
         Triple(statementNode, RdfTerms.object, object),
         Triple(
           statementNode,
-          IriTerm('http://example.org/assertedBy'),
+          const IriTerm('http://example.org/assertedBy'),
           LiteralTerm.string('Alice'),
         ),
       ];
@@ -281,7 +287,7 @@ void main() {
       final metadataFound = reparsedTriples.any(
         (t) =>
             t.subject == statementNode &&
-            t.predicate == IriTerm('http://example.org/assertedBy') &&
+            t.predicate == const IriTerm('http://example.org/assertedBy') &&
             t.object == LiteralTerm.string('Alice'),
       );
       expect(
@@ -293,15 +299,15 @@ void main() {
 
     test('serializes reified statements using rdf:ID syntax when possible', () {
       // Create the original triple
-      final subject = IriTerm('http://example.org/JohnDoe');
-      final predicate = IriTerm('http://example.org/authorOf');
-      final object = IriTerm('http://example.org/Book1');
+      final subject = const IriTerm('http://example.org/JohnDoe');
+      final predicate = const IriTerm('http://example.org/authorOf');
+      final object = const IriTerm('http://example.org/Book1');
       final originalTriple = Triple(subject, predicate, object);
 
       // Create the reification statement with proper baseUri handling
       final baseUri = 'http://example.org/doc';
       final localId = 'statement1';
-      final statementNode = IriTerm('$baseUri#$localId');
+      final statementNode = IriTerm.validated('$baseUri#$localId');
 
       // Create the reification triples
       final triples = <Triple>[
@@ -312,7 +318,7 @@ void main() {
         Triple(statementNode, RdfTerms.object, object),
         Triple(
           statementNode,
-          IriTerm('http://example.org/assertedBy'),
+          const IriTerm('http://example.org/assertedBy'),
           LiteralTerm.string('Alice'),
         ),
       ];
@@ -371,10 +377,12 @@ void main() {
       // Verify the reification statement type is present
       final typeExists = reparsedTriples.any(
         (t) =>
-            (t.subject as IriTerm).iri.contains('statement1') &&
+            (t.subject as IriTerm).value.contains('statement1') &&
             t.predicate == RdfTerms.type &&
             t.object ==
-                IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement'),
+                const IriTerm(
+                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement',
+                ),
       );
       expect(typeExists, isTrue);
     });

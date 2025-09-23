@@ -147,11 +147,11 @@ void main() {
       expect(triples, hasLength(1));
       expect(
         triples[0].subject,
-        equals(IriTerm('http://example.org/base/relative')),
+        equals(const IriTerm('http://example.org/base/relative')),
       );
       expect(
         triples[0].object,
-        equals(IriTerm('http://example.org/base/other')),
+        equals(const IriTerm('http://example.org/base/other')),
       );
     });
 
@@ -203,38 +203,39 @@ void main() {
 
       // Find the age triple
       final ageTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/age',
+        (t) => (t.predicate as IriTerm).value == 'http://example.org/age',
       );
 
       expect(ageTriple.object, isA<LiteralTerm>());
       expect((ageTriple.object as LiteralTerm).value, equals('42'));
       expect(
         (ageTriple.object as LiteralTerm).datatype,
-        equals(IriTerm('http://www.w3.org/2001/XMLSchema#integer')),
+        equals(const IriTerm('http://www.w3.org/2001/XMLSchema#integer')),
       );
 
       // Find the height triple
       final heightTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/height',
+        (t) => (t.predicate as IriTerm).value == 'http://example.org/height',
       );
 
       expect(heightTriple.object, isA<LiteralTerm>());
       expect((heightTriple.object as LiteralTerm).value, equals('1.75'));
       expect(
         (heightTriple.object as LiteralTerm).datatype,
-        equals(IriTerm('http://www.w3.org/2001/XMLSchema#decimal')),
+        equals(const IriTerm('http://www.w3.org/2001/XMLSchema#decimal')),
       );
 
       // Find the registered triple
       final registeredTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/registered',
+        (t) =>
+            (t.predicate as IriTerm).value == 'http://example.org/registered',
       );
 
       expect(registeredTriple.object, isA<LiteralTerm>());
       expect((registeredTriple.object as LiteralTerm).value, equals('true'));
       expect(
         (registeredTriple.object as LiteralTerm).datatype,
-        equals(IriTerm('http://www.w3.org/2001/XMLSchema#boolean')),
+        equals(const IriTerm('http://www.w3.org/2001/XMLSchema#boolean')),
       );
     });
   });

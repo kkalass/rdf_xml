@@ -40,8 +40,8 @@ void debugCollectionTriples(List<Triple> triples) {
       reparsedTriples
           .where(
             (t) =>
-                (t.predicate as IriTerm).iri == RdfTerms.first.iri ||
-                (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                (t.predicate as IriTerm).value == RdfTerms.first.value ||
+                (t.predicate as IriTerm).value == RdfTerms.rest.value,
           )
           .toList();
 
@@ -121,8 +121,8 @@ void main() {
       // Find the items triple that links the list to the first node
       final itemsTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/resource') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/items',
+            t.subject == const IriTerm('http://example.org/resource') &&
+            (t.predicate as IriTerm).value == 'http://example.org/items',
       );
 
       final firstListNode = itemsTriple.object;
@@ -136,9 +136,9 @@ void main() {
       expect(items, hasLength(3));
 
       // Verify the items are the expected resources
-      expect(items[0], equals(IriTerm('http://example.org/item1')));
-      expect(items[1], equals(IriTerm('http://example.org/item2')));
-      expect(items[2], equals(IriTerm('http://example.org/item3')));
+      expect(items[0], equals(const IriTerm('http://example.org/item1')));
+      expect(items[1], equals(const IriTerm('http://example.org/item2')));
+      expect(items[2], equals(const IriTerm('http://example.org/item3')));
     });
 
     test('parses empty collection correctly', () {
@@ -163,11 +163,11 @@ void main() {
       final itemsTriple = triples.first;
       expect(
         itemsTriple.subject,
-        equals(IriTerm('http://example.org/resource')),
+        equals(const IriTerm('http://example.org/resource')),
       );
       expect(
         itemsTriple.predicate,
-        equals(IriTerm('http://example.org/items')),
+        equals(const IriTerm('http://example.org/items')),
       );
       expect(itemsTriple.object, equals(RdfTerms.nil));
     });
@@ -201,8 +201,8 @@ void main() {
       // Find the values triple that links the list to the first node
       final valuesTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/resource') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/values',
+            t.subject == const IriTerm('http://example.org/resource') &&
+            (t.predicate as IriTerm).value == 'http://example.org/values',
       );
 
       final firstListNode = valuesTriple.object;
@@ -227,7 +227,8 @@ void main() {
           triples
               .where(
                 (t) =>
-                    (t.predicate as IriTerm).iri == 'http://example.org/value',
+                    (t.predicate as IriTerm).value ==
+                    'http://example.org/value',
               )
               .toList();
 
@@ -280,8 +281,8 @@ void main() {
       // Find the values triple
       final valuesTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/resource') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/values',
+            t.subject == const IriTerm('http://example.org/resource') &&
+            (t.predicate as IriTerm).value == 'http://example.org/values',
       );
 
       final firstListNode = valuesTriple.object;
@@ -299,7 +300,7 @@ void main() {
       expect(items, hasLength(3));
 
       // Verify the first item is an IRI
-      expect(items[0], equals(IriTerm('http://example.org/item1')));
+      expect(items[0], equals(const IriTerm('http://example.org/item1')));
 
       // Verify the second and third items are blank nodes
       expect(items[1], isA<BlankNodeTerm>());
@@ -310,7 +311,8 @@ void main() {
           triples
               .where(
                 (t) =>
-                    (t.predicate as IriTerm).iri == 'http://example.org/value',
+                    (t.predicate as IriTerm).value ==
+                    'http://example.org/value',
               )
               .toList();
 
@@ -333,7 +335,7 @@ void main() {
         (t) =>
             t.object is LiteralTerm &&
             (t.object as LiteralTerm).value == '42' &&
-            (t.object as LiteralTerm).datatype.iri ==
+            (t.object as LiteralTerm).datatype.value ==
                 'http://www.w3.org/2001/XMLSchema#integer',
       );
       expect(intValue, isNotNull);
@@ -343,7 +345,7 @@ void main() {
         (t) =>
             t.object is LiteralTerm &&
             (t.object as LiteralTerm).value == '2025-05-05' &&
-            (t.object as LiteralTerm).datatype.iri ==
+            (t.object as LiteralTerm).datatype.value ==
                 'http://www.w3.org/2001/XMLSchema#date',
       );
       expect(dateValue, isNotNull);
@@ -356,8 +358,8 @@ void main() {
 
     test('serializes and re-parses basic RDF collection correctly', () {
       // Create a graph with a basic collection
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/items');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/items');
 
       // Create blank nodes for the collection structure
       final listNode1 = BlankNodeTerm();
@@ -365,9 +367,9 @@ void main() {
       final listNode3 = BlankNodeTerm();
 
       // Create collection item resources
-      final item1 = IriTerm('http://example.org/item1');
-      final item2 = IriTerm('http://example.org/item2');
-      final item3 = IriTerm('http://example.org/item3');
+      final item1 = const IriTerm('http://example.org/item1');
+      final item2 = const IriTerm('http://example.org/item2');
+      final item3 = const IriTerm('http://example.org/item3');
 
       final triples = <Triple>[
         // Connect list subject to the first node in the collection
@@ -426,8 +428,8 @@ void main() {
 
     test('serializes and re-parses empty collection correctly', () {
       // Create a graph with an empty collection
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/items');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/items');
 
       final triples = <Triple>[
         // Empty collection links directly to rdf:nil
@@ -461,8 +463,8 @@ void main() {
       'serializes and re-parses collection with literal items correctly',
       () {
         // Create a graph with a collection containing string literals
-        final subject = IriTerm('http://example.org/resource');
-        final predicate = IriTerm('http://example.org/values');
+        final subject = const IriTerm('http://example.org/resource');
+        final predicate = const IriTerm('http://example.org/values');
 
         // Create blank nodes for the collection structure
         final listNode1 = BlankNodeTerm();
@@ -525,8 +527,8 @@ void main() {
       'serializes and re-parses collection with typed literals correctly',
       () {
         // Create a graph with a collection containing typed literals
-        final subject = IriTerm('http://example.org/resource');
-        final predicate = IriTerm('http://example.org/values');
+        final subject = const IriTerm('http://example.org/resource');
+        final predicate = const IriTerm('http://example.org/values');
 
         // Create blank nodes for the collection structure
         final listNode1 = BlankNodeTerm();
@@ -543,7 +545,9 @@ void main() {
             RdfTerms.first,
             LiteralTerm(
               '42',
-              datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
+              datatype: const IriTerm(
+                'http://www.w3.org/2001/XMLSchema#integer',
+              ),
             ),
           ),
           Triple(listNode1, RdfTerms.rest, listNode2),
@@ -554,7 +558,9 @@ void main() {
             RdfTerms.first,
             LiteralTerm(
               '3.14',
-              datatype: IriTerm('http://www.w3.org/2001/XMLSchema#decimal'),
+              datatype: const IriTerm(
+                'http://www.w3.org/2001/XMLSchema#decimal',
+              ),
             ),
           ),
           Triple(listNode2, RdfTerms.rest, listNode3),
@@ -565,7 +571,7 @@ void main() {
             RdfTerms.first,
             LiteralTerm(
               '2025-05-05',
-              datatype: IriTerm('http://www.w3.org/2001/XMLSchema#date'),
+              datatype: const IriTerm('http://www.w3.org/2001/XMLSchema#date'),
             ),
           ),
           Triple(listNode3, RdfTerms.rest, RdfTerms.nil),
@@ -602,21 +608,21 @@ void main() {
         expect(integerItem.value, equals('42'));
         expect(
           integerItem.datatype,
-          equals(IriTerm('http://www.w3.org/2001/XMLSchema#integer')),
+          equals(const IriTerm('http://www.w3.org/2001/XMLSchema#integer')),
         );
 
         final decimalItem = collectionItems[1] as LiteralTerm;
         expect(decimalItem.value, equals('3.14'));
         expect(
           decimalItem.datatype,
-          equals(IriTerm('http://www.w3.org/2001/XMLSchema#decimal')),
+          equals(const IriTerm('http://www.w3.org/2001/XMLSchema#decimal')),
         );
 
         final dateItem = collectionItems[2] as LiteralTerm;
         expect(dateItem.value, equals('2025-05-05'));
         expect(
           dateItem.datatype,
-          equals(IriTerm('http://www.w3.org/2001/XMLSchema#date')),
+          equals(const IriTerm('http://www.w3.org/2001/XMLSchema#date')),
         );
       },
     );
@@ -625,8 +631,8 @@ void main() {
       'serializes and re-parses collection with language-tagged literals correctly',
       () {
         // Create a graph with a collection containing language-tagged literals
-        final subject = IriTerm('http://example.org/resource');
-        final predicate = IriTerm('http://example.org/labels');
+        final subject = const IriTerm('http://example.org/resource');
+        final predicate = const IriTerm('http://example.org/labels');
 
         // Create blank nodes for the collection structure
         final listNode1 = BlankNodeTerm();
@@ -721,8 +727,8 @@ void main() {
       // Find the triple that links to the main collection
       final mainListTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/resource') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/nestedList',
+            t.subject == const IriTerm('http://example.org/resource') &&
+            (t.predicate as IriTerm).value == 'http://example.org/nestedList',
       );
 
       final mainListNode = mainListTriple.object;
@@ -741,20 +747,20 @@ void main() {
       expect(mainItems, hasLength(3));
 
       // The first item should be a direct resource
-      expect(mainItems[0], equals(IriTerm('http://example.org/item1')));
+      expect(mainItems[0], equals(const IriTerm('http://example.org/item1')));
 
       // The second item should be a blank node
       expect(mainItems[1], isA<BlankNodeTerm>());
 
       // The third item should be a direct resource
-      expect(mainItems[2], equals(IriTerm('http://example.org/item3')));
+      expect(mainItems[2], equals(const IriTerm('http://example.org/item3')));
 
       // Find all subList triples in the graph
       final allSubListTriples =
           triples
               .where(
                 (t) =>
-                    (t.predicate as IriTerm).iri ==
+                    (t.predicate as IriTerm).value ==
                     'http://example.org/subList',
               )
               .toList();
@@ -788,14 +794,14 @@ void main() {
       expect(subItems, hasLength(2));
 
       // Verify the sub-collection items
-      expect(subItems[0], equals(IriTerm('http://example.org/subItem1')));
-      expect(subItems[1], equals(IriTerm('http://example.org/subItem2')));
+      expect(subItems[0], equals(const IriTerm('http://example.org/subItem1')));
+      expect(subItems[1], equals(const IriTerm('http://example.org/subItem2')));
     });
 
     test('serializes and re-parses nested collections correctly', () {
       // Create a graph with nested collections
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/nestedList');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/nestedList');
 
       // Create blank nodes for the main collection structure
       final listNode1 = BlankNodeTerm();
@@ -804,7 +810,7 @@ void main() {
 
       // Create the middle blank node that will contain the sub-collection
       final middleNode = BlankNodeTerm();
-      final subListPredicate = IriTerm('http://example.org/subList');
+      final subListPredicate = const IriTerm('http://example.org/subList');
 
       // Create blank nodes for the sub-collection structure
       final subListNode1 = BlankNodeTerm();
@@ -815,7 +821,11 @@ void main() {
         Triple(subject, predicate, listNode1),
 
         // First item in main collection (direct IRI)
-        Triple(listNode1, RdfTerms.first, IriTerm('http://example.org/item1')),
+        Triple(
+          listNode1,
+          RdfTerms.first,
+          const IriTerm('http://example.org/item1'),
+        ),
         Triple(listNode1, RdfTerms.rest, listNode2),
 
         // Second item in main collection (blank node with nested collection)
@@ -829,7 +839,7 @@ void main() {
         Triple(
           subListNode1,
           RdfTerms.first,
-          IriTerm('http://example.org/subItem1'),
+          const IriTerm('http://example.org/subItem1'),
         ),
         Triple(subListNode1, RdfTerms.rest, subListNode2),
 
@@ -837,12 +847,16 @@ void main() {
         Triple(
           subListNode2,
           RdfTerms.first,
-          IriTerm('http://example.org/subItem2'),
+          const IriTerm('http://example.org/subItem2'),
         ),
         Triple(subListNode2, RdfTerms.rest, RdfTerms.nil),
 
         // Third item in main collection with termination
-        Triple(listNode3, RdfTerms.first, IriTerm('http://example.org/item3')),
+        Triple(
+          listNode3,
+          RdfTerms.first,
+          const IriTerm('http://example.org/item3'),
+        ),
         Triple(listNode3, RdfTerms.rest, RdfTerms.nil),
       ];
 
@@ -875,8 +889,8 @@ void main() {
       expect(mainItems, hasLength(3));
 
       // First and third items should be direct resources
-      expect(mainItems[0], equals(IriTerm('http://example.org/item1')));
-      expect(mainItems[2], equals(IriTerm('http://example.org/item3')));
+      expect(mainItems[0], equals(const IriTerm('http://example.org/item1')));
+      expect(mainItems[2], equals(const IriTerm('http://example.org/item3')));
 
       // Second item should be a blank node
       expect(mainItems[1], isA<BlankNodeTerm>());
@@ -897,8 +911,8 @@ void main() {
       expect(subItems, hasLength(2));
 
       // Verify the sub-collection items
-      expect(subItems[0], equals(IriTerm('http://example.org/subItem1')));
-      expect(subItems[1], equals(IriTerm('http://example.org/subItem2')));
+      expect(subItems[0], equals(const IriTerm('http://example.org/subItem1')));
+      expect(subItems[1], equals(const IriTerm('http://example.org/subItem2')));
     });
   });
 

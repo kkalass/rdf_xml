@@ -10,18 +10,18 @@ void main() {
   // Create a graph with URIs that can be relativized
   final graph = RdfGraph.fromTriples([
     Triple(
-      IriTerm('http://example.org/base/document'),
-      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      const IriTerm('http://example.org/base/document'),
+      const IriTerm('http://purl.org/dc/elements/1.1/title'),
       LiteralTerm.string('Example Document'),
     ),
     Triple(
-      IriTerm('http://example.org/base/document'),
-      IriTerm('http://purl.org/dc/elements/1.1/creator'),
+      const IriTerm('http://example.org/base/document'),
+      const IriTerm('http://purl.org/dc/elements/1.1/creator'),
       LiteralTerm.string('Jane Doe'),
     ),
     Triple(
-      IriTerm('http://example.org/base/images/photo.jpg'),
-      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      const IriTerm('http://example.org/base/images/photo.jpg'),
+      const IriTerm('http://purl.org/dc/elements/1.1/title'),
       LiteralTerm.string('Profile Photo'),
     ),
   ]);
@@ -89,14 +89,14 @@ void main() {
 
   final emptyRelativeGraph = RdfGraph.fromTriples([
     Triple(
-      IriTerm('http://example.org/base/'), // IRI equals base URI exactly
-      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      const IriTerm('http://example.org/base/'), // IRI equals base URI exactly
+      const IriTerm('http://purl.org/dc/elements/1.1/title'),
       LiteralTerm.string('Base Document'),
     ),
     Triple(
-      IriTerm('http://example.org/base/'), // Same IRI again
-      IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      IriTerm('http://purl.org/dc/dcmitype/Text'),
+      const IriTerm('http://example.org/base/'), // Same IRI again
+      const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      const IriTerm('http://purl.org/dc/dcmitype/Text'),
     ),
   ]);
 

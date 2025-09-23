@@ -85,15 +85,15 @@ void main() {
       final format = RdfXmlCodec();
 
       // Create an initial graph with some triples
-      final subject = IriTerm('http://example.org/resource');
+      final subject = const IriTerm('http://example.org/resource');
       final triple1 = Triple(
         subject,
         RdfTerms.type,
-        IriTerm('http://example.org/Type'),
+        const IriTerm('http://example.org/Type'),
       );
       final triple2 = Triple(
         subject,
-        IriTerm('http://example.org/title'),
+        const IriTerm('http://example.org/title'),
         LiteralTerm.string('Resource Title'),
       );
 
@@ -136,8 +136,8 @@ void main() {
       expect(title.value, equals('Title with <brackets> & ampersands'));
 
       // Now test serialization of entities
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/title');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/title');
       final object = LiteralTerm.string('Contains <, > and & characters');
 
       final triple = Triple(subject, predicate, object);
@@ -164,8 +164,8 @@ void main() {
     });
 
     test('Supports custom namespace prefixes', () {
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/property');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/property');
       final object = LiteralTerm.string('Value');
 
       final triple = Triple(subject, predicate, object);

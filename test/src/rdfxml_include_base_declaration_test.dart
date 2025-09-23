@@ -12,8 +12,8 @@ import 'package:test/test.dart';
 RdfGraph createSimpleTestGraph() {
   return RdfGraph.fromTriples([
     Triple(
-      IriTerm('http://example.org/subject'),
-      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      const IriTerm('http://example.org/subject'),
+      const IriTerm('http://purl.org/dc/elements/1.1/title'),
       LiteralTerm('Test Title'),
     ),
   ]);
@@ -116,8 +116,8 @@ void main() {
     test('works correctly with relative URIs when base is excluded', () {
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://example.org/base/resource'),
-          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          const IriTerm('http://example.org/base/resource'),
+          const IriTerm('http://purl.org/dc/elements/1.1/title'),
           LiteralTerm('Test Title'),
         ),
       ]);

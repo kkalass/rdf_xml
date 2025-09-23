@@ -9,8 +9,8 @@ void main() {
   group('RdfXmlSerializer', () {
     test('serializes basic triples to RDF/XML', () {
       final triple = Triple(
-        IriTerm('http://example.org/subject'),
-        IriTerm('http://example.org/predicate'),
+        const IriTerm('http://example.org/subject'),
+        const IriTerm('http://example.org/predicate'),
         LiteralTerm.string('Object'),
       );
 
@@ -65,13 +65,17 @@ void main() {
     });
 
     test('serializes typed resources', () {
-      final subject = IriTerm('http://example.org/person/1');
+      final subject = const IriTerm('http://example.org/person/1');
 
       final inputTriples = [
-        Triple(subject, RdfTerms.type, IriTerm('http://example.org/Person')),
         Triple(
           subject,
-          IriTerm('http://example.org/name'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Person'),
+        ),
+        Triple(
+          subject,
+          const IriTerm('http://example.org/name'),
           LiteralTerm.string('John Doe'),
         ),
       ];
@@ -89,14 +93,17 @@ void main() {
 
       // Check the type triple
       final typeTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == RdfTerms.type.iri,
+        (t) => (t.predicate as IriTerm).value == RdfTerms.type.value,
       );
       expect(typeTriple.subject, equals(subject));
-      expect(typeTriple.object, equals(IriTerm('http://example.org/Person')));
+      expect(
+        typeTriple.object,
+        equals(const IriTerm('http://example.org/Person')),
+      );
 
       // Check the name triple
       final nameTriple = parsedTriples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/name',
+        (t) => (t.predicate as IriTerm).value == 'http://example.org/name',
       );
       expect(nameTriple.subject, equals(subject));
       expect(nameTriple.object, equals(LiteralTerm.string('John Doe')));
@@ -128,17 +135,17 @@ void main() {
     });
 
     test('serializes language-tagged literals', () {
-      final subject = IriTerm('http://example.org/book/1');
+      final subject = const IriTerm('http://example.org/book/1');
 
       final triples = [
         Triple(
           subject,
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.withLanguage('The Lord of the Rings', 'en'),
         ),
         Triple(
           subject,
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.withLanguage('Der Herr der Ringe', 'de'),
         ),
       ];
@@ -182,14 +189,14 @@ void main() {
     });
 
     test('serializes datatyped literals', () {
-      final subject = IriTerm('http://example.org/person/1');
+      final subject = const IriTerm('http://example.org/person/1');
 
       final triple = Triple(
         subject,
-        IriTerm('http://example.org/age'),
+        const IriTerm('http://example.org/age'),
         LiteralTerm(
           '42',
-          datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
+          datatype: const IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
         ),
       );
 
@@ -228,23 +235,27 @@ void main() {
     });
 
     test('handles nested resources', () {
-      final person = IriTerm('http://example.org/person/1');
+      final person = const IriTerm('http://example.org/person/1');
       final address = BlankNodeTerm();
 
       final triples = [
         // Link person to address
-        Triple(person, IriTerm('http://example.org/address'), address),
+        Triple(person, const IriTerm('http://example.org/address'), address),
 
         // Add address properties
-        Triple(address, RdfTerms.type, IriTerm('http://example.org/Address')),
         Triple(
           address,
-          IriTerm('http://example.org/street'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Address'),
+        ),
+        Triple(
+          address,
+          const IriTerm('http://example.org/street'),
           LiteralTerm.string('123 Main St'),
         ),
         Triple(
           address,
-          IriTerm('http://example.org/city'),
+          const IriTerm('http://example.org/city'),
           LiteralTerm.string('Springfield'),
         ),
       ];
@@ -312,55 +323,71 @@ void main() {
     test('correctly handles language tags in nested resources', () {
       // Create a publication with multilingual title and abstract,
       // plus nested authors with multilingual names
-      final publication = IriTerm('http://example.org/publication/1');
+      final publication = const IriTerm('http://example.org/publication/1');
       final author1 = BlankNodeTerm();
-      final author2 = IriTerm('http://example.org/person/jane');
+      final author2 = const IriTerm('http://example.org/person/jane');
 
       final triples = [
         // Publication metadata with language tags
         Triple(
           publication,
           RdfTerms.type,
-          IriTerm('http://example.org/Publication'),
+          const IriTerm('http://example.org/Publication'),
         ),
         Triple(
           publication,
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.withLanguage('Machine Learning Fundamentals', 'en'),
         ),
         Triple(
           publication,
-          IriTerm('http://example.org/title'),
+          const IriTerm('http://example.org/title'),
           LiteralTerm.withLanguage('Grundlagen des maschinellen Lernens', 'de'),
         ),
 
         // Link to authors
-        Triple(publication, IriTerm('http://example.org/author'), author1),
-        Triple(publication, IriTerm('http://example.org/author'), author2),
+        Triple(
+          publication,
+          const IriTerm('http://example.org/author'),
+          author1,
+        ),
+        Triple(
+          publication,
+          const IriTerm('http://example.org/author'),
+          author2,
+        ),
 
         // Author 1 (blank node) with multilingual names
-        Triple(author1, RdfTerms.type, IriTerm('http://example.org/Person')),
         Triple(
           author1,
-          IriTerm('http://example.org/name'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Person'),
+        ),
+        Triple(
+          author1,
+          const IriTerm('http://example.org/name'),
           LiteralTerm.withLanguage('John Smith', 'en'),
         ),
         Triple(
           author1,
-          IriTerm('http://example.org/name'),
+          const IriTerm('http://example.org/name'),
           LiteralTerm.withLanguage('Johann Schmidt', 'de'),
         ),
 
         // Author 2 (IRI) with multilingual names
-        Triple(author2, RdfTerms.type, IriTerm('http://example.org/Person')),
         Triple(
           author2,
-          IriTerm('http://example.org/name'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Person'),
+        ),
+        Triple(
+          author2,
+          const IriTerm('http://example.org/name'),
           LiteralTerm.withLanguage('Jane Doe', 'en'),
         ),
         Triple(
           author2,
-          IriTerm('http://example.org/name'),
+          const IriTerm('http://example.org/name'),
           LiteralTerm.withLanguage('Jana Musterfrau', 'de'),
         ),
       ];
@@ -479,7 +506,7 @@ void main() {
 
     test('serializes RDF collections', () {
       // Create a list subject
-      final listSubject = IriTerm('http://example.org/list');
+      final listSubject = const IriTerm('http://example.org/list');
 
       // Create blank nodes for the collection structure
       final listNode1 = BlankNodeTerm();
@@ -487,14 +514,18 @@ void main() {
       final listNode3 = BlankNodeTerm();
 
       // Create collection item resources
-      final item1 = IriTerm('http://example.org/item/1');
-      final item2 = IriTerm('http://example.org/item/2');
-      final item3 = IriTerm('http://example.org/item/3');
+      final item1 = const IriTerm('http://example.org/item/1');
+      final item2 = const IriTerm('http://example.org/item/2');
+      final item3 = const IriTerm('http://example.org/item/3');
 
       // Create triples representing the RDF collection structure
       final triples = [
         // Connect list subject to the first node in the collection
-        Triple(listSubject, IriTerm('http://example.org/items'), listNode1),
+        Triple(
+          listSubject,
+          const IriTerm('http://example.org/items'),
+          listNode1,
+        ),
 
         // First item chain
         Triple(listNode1, RdfTerms.first, item1),
@@ -511,17 +542,17 @@ void main() {
         // Add some properties to items to verify they're properly serialized
         Triple(
           item1,
-          IriTerm('http://example.org/label'),
+          const IriTerm('http://example.org/label'),
           LiteralTerm.string('First Item'),
         ),
         Triple(
           item2,
-          IriTerm('http://example.org/label'),
+          const IriTerm('http://example.org/label'),
           LiteralTerm.string('Second Item'),
         ),
         Triple(
           item3,
-          IriTerm('http://example.org/label'),
+          const IriTerm('http://example.org/label'),
           LiteralTerm.string('Third Item'),
         ),
       ];
@@ -592,7 +623,8 @@ void main() {
               .where(
                 (t) =>
                     t.subject.toString() == listSubject.toString() &&
-                    (t.predicate as IriTerm).iri == 'http://example.org/items',
+                    (t.predicate as IriTerm).value ==
+                        'http://example.org/items',
               )
               .toList();
 
@@ -615,7 +647,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.first.value,
                 )
                 .toList();
 
@@ -628,7 +660,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.rest.value,
                 )
                 .toList();
 
@@ -641,7 +673,7 @@ void main() {
 
       // Verify the items are in the correct order with correct URIs
       expect(
-        collectedItems.map((e) => (e as IriTerm).iri).toList(),
+        collectedItems.map((e) => (e as IriTerm).value).toList(),
         equals([
           'http://example.org/item/1',
           'http://example.org/item/2',
@@ -652,7 +684,7 @@ void main() {
 
     test('serializes string literals in RDF collections', () {
       // Create a list subject
-      final listSubject = IriTerm('http://example.org/subj1');
+      final listSubject = const IriTerm('http://example.org/subj1');
 
       // Create blank nodes for the collection structure
       final listNode1 = BlankNodeTerm();
@@ -662,7 +694,11 @@ void main() {
       // This matches the example in the request: ex:subj1 ex:prop1 ("item1" "item2")
       final triples = [
         // Connect list subject to the first node in the collection
-        Triple(listSubject, IriTerm('http://example.org/prop1'), listNode1),
+        Triple(
+          listSubject,
+          const IriTerm('http://example.org/prop1'),
+          listNode1,
+        ),
 
         // First item (string literal)
         Triple(listNode1, RdfTerms.first, LiteralTerm.string('item1')),
@@ -737,7 +773,8 @@ void main() {
               .where(
                 (t) =>
                     t.subject.toString() == listSubject.toString() &&
-                    (t.predicate as IriTerm).iri == 'http://example.org/prop1',
+                    (t.predicate as IriTerm).value ==
+                        'http://example.org/prop1',
               )
               .toList();
 
@@ -759,7 +796,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.first.value,
                 )
                 .toList();
 
@@ -772,7 +809,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.rest.value,
                 )
                 .toList();
 
@@ -792,7 +829,7 @@ void main() {
 
     test('serializes language-tagged literals in RDF collections', () {
       // Create a list subject
-      final listSubject = IriTerm('http://example.org/multilingualList');
+      final listSubject = const IriTerm('http://example.org/multilingualList');
 
       // Create blank nodes for the collection structure
       final listNode1 = BlankNodeTerm();
@@ -801,7 +838,11 @@ void main() {
       // Create triples representing the RDF collection with language-tagged literals
       final triples = [
         // Connect list subject to the first node in the collection
-        Triple(listSubject, IriTerm('http://example.org/labels'), listNode1),
+        Triple(
+          listSubject,
+          const IriTerm('http://example.org/labels'),
+          listNode1,
+        ),
 
         // First item (English literal)
         Triple(
@@ -887,7 +928,8 @@ void main() {
               .where(
                 (t) =>
                     t.subject.toString() == listSubject.toString() &&
-                    (t.predicate as IriTerm).iri == 'http://example.org/labels',
+                    (t.predicate as IriTerm).value ==
+                        'http://example.org/labels',
               )
               .toList();
 
@@ -906,7 +948,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.first.value,
                 )
                 .toList();
 
@@ -919,7 +961,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.rest.value,
                 )
                 .toList();
 
@@ -951,7 +993,7 @@ void main() {
 
     test('serializes datatyped literals in RDF collections', () {
       // Create a list subject
-      final listSubject = IriTerm('http://example.org/typedList');
+      final listSubject = const IriTerm('http://example.org/typedList');
 
       // Create blank nodes for the collection structure
       final listNode1 = BlankNodeTerm();
@@ -961,7 +1003,11 @@ void main() {
       // Create triples representing the RDF collection with datatyped literals
       final triples = [
         // Connect list subject to the first node in the collection
-        Triple(listSubject, IriTerm('http://example.org/values'), listNode1),
+        Triple(
+          listSubject,
+          const IriTerm('http://example.org/values'),
+          listNode1,
+        ),
 
         // First item (integer literal)
         Triple(
@@ -969,7 +1015,7 @@ void main() {
           RdfTerms.first,
           LiteralTerm(
             '42',
-            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
+            datatype: const IriTerm('http://www.w3.org/2001/XMLSchema#integer'),
           ),
         ),
         Triple(listNode1, RdfTerms.rest, listNode2),
@@ -980,7 +1026,7 @@ void main() {
           RdfTerms.first,
           LiteralTerm(
             '3.14',
-            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#decimal'),
+            datatype: const IriTerm('http://www.w3.org/2001/XMLSchema#decimal'),
           ),
         ),
         Triple(listNode2, RdfTerms.rest, listNode3),
@@ -991,7 +1037,7 @@ void main() {
           RdfTerms.first,
           LiteralTerm(
             '2025-05-06',
-            datatype: IriTerm('http://www.w3.org/2001/XMLSchema#date'),
+            datatype: const IriTerm('http://www.w3.org/2001/XMLSchema#date'),
           ),
         ),
         Triple(listNode3, RdfTerms.rest, RdfTerms.nil),
@@ -1073,7 +1119,8 @@ void main() {
               .where(
                 (t) =>
                     t.subject.toString() == listSubject.toString() &&
-                    (t.predicate as IriTerm).iri == 'http://example.org/values',
+                    (t.predicate as IriTerm).value ==
+                        'http://example.org/values',
               )
               .toList();
 
@@ -1092,7 +1139,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.first.value,
                 )
                 .toList();
 
@@ -1105,7 +1152,7 @@ void main() {
                 .where(
                   (t) =>
                       t.subject.toString() == currentNode.toString() &&
-                      (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+                      (t.predicate as IriTerm).value == RdfTerms.rest.value,
                 )
                 .toList();
 
@@ -1125,7 +1172,7 @@ void main() {
           collectedItems.firstWhere(
                 (item) =>
                     item is LiteralTerm &&
-                    item.datatype.iri ==
+                    item.datatype.value ==
                         'http://www.w3.org/2001/XMLSchema#integer',
               )
               as LiteralTerm;
@@ -1135,7 +1182,7 @@ void main() {
           collectedItems.firstWhere(
                 (item) =>
                     item is LiteralTerm &&
-                    item.datatype.iri ==
+                    item.datatype.value ==
                         'http://www.w3.org/2001/XMLSchema#decimal',
               )
               as LiteralTerm;
@@ -1145,7 +1192,7 @@ void main() {
           collectedItems.firstWhere(
                 (item) =>
                     item is LiteralTerm &&
-                    item.datatype.iri ==
+                    item.datatype.value ==
                         'http://www.w3.org/2001/XMLSchema#date',
               )
               as LiteralTerm;
@@ -1158,8 +1205,8 @@ void main() {
       // Test the specific issue where IRI exactly matches base URI
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://example.org/resource'),
-          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          const IriTerm('http://example.org/resource'),
+          const IriTerm('http://purl.org/dc/elements/1.1/title'),
           LiteralTerm.string('Test Resource'),
         ),
       ]);
@@ -1178,8 +1225,8 @@ void main() {
     test('creates proper relative URIs for sub-resources', () {
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://example.org/base/sub/resource'),
-          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          const IriTerm('http://example.org/base/sub/resource'),
+          const IriTerm('http://purl.org/dc/elements/1.1/title'),
           LiteralTerm.string('Sub Resource'),
         ),
       ]);
@@ -1194,8 +1241,8 @@ void main() {
     test('keeps absolute URIs when they do not start with base URI', () {
       final graph = RdfGraph.fromTriples([
         Triple(
-          IriTerm('http://other.example.org/resource'),
-          IriTerm('http://purl.org/dc/elements/1.1/title'),
+          const IriTerm('http://other.example.org/resource'),
+          const IriTerm('http://purl.org/dc/elements/1.1/title'),
           LiteralTerm.string('Other Resource'),
         ),
       ]);

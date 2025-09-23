@@ -44,6 +44,8 @@ final class RdfXmlCodec extends RdfGraphCodec {
   /// Serializer options for configuring serializer behavior
   final RdfXmlEncoderOptions _encoderOptions;
 
+  final IriTermFactory _iriTermFactory;
+
   /// Creates a new RDF/XML format plugin with optional dependencies
   ///
   /// Parameters:
@@ -60,11 +62,13 @@ final class RdfXmlCodec extends RdfGraphCodec {
     RdfXmlDecoderOptions? decoderOptions,
     RdfXmlEncoderOptions? encoderOptions,
     RdfNamespaceMappings? namespaceMappings,
+    IriTermFactory iriTermFactory = IriTerm.validated,
   }) : _xmlDocumentProvider =
            xmlDocumentProvider ?? const DefaultXmlDocumentProvider(),
        _uriResolver = uriResolver ?? const DefaultUriResolver(),
        _namespaceMappings = namespaceMappings ?? const RdfNamespaceMappings(),
        _xmlBuilder = xmlBuilder ?? DefaultRdfXmlBuilder(),
+       _iriTermFactory = iriTermFactory,
        _decoderOptions = decoderOptions ?? const RdfXmlDecoderOptions(),
        _encoderOptions = encoderOptions ?? const RdfXmlEncoderOptions();
 
@@ -85,6 +89,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
       rdfNamespaceMappings: _namespaceMappings,
       uriResolver: _uriResolver,
       options: _decoderOptions,
+      iriTermFactory: _iriTermFactory,
     );
   }
 
@@ -101,6 +106,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
   RdfGraphCodec withOptions({
     RdfGraphEncoderOptions? encoder,
     RdfGraphDecoderOptions? decoder,
+    IriTermFactory? iriTermFactory,
   }) => RdfXmlCodec(
     xmlDocumentProvider: _xmlDocumentProvider,
     uriResolver: _uriResolver,
@@ -108,6 +114,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
     xmlBuilder: _xmlBuilder,
     decoderOptions: RdfXmlDecoderOptions.from(decoder ?? _decoderOptions),
     encoderOptions: RdfXmlEncoderOptions.from(encoder ?? _encoderOptions),
+    iriTermFactory: iriTermFactory ?? _iriTermFactory,
   );
 
   @override
@@ -124,29 +131,45 @@ final class RdfXmlCodec extends RdfGraphCodec {
   ///
   /// Convenience factory for creating a codec that enforces strict compliance
   /// with the RDF/XML specification.
-  factory RdfXmlCodec.strict() =>
-      RdfXmlCodec(decoderOptions: RdfXmlDecoderOptions.strict());
+  factory RdfXmlCodec.strict({
+    IriTermFactory iriTermFactory = IriTerm.validated,
+  }) => RdfXmlCodec(
+    decoderOptions: RdfXmlDecoderOptions.strict(),
+    iriTermFactory: iriTermFactory,
+  );
 
   /// Creates a new RDF/XML codec with lenient decoder options
   ///
   /// Convenience factory for creating a codec that tries to parse
   /// even non-conformant RDF/XML.
-  factory RdfXmlCodec.lenient() =>
-      RdfXmlCodec(decoderOptions: RdfXmlDecoderOptions.lenient());
+  factory RdfXmlCodec.lenient({
+    IriTermFactory iriTermFactory = IriTerm.validated,
+  }) => RdfXmlCodec(
+    decoderOptions: RdfXmlDecoderOptions.lenient(),
+    iriTermFactory: iriTermFactory,
+  );
 
   /// Creates a new RDF/XML codec optimized for readability
   ///
   /// Convenience factory for creating a codec that produces
   /// human-readable RDF/XML output.
-  factory RdfXmlCodec.readable() =>
-      RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions.readable());
+  factory RdfXmlCodec.readable({
+    IriTermFactory iriTermFactory = IriTerm.validated,
+  }) => RdfXmlCodec(
+    encoderOptions: RdfXmlEncoderOptions.readable(),
+    iriTermFactory: iriTermFactory,
+  );
 
   /// Creates a new RDF/XML codec optimized for compact output
   ///
   /// Convenience factory for creating a codec that produces
   /// the most compact RDF/XML output.
-  factory RdfXmlCodec.compact() =>
-      RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions.compact());
+  factory RdfXmlCodec.compact({
+    IriTermFactory iriTermFactory = IriTerm.validated,
+  }) => RdfXmlCodec(
+    encoderOptions: RdfXmlEncoderOptions.compact(),
+    iriTermFactory: iriTermFactory,
+  );
 
   /// Creates a copy of this codec with the given values
   ///
@@ -158,6 +181,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
     IRdfXmlBuilder? xmlBuilder,
     RdfXmlDecoderOptions? decoderOptions,
     RdfXmlEncoderOptions? encoderOptions,
+    IriTermFactory? iriTermFactory,
   }) {
     return RdfXmlCodec(
       xmlDocumentProvider: xmlDocumentProvider ?? _xmlDocumentProvider,
@@ -166,6 +190,7 @@ final class RdfXmlCodec extends RdfGraphCodec {
       xmlBuilder: xmlBuilder ?? _xmlBuilder,
       decoderOptions: decoderOptions ?? _decoderOptions,
       encoderOptions: encoderOptions ?? _encoderOptions,
+      iriTermFactory: iriTermFactory ?? _iriTermFactory,
     );
   }
 }
@@ -183,23 +208,31 @@ final class RdfXmlDecoder extends RdfGraphDecoder {
 
   final RdfNamespaceMappings _rdfNamespaceMappings;
 
+  final IriTermFactory _iriTermFactory;
+
   /// Creates a new adapter for RdfXmlParser
   const RdfXmlDecoder({
     required IXmlDocumentProvider xmlDocumentProvider,
     required IUriResolver uriResolver,
     required RdfXmlDecoderOptions options,
     required RdfNamespaceMappings rdfNamespaceMappings,
+    IriTermFactory iriTermFactory = IriTerm.validated,
   }) : _xmlDocumentProvider = xmlDocumentProvider,
        _rdfNamespaceMappings = rdfNamespaceMappings,
        _uriResolver = uriResolver,
-       _options = options;
+       _options = options,
+       _iriTermFactory = iriTermFactory;
 
   @override
-  RdfXmlDecoder withOptions(RdfGraphDecoderOptions options) => RdfXmlDecoder(
+  RdfXmlDecoder withOptions(
+    RdfGraphDecoderOptions options, {
+    IriTermFactory? iriTermFactory,
+  }) => RdfXmlDecoder(
     xmlDocumentProvider: _xmlDocumentProvider,
     uriResolver: _uriResolver,
     options: RdfXmlDecoderOptions.from(options),
     rdfNamespaceMappings: _rdfNamespaceMappings,
+    iriTermFactory: iriTermFactory ?? _iriTermFactory,
   );
 
   @override
@@ -211,6 +244,7 @@ final class RdfXmlDecoder extends RdfGraphDecoder {
       xmlDocumentProvider: _xmlDocumentProvider,
       uriResolver: _uriResolver,
       options: _options,
+      iriTermFactory: _iriTermFactory,
     );
     final triples = parser.parse();
     return RdfGraph.fromTriples(triples);

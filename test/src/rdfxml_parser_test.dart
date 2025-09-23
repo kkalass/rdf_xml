@@ -22,10 +22,13 @@ void main() {
       final triples = parser.parse();
 
       expect(triples, hasLength(1));
-      expect(triples[0].subject, equals(IriTerm('http://example.org/subject')));
+      expect(
+        triples[0].subject,
+        equals(const IriTerm('http://example.org/subject')),
+      );
       expect(
         triples[0].predicate,
-        equals(IriTerm('http://example.org/predicate')),
+        equals(const IriTerm('http://example.org/predicate')),
       );
       expect(triples[0].object, equals(LiteralTerm.string('Object')));
     });
@@ -47,26 +50,32 @@ void main() {
 
       // Find the type triple
       final typeTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == RdfTerms.type.iri,
+        (t) => (t.predicate as IriTerm).value == RdfTerms.type.value,
       );
 
       expect(
         typeTriple.subject,
-        equals(IriTerm('http://example.org/person/1')),
+        equals(const IriTerm('http://example.org/person/1')),
       );
       expect(typeTriple.predicate, equals(RdfTerms.type));
-      expect(typeTriple.object, equals(IriTerm('http://example.org/Person')));
+      expect(
+        typeTriple.object,
+        equals(const IriTerm('http://example.org/Person')),
+      );
 
       // Find the name triple
       final nameTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/name',
+        (t) => (t.predicate as IriTerm).value == 'http://example.org/name',
       );
 
       expect(
         nameTriple.subject,
-        equals(IriTerm('http://example.org/person/1')),
+        equals(const IriTerm('http://example.org/person/1')),
       );
-      expect(nameTriple.predicate, equals(IriTerm('http://example.org/name')));
+      expect(
+        nameTriple.predicate,
+        equals(const IriTerm('http://example.org/name')),
+      );
       expect(nameTriple.object, equals(LiteralTerm.string('John Doe')));
     });
 
@@ -89,11 +98,11 @@ void main() {
       expect(triples.length, equals(1));
       expect(
         triples[0].subject,
-        equals(IriTerm('http://example.org/data/resource1')),
+        equals(const IriTerm('http://example.org/data/resource1')),
       );
       expect(
         triples[0].predicate,
-        equals(IriTerm('http://purl.org/dc/elements/1.1/description')),
+        equals(const IriTerm('http://purl.org/dc/elements/1.1/description')),
       );
       expect(triples[0].object, isA<LiteralTerm>());
       expect(
@@ -172,13 +181,13 @@ void main() {
 
       // Find the address triple that links the person to the address
       final addressTriple = triples.firstWhere(
-        (t) => (t.predicate as IriTerm).iri == 'http://example.org/address',
+        (t) => (t.predicate as IriTerm).value == 'http://example.org/address',
         orElse: () => throw StateError('No address triple found'),
       );
 
       expect(
         addressTriple.subject,
-        equals(IriTerm('http://example.org/person/1')),
+        equals(const IriTerm('http://example.org/person/1')),
       );
       final addressNode = addressTriple.object;
       expect(addressNode, isA<BlankNodeTerm>());
@@ -187,17 +196,20 @@ void main() {
       final typeTriple = triples.firstWhere(
         (t) =>
             t.subject == addressNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.type.iri,
+            (t.predicate as IriTerm).value == RdfTerms.type.value,
         orElse: () => throw StateError('No type triple found for address'),
       );
 
-      expect(typeTriple.object, equals(IriTerm('http://example.org/Address')));
+      expect(
+        typeTriple.object,
+        equals(const IriTerm('http://example.org/Address')),
+      );
 
       // Find the street triple
       final streetTriple = triples.firstWhere(
         (t) =>
             t.subject == addressNode &&
-            (t.predicate as IriTerm).iri == 'http://example.org/street',
+            (t.predicate as IriTerm).value == 'http://example.org/street',
         orElse: () => throw StateError('No street triple found for address'),
       );
 
@@ -207,7 +219,7 @@ void main() {
       final cityTriple = triples.firstWhere(
         (t) =>
             t.subject == addressNode &&
-            (t.predicate as IriTerm).iri == 'http://example.org/city',
+            (t.predicate as IriTerm).value == 'http://example.org/city',
         orElse: () => throw StateError('No city triple found for address'),
       );
 
@@ -244,8 +256,8 @@ void main() {
       // Find the items triple that links the list to the first node
       final itemsTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/list') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/items',
+            t.subject == const IriTerm('http://example.org/list') &&
+            (t.predicate as IriTerm).value == 'http://example.org/items',
       );
 
       final firstListNode = itemsTriple.object as BlankNodeTerm;
@@ -254,19 +266,19 @@ void main() {
       final firstItemTriple = triples.firstWhere(
         (t) =>
             t.subject == firstListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+            (t.predicate as IriTerm).value == RdfTerms.first.value,
       );
 
       expect(
         firstItemTriple.object,
-        equals(IriTerm('http://example.org/item/1')),
+        equals(const IriTerm('http://example.org/item/1')),
       );
 
       // Find the rest link from first to second node
       final firstRestTriple = triples.firstWhere(
         (t) =>
             t.subject == firstListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+            (t.predicate as IriTerm).value == RdfTerms.rest.value,
       );
 
       final secondListNode = firstRestTriple.object as BlankNodeTerm;
@@ -275,19 +287,19 @@ void main() {
       final secondItemTriple = triples.firstWhere(
         (t) =>
             t.subject == secondListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+            (t.predicate as IriTerm).value == RdfTerms.first.value,
       );
 
       expect(
         secondItemTriple.object,
-        equals(IriTerm('http://example.org/item/2')),
+        equals(const IriTerm('http://example.org/item/2')),
       );
 
       // Find the rest link from second to third node
       final secondRestTriple = triples.firstWhere(
         (t) =>
             t.subject == secondListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+            (t.predicate as IriTerm).value == RdfTerms.rest.value,
       );
 
       final thirdListNode = secondRestTriple.object as BlankNodeTerm;
@@ -296,19 +308,19 @@ void main() {
       final thirdItemTriple = triples.firstWhere(
         (t) =>
             t.subject == thirdListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.first.iri,
+            (t.predicate as IriTerm).value == RdfTerms.first.value,
       );
 
       expect(
         thirdItemTriple.object,
-        equals(IriTerm('http://example.org/item/3')),
+        equals(const IriTerm('http://example.org/item/3')),
       );
 
       // Find the rest link from third node to nil
       final thirdRestTriple = triples.firstWhere(
         (t) =>
             t.subject == thirdListNode &&
-            (t.predicate as IriTerm).iri == RdfTerms.rest.iri,
+            (t.predicate as IriTerm).value == RdfTerms.rest.value,
       );
 
       expect(thirdRestTriple.object, equals(RdfTerms.nil));
@@ -354,19 +366,21 @@ void main() {
       expect(triples, isNotEmpty);
 
       // Definiere wichtige URIs
-      final foafPerson = IriTerm('http://xmlns.com/foaf/0.1/Person');
-      final rdfType = IriTerm(
+      final foafPerson = const IriTerm('http://xmlns.com/foaf/0.1/Person');
+      final rdfType = const IriTerm(
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
       );
-      final owlClass = IriTerm('http://www.w3.org/2002/07/owl#Class');
-      final rdfsSubClassOf = IriTerm(
+      final owlClass = const IriTerm('http://www.w3.org/2002/07/owl#Class');
+      final rdfsSubClassOf = const IriTerm(
         'http://www.w3.org/2000/01/rdf-schema#subClassOf',
       );
-      final foafAgent = IriTerm('http://xmlns.com/foaf/0.1/Agent');
-      final spatialThing = IriTerm(
+      final foafAgent = const IriTerm('http://xmlns.com/foaf/0.1/Agent');
+      final spatialThing = const IriTerm(
         'http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing',
       );
-      final rdfsLabel = IriTerm('http://www.w3.org/2000/01/rdf-schema#label');
+      final rdfsLabel = const IriTerm(
+        'http://www.w3.org/2000/01/rdf-schema#label',
+      );
 
       // Überprüfe, dass Person eine Klasse ist
       final typeTriple = triples.firstWhere(

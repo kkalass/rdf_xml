@@ -66,11 +66,11 @@ void main() {
 
       // Check that subject was resolved using custom prefix mapping
       final subject = triples[0].subject as IriTerm;
-      expect(subject.iri, equals('http://mycustomnamespace.org/resource1'));
+      expect(subject.value, equals('http://mycustomnamespace.org/resource1'));
 
       // Check that object was resolved using custom prefix mapping
       final object = triples[0].object as IriTerm;
-      expect(object.iri, equals('http://localhost:8080/resources/item1'));
+      expect(object.value, equals('http://localhost:8080/resources/item1'));
     });
   });
 }

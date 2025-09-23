@@ -8,8 +8,8 @@ import 'package:test/test.dart';
 void main() {
   group('RdfXmlSerializer Configuration Options', () {
     test('prettyPrint option controls formatting', () {
-      final subject = IriTerm('http://example.org/resource');
-      final predicate = IriTerm('http://example.org/property');
+      final subject = const IriTerm('http://example.org/resource');
+      final predicate = const IriTerm('http://example.org/property');
       final object = LiteralTerm.string('Value');
 
       final triple = Triple(subject, predicate, object);
@@ -47,8 +47,8 @@ void main() {
 
     test('indentSpaces option controls indentation level', () {
       final triple = Triple(
-        IriTerm('http://example.org/resource'),
-        IriTerm('http://example.org/property'),
+        const IriTerm('http://example.org/resource'),
+        const IriTerm('http://example.org/property'),
         LiteralTerm.string('Value'),
       );
       final graph = RdfGraph(triples: [triple]);
@@ -74,17 +74,21 @@ void main() {
 
     test('useNamespaces option affects serialization output', () {
       // Setup a more complex graph with multiple different namespaces
-      final resource = IriTerm('http://example.org/resource');
+      final resource = const IriTerm('http://example.org/resource');
       final triples = [
-        Triple(resource, RdfTerms.type, IriTerm('http://example.org/Type')),
         Triple(
           resource,
-          IriTerm('http://example.org/property'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Type'),
+        ),
+        Triple(
+          resource,
+          const IriTerm('http://example.org/property'),
           LiteralTerm.string('Value'),
         ),
         Triple(
           resource,
-          IriTerm('http://purl.org/dc/terms/title'),
+          const IriTerm('http://purl.org/dc/terms/title'),
           LiteralTerm.string('Resource Title'),
         ),
       ];
@@ -109,15 +113,15 @@ void main() {
     });
 
     test('useTypedNodes option affects serialization output', () {
-      final subject = IriTerm('http://example.org/person/1');
+      final subject = const IriTerm('http://example.org/person/1');
       final typeTriple = Triple(
         subject,
         RdfTerms.type,
-        IriTerm('http://example.org/Person'),
+        const IriTerm('http://example.org/Person'),
       );
       final nameTriple = Triple(
         subject,
-        IriTerm('http://example.org/name'),
+        const IriTerm('http://example.org/name'),
         LiteralTerm.string('John Doe'),
       );
 
@@ -161,12 +165,16 @@ void main() {
       };
 
       // Set up a graph that only uses some of the namespaces
-      final resource = IriTerm('http://example.org/resource');
+      final resource = const IriTerm('http://example.org/resource');
       final triples = [
-        Triple(resource, RdfTerms.type, IriTerm('http://example.org/Type')),
         Triple(
           resource,
-          IriTerm('http://purl.org/dc/terms/title'),
+          RdfTerms.type,
+          const IriTerm('http://example.org/Type'),
+        ),
+        Triple(
+          resource,
+          const IriTerm('http://purl.org/dc/terms/title'),
           LiteralTerm.string('Resource Title'),
         ),
         // No triples using the 'foaf' or 'unused' namespaces

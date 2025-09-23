@@ -84,13 +84,13 @@ void main() {
   // Create a graph with some triples
   final graph = RdfGraph.fromTriples([
     Triple(
-      IriTerm('http://example.org/resource'),
-      IriTerm('http://purl.org/dc/elements/1.1/title'),
+      const IriTerm('http://example.org/resource'),
+      const IriTerm('http://purl.org/dc/elements/1.1/title'),
       LiteralTerm.string('Example Resource'),
     ),
     Triple(
-      IriTerm('http://example.org/resource'),
-      IriTerm('http://purl.org/dc/elements/1.1/creator'),
+      const IriTerm('http://example.org/resource'),
+      const IriTerm('http://purl.org/dc/elements/1.1/creator'),
       LiteralTerm.string('Example Author'),
     ),
   ]);

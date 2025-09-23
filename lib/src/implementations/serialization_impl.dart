@@ -191,11 +191,11 @@ final class _SubjectGroup {
         final canUseRdfId =
             baseUri != null &&
             baseUri.isNotEmpty &&
-            statementIri.iri.startsWith('$baseUri#');
+            statementIri.value.startsWith('$baseUri#');
 
         if (canUseRdfId) {
           // Extract the local ID from the URI (part after #)
-          final localId = statementIri.iri.substring(
+          final localId = statementIri.value.substring(
             baseUri.length + 1,
           ); // +1 for the #
           // Create reification info
@@ -664,7 +664,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
         if (localId != null) 'rdf:ID': localId,
         if (literal.datatype != RdfTerms.string &&
             literal.datatype != RdfTerms.langString)
-          'rdf:datatype': literal.datatype.iri,
+          'rdf:datatype': literal.datatype.value,
         if (literal.language != null) 'xml:lang': literal.language!,
       },
       nest: literal.value,
@@ -701,7 +701,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
     final notHandledTriples = <Triple>[];
     for (final triple in containerGroup.triples) {
       if (triple.predicate is IriTerm) {
-        final predIri = (triple.predicate as IriTerm).iri;
+        final predIri = (triple.predicate as IriTerm).value;
 
         // Check if this is a container item predicate (rdf:_1, rdf:_2, etc.)
         if (predIri.startsWith('${RdfTerms.rdfNamespace}_')) {
@@ -893,7 +893,7 @@ final class DefaultRdfXmlBuilder implements IRdfXmlBuilder {
           'WARNING: Special IRI $iri used in serialization. '
           'This either means that a special treatment was not applied, or an IRI was configured as special which is not so special at all.',
         );
-        return iri.iri;
+        return iri.value;
       }(),
     };
   }

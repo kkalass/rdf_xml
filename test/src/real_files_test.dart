@@ -58,13 +58,15 @@ void main() {
       final graph = RdfGraph(triples: triples);
 
       // Check for some key FOAF classes
-      final personClass = IriTerm('http://xmlns.com/foaf/0.1/Person');
-      final documentClass = IriTerm('http://xmlns.com/foaf/0.1/Document');
-      final agentClass = IriTerm('http://xmlns.com/foaf/0.1/Agent');
+      final personClass = const IriTerm('http://xmlns.com/foaf/0.1/Person');
+      final documentClass = const IriTerm('http://xmlns.com/foaf/0.1/Document');
+      final agentClass = const IriTerm('http://xmlns.com/foaf/0.1/Agent');
 
       // In RDFS/OWL ontologies, classes are often defined as subjects of rdfs:Class or owl:Class
-      final rdfsClass = IriTerm('http://www.w3.org/2000/01/rdf-schema#Class');
-      final owlClass = IriTerm('http://www.w3.org/2002/07/owl#Class');
+      final rdfsClass = const IriTerm(
+        'http://www.w3.org/2000/01/rdf-schema#Class',
+      );
+      final owlClass = const IriTerm('http://www.w3.org/2002/07/owl#Class');
 
       expect(
         graph.triples
@@ -74,7 +76,7 @@ void main() {
                   (t.predicate == RdfTerms.type &&
                           (t.object == rdfsClass || t.object == owlClass) ||
                       t.predicate ==
-                          IriTerm(
+                          const IriTerm(
                             'http://www.w3.org/2000/01/rdf-schema#label',
                           )),
             )
@@ -91,7 +93,7 @@ void main() {
                   (t.predicate == RdfTerms.type &&
                           (t.object == rdfsClass || t.object == owlClass) ||
                       t.predicate ==
-                          IriTerm(
+                          const IriTerm(
                             'http://www.w3.org/2000/01/rdf-schema#label',
                           )),
             )
@@ -108,7 +110,7 @@ void main() {
                   (t.predicate == RdfTerms.type &&
                           (t.object == rdfsClass || t.object == owlClass) ||
                       t.predicate ==
-                          IriTerm(
+                          const IriTerm(
                             'http://www.w3.org/2000/01/rdf-schema#label',
                           )),
             )
@@ -118,18 +120,18 @@ void main() {
       );
 
       // Check for some key FOAF properties
-      final nameProp = IriTerm('http://xmlns.com/foaf/0.1/name');
-      final knowsProp = IriTerm('http://xmlns.com/foaf/0.1/knows');
-      final mboxProp = IriTerm('http://xmlns.com/foaf/0.1/mbox');
+      final nameProp = const IriTerm('http://xmlns.com/foaf/0.1/name');
+      final knowsProp = const IriTerm('http://xmlns.com/foaf/0.1/knows');
+      final mboxProp = const IriTerm('http://xmlns.com/foaf/0.1/mbox');
 
       // In RDF/OWL properties are defined as rdf:Property or owl:ObjectProperty/DatatypeProperty
-      final rdfProperty = IriTerm(
+      final rdfProperty = const IriTerm(
         'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property',
       );
-      final owlObjectProperty = IriTerm(
+      final owlObjectProperty = const IriTerm(
         'http://www.w3.org/2002/07/owl#ObjectProperty',
       );
-      final owlDatatypeProperty = IriTerm(
+      final owlDatatypeProperty = const IriTerm(
         'http://www.w3.org/2002/07/owl#DatatypeProperty',
       );
 
@@ -205,7 +207,7 @@ void main() {
                   t.subject == personClass &&
                   (t.predicate == RdfTerms.type ||
                       t.predicate ==
-                          IriTerm(
+                          const IriTerm(
                             'http://www.w3.org/2000/01/rdf-schema#label',
                           )),
             )
@@ -234,13 +236,13 @@ void main() {
       final graph = RdfGraph(triples: triples);
 
       // Check for some key SKOS classes with full URIs
-      final conceptClass = IriTerm(
+      final conceptClass = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#Concept',
       );
-      final conceptSchemeClass = IriTerm(
+      final conceptSchemeClass = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#ConceptScheme',
       );
-      final collectionClass = IriTerm(
+      final collectionClass = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#Collection',
       );
 
@@ -264,13 +266,13 @@ void main() {
       );
 
       // Check for some key SKOS properties
-      final prefLabelProp = IriTerm(
+      final prefLabelProp = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#prefLabel',
       );
-      final broaderProp = IriTerm(
+      final broaderProp = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#broader',
       );
-      final narrowerProp = IriTerm(
+      final narrowerProp = const IriTerm(
         'http://www.w3.org/2004/02/skos/core#narrower',
       );
 

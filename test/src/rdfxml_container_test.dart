@@ -82,8 +82,8 @@ void main() {
       // Find the container link triple
       final containerTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/container/bag') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/items',
+            t.subject == const IriTerm('http://example.org/container/bag') &&
+            (t.predicate as IriTerm).value == 'http://example.org/items',
       );
 
       // Get the container node
@@ -94,12 +94,12 @@ void main() {
       final typeTriple = triples.firstWhere(
         (t) =>
             t.subject == containerNode &&
-            (t.predicate as IriTerm).iri ==
+            (t.predicate as IriTerm).value ==
                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
       );
       expect(
         typeTriple.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag')),
       );
 
       // Verify it has the expected members
@@ -108,7 +108,7 @@ void main() {
               .where(
                 (t) =>
                     t.subject == containerNode &&
-                    (t.predicate as IriTerm).iri.startsWith(
+                    (t.predicate as IriTerm).value.startsWith(
                       'http://www.w3.org/1999/02/22-rdf-syntax-ns#_',
                     ),
               )
@@ -124,7 +124,7 @@ void main() {
 
       // Check the predicates are _1, _2, _3
       final predicates =
-          itemTriples.map((t) => (t.predicate as IriTerm).iri).toList();
+          itemTriples.map((t) => (t.predicate as IriTerm).value).toList();
 
       expect(
         predicates,
@@ -161,8 +161,8 @@ void main() {
       // Find the container link triple
       final containerTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/container/seq') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/orderedItems',
+            t.subject == const IriTerm('http://example.org/container/seq') &&
+            (t.predicate as IriTerm).value == 'http://example.org/orderedItems',
       );
 
       // Get the container node
@@ -173,12 +173,12 @@ void main() {
       final typeTriple = triples.firstWhere(
         (t) =>
             t.subject == containerNode &&
-            (t.predicate as IriTerm).iri ==
+            (t.predicate as IriTerm).value ==
                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
       );
       expect(
         typeTriple.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq')),
       );
 
       // Verify it has the expected members
@@ -187,7 +187,7 @@ void main() {
               .where(
                 (t) =>
                     t.subject == containerNode &&
-                    (t.predicate as IriTerm).iri.startsWith(
+                    (t.predicate as IriTerm).value.startsWith(
                       'http://www.w3.org/1999/02/22-rdf-syntax-ns#_',
                     ),
               )
@@ -200,7 +200,7 @@ void main() {
       for (int i = 1; i <= 3; i++) {
         final triple = itemTriples.firstWhere(
           (t) =>
-              (t.predicate as IriTerm).iri ==
+              (t.predicate as IriTerm).value ==
               'http://www.w3.org/1999/02/22-rdf-syntax-ns#_$i',
         );
         orderedValues.add((triple.object as LiteralTerm).value);
@@ -235,8 +235,8 @@ void main() {
       // Find the container link triple
       final containerTriple = triples.firstWhere(
         (t) =>
-            t.subject == IriTerm('http://example.org/container/alt') &&
-            (t.predicate as IriTerm).iri == 'http://example.org/alternatives',
+            t.subject == const IriTerm('http://example.org/container/alt') &&
+            (t.predicate as IriTerm).value == 'http://example.org/alternatives',
       );
 
       // Get the container node
@@ -247,12 +247,12 @@ void main() {
       final typeTriple = triples.firstWhere(
         (t) =>
             t.subject == containerNode &&
-            (t.predicate as IriTerm).iri ==
+            (t.predicate as IriTerm).value ==
                 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
       );
       expect(
         typeTriple.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt')),
       );
 
       // Verify it has the expected alternatives
@@ -261,7 +261,7 @@ void main() {
               .where(
                 (t) =>
                     t.subject == containerNode &&
-                    (t.predicate as IriTerm).iri.startsWith(
+                    (t.predicate as IriTerm).value.startsWith(
                       'http://www.w3.org/1999/02/22-rdf-syntax-ns#_',
                     ),
               )
@@ -272,7 +272,7 @@ void main() {
       // Check the default option (first one)
       final defaultOption = itemTriples.firstWhere(
         (t) =>
-            (t.predicate as IriTerm).iri ==
+            (t.predicate as IriTerm).value ==
             'http://www.w3.org/1999/02/22-rdf-syntax-ns#_1',
       );
 
@@ -281,8 +281,8 @@ void main() {
 
     test('serializes and re-parses rdf:Bag container correctly', () {
       // Create a graph with a Bag container
-      final subject = IriTerm('http://example.org/container/bag');
-      final predicate = IriTerm('http://example.org/items');
+      final subject = const IriTerm('http://example.org/container/bag');
+      final predicate = const IriTerm('http://example.org/items');
       final containerNode = BlankNodeTerm();
 
       final triples = <Triple>[
@@ -290,21 +290,21 @@ void main() {
         Triple(
           containerNode,
           RdfTerms.type,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
           LiteralTerm.string('Item 1'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
           LiteralTerm.string('Item 2'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
           LiteralTerm.string('Item 3'),
         ),
       ];
@@ -351,7 +351,7 @@ void main() {
       expect(typeTriples, hasLength(1));
       expect(
         typeTriples.first.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag')),
       );
 
       // Check all items are present
@@ -360,7 +360,7 @@ void main() {
         final itemTriples = RdfTestUtils.triplesWithSubjectPredicate(
           reparsedGraph,
           newContainerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_$i'),
+          IriTerm.validated('http://www.w3.org/1999/02/22-rdf-syntax-ns#_$i'),
         );
         expect(itemTriples, hasLength(1));
         values.add((itemTriples.first.object as LiteralTerm).value);
@@ -371,8 +371,8 @@ void main() {
 
     test('serializes and re-parses rdf:Seq container correctly', () {
       // Create a graph with a Seq container
-      final subject = IriTerm('http://example.org/container/seq');
-      final predicate = IriTerm('http://example.org/orderedItems');
+      final subject = const IriTerm('http://example.org/container/seq');
+      final predicate = const IriTerm('http://example.org/orderedItems');
       final containerNode = BlankNodeTerm();
 
       final triples = <Triple>[
@@ -380,21 +380,21 @@ void main() {
         Triple(
           containerNode,
           RdfTerms.type,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
           LiteralTerm.string('First'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
           LiteralTerm.string('Second'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
           LiteralTerm.string('Third'),
         ),
       ];
@@ -433,7 +433,7 @@ void main() {
       expect(typeTriples, hasLength(1));
       expect(
         typeTriples.first.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq')),
       );
 
       // Check the items are in the right order
@@ -442,7 +442,7 @@ void main() {
         final itemTriples = RdfTestUtils.triplesWithSubjectPredicate(
           reparsedGraph,
           newContainerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_$i'),
+          IriTerm.validated('http://www.w3.org/1999/02/22-rdf-syntax-ns#_$i'),
         );
         expect(itemTriples, hasLength(1));
         orderedValues.add((itemTriples.first.object as LiteralTerm).value);
@@ -453,8 +453,8 @@ void main() {
 
     test('serializes and re-parses rdf:Alt container correctly', () {
       // Create a graph with an Alt container
-      final subject = IriTerm('http://example.org/container/alt');
-      final predicate = IriTerm('http://example.org/alternatives');
+      final subject = const IriTerm('http://example.org/container/alt');
+      final predicate = const IriTerm('http://example.org/alternatives');
       final containerNode = BlankNodeTerm();
 
       final triples = <Triple>[
@@ -462,21 +462,21 @@ void main() {
         Triple(
           containerNode,
           RdfTerms.type,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
           LiteralTerm.string('Option A'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_2'),
           LiteralTerm.string('Option B'),
         ),
         Triple(
           containerNode,
-          IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
+          const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_3'),
           LiteralTerm.string('Option C'),
         ),
       ];
@@ -515,14 +515,14 @@ void main() {
       expect(typeTriples, hasLength(1));
       expect(
         typeTriples.first.object,
-        equals(IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt')),
+        equals(const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt')),
       );
 
       // Check the default option is preserved (first item)
       final defaultOptionTriples = RdfTestUtils.triplesWithSubjectPredicate(
         reparsedGraph,
         newContainerNode,
-        IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
+        const IriTerm('http://www.w3.org/1999/02/22-rdf-syntax-ns#_1'),
       );
       expect(defaultOptionTriples, hasLength(1));
       expect(

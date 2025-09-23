@@ -69,8 +69,14 @@ void main() {
       expect(graph.triples, hasLength(1));
 
       final triple = graph.triples.first;
-      expect(triple.subject, equals(IriTerm('http://example.org/subject')));
-      expect(triple.predicate, equals(IriTerm('http://example.org/predicate')));
+      expect(
+        triple.subject,
+        equals(const IriTerm('http://example.org/subject')),
+      );
+      expect(
+        triple.predicate,
+        equals(const IriTerm('http://example.org/predicate')),
+      );
       expect(triple.object, equals(LiteralTerm.string('Object')));
     });
 
@@ -78,9 +84,9 @@ void main() {
       final codec = RdfXmlCodec();
       final encoder = codec.encoder;
 
-      final subject = IriTerm('http://example.org/subject');
+      final subject = const IriTerm('http://example.org/subject');
       final predicate = RdfTerms.type;
-      final object = IriTerm('http://example.org/Class');
+      final object = const IriTerm('http://example.org/Class');
 
       final graph = RdfGraph(triples: [Triple(subject, predicate, object)]);
 
@@ -173,11 +179,11 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
       expect(triples, isNotEmpty);
       expect(
         triples.first.subject,
-        equals(IriTerm("http://example.org/resource")),
+        equals(const IriTerm("http://example.org/resource")),
       );
       expect(
         triples.first.predicate,
-        equals(IriTerm("http://purl.org/dc/elements/1.1/identifier")),
+        equals(const IriTerm("http://purl.org/dc/elements/1.1/identifier")),
       );
       expect(triples.first.object, equals(LiteralTerm("4711")));
     });
@@ -186,8 +192,8 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
       final newXml = rdfxml.encode(
         RdfGraph.fromTriples([
           Triple(
-            IriTerm("http://example.org/resource"),
-            IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+            const IriTerm("http://example.org/resource"),
+            const IriTerm("http://purl.org/dc/elements/1.1/identifier"),
             LiteralTerm("4711"),
           ),
         ]),
@@ -203,8 +209,8 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
         final newXml = rdfxml.encode(
           RdfGraph.fromTriples([
             Triple(
-              IriTerm("http://example.org/resource"),
-              IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+              const IriTerm("http://example.org/resource"),
+              const IriTerm("http://purl.org/dc/elements/1.1/identifier"),
               LiteralTerm("4711"),
             ),
           ]),
@@ -223,8 +229,8 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
       final newXml = rdfxml.encode(
         RdfGraph.fromTriples([
           Triple(
-            IriTerm("http://example.org/resource/1"),
-            IriTerm("http://purl.org/dc/elements/1.1/identifier"),
+            const IriTerm("http://example.org/resource/1"),
+            const IriTerm("http://purl.org/dc/elements/1.1/identifier"),
             LiteralTerm("4711"),
           ),
         ]),
@@ -248,11 +254,11 @@ RdfXmlCodec(encoderOptions: RdfXmlEncoderOptions(includeBaseDeclaration: false))
       expect(triples, isNotEmpty);
       expect(
         triples.first.subject,
-        equals(IriTerm("http://example.org/resource")),
+        equals(const IriTerm("http://example.org/resource")),
       );
       expect(
         triples.first.predicate,
-        equals(IriTerm("http://purl.org/dc/elements/1.1/identifier")),
+        equals(const IriTerm("http://purl.org/dc/elements/1.1/identifier")),
       );
       expect(triples.first.object, equals(LiteralTerm("4711")));
     });
