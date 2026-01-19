@@ -1,3 +1,15 @@
+> # ⚠️ DEPRECATED - This package has moved!
+> 
+> **This package is no longer maintained.** It has been integrated into the [locorda](https://github.com/locorda) project's monorepo and rebranded.
+> 
+> **Please migrate to:** [`locorda_rdf_xml`](https://pub.dev/packages/locorda_rdf_xml)
+> 
+> All future development and support will happen in the new package. This repository will be archived.
+> 
+> **Migration:** Simply replace `rdf_xml` with `locorda_rdf_xml` in your `pubspec.yaml` and update your imports.
+> 
+> **⚠️ Important:** This package depends on `rdf_core`. You must also migrate to [`locorda_rdf_core`](https://pub.dev/packages/locorda_rdf_core) as all rdf_* packages have been moved to the locorda project.
+
 # RDF XML
 
 [![pub package](https://img.shields.io/pub/v/rdf_xml.svg)](https://pub.dev/packages/rdf_xml)
